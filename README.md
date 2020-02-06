@@ -31,6 +31,9 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 If you are interested in adding additional previewers, or in maintaining/enhancing existing ones, contact us at [dataverse-dev@googlegroups.com](mailto:dataverse-dev@googlegroups.com) or work through github to fork/make pull-requests against the repository.
 
 ### Curl commands to configure these tools with your dataverse instance:
+
+#### Note: The primary repository for dataverse-previewers is now https://github.com/GlobalDataverseCommunityConsortium/dataverse-previewers. At some point, QDR may stop making the previewers available from the https://qualitativedatarepository.github.io/dataverse-previewers/ URLs used below. We recommend that you use the instructions available at the GlobalDataverseCommunityConsortium repository for new installations. For existing installations, the Dataverse API can be used to list registered externaltools (curl http://localhost:8080/api/admin/externalTools) and then delete relevant tools by id number (e.g. curl -X DELETE http://localhost:8080/api/admin/externalTools/1 ) before installing the tools at the new localtion by running the curl commands at https://github.com/GlobalDataverseCommunityConsortium/dataverse-previewers/blob/master/README.md).
+
 You should be able to cut/paste any/all of the commands below to run on your Dataverse machine:
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
