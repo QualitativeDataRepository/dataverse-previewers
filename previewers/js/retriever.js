@@ -101,14 +101,58 @@ function addStandardPreviewHeader(file, title, authors) {
 	if (previewMode !== 'true') {
 		// Add favicon from source Dataverse
 		$('head')
+		        .append(
+                        $('<link/>')
+                                .attr('sizes', '180x180')
+                                .attr('rel', 'apple-touch-icon')
+                                .attr(
+                                        'href',
+                                        queryParams.get("siteUrl")
+                                             + '/javax.faces.resource/images/fav/apple-touch-icon.png.xhtml'))
+                .append(
+                        $('<link/>')
+                                .attr('type', 'image/png')
+                                .attr('sizes', '16x16')
+                                .attr('rel', 'icon')
+                                .attr(
+                                        'href',
+                                        queryParams.get("siteUrl")
+                                                + '/javax.faces.resource/images/fav/favicon-16x16.png.xhtml'))
+                .append(
+                        $('<link/>')
+                                .attr('type', 'image/png')
+                                .attr('sizes', '32x32')
+                                .attr('rel', 'icon')
+                                .attr(
+                                        'href',
+                                        queryParams.get("siteUrl")
+                                                + '/javax.faces.resource/images/fav/favicon-32x32.png.xhtml'))
+                                                                                
 				.append(
 						$('<link/>')
-								.attr('type', 'image/png')
-								.attr('rel', 'icon')
+								.attr('rel', 'manifest')
 								.attr(
 										'href',
 										queryParams.get("siteUrl")
-												+ '/javax.faces.resource/images/favicondataverse.png.xhtml'));
+												+ '/javax.faces.resource/images/site.webmanifest.xhtml'))
+												
+                 .append(
+                        $('<link/>')
+                                .attr('color', '#da532c')
+                                .attr('rel', 'mask-icon')
+                                .attr(
+                                        'href',
+                                        queryParams.get("siteUrl")
+                                                + '/javax.faces.resource/images/fav/safari-pinned-tab.svg.xhtml'))
+                 .append(
+                        $('<meta/>')
+                                .attr('content', '#da532c')
+                                .attr('name', 'msapplication-TileColor'))
+                 .append(
+                        $('<meta/>')
+                                .attr('content', '#ffffff')
+                                .attr('name', 'theme-color'));
+												
 		// Add logo from source Dataverse or use a local one, unless we are in preview mode
 		$('#logo')
 				.attr('src', queryParams.get("siteUrl") + '/logos/preview_logo.png')
