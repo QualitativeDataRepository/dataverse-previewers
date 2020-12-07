@@ -28,9 +28,12 @@ The original tools were developed through the [Qualitative Data Repository](http
 
 The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/anncie-pcss).
 
-If you are interested in adding additional previewers, or in maintaining/enhancing existing ones, contact us at [qdr@syr.edu](mailto:qdr.syr.edu) or work through github to fork/make pull-requests against the repository.
+If you are interested in adding additional previewers, or in maintaining/enhancing existing ones, contact us at [dataverse-dev@googlegroups.com](mailto:dataverse-dev@googlegroups.com) or work through github to fork/make pull-requests against the repository.
 
 ### Curl commands to configure these tools with your dataverse instance:
+
+#### Note: The primary repository for dataverse-previewers is now in the [Global Dataverse Community Consortium (GDCC) organization](https://github.com/GlobalDataverseCommunityConsortium/dataverse-previewers). At some point, QDR may stop making the previewers available from the ht<i></i>tps://qualitativedatarepository.github.io/dataverse-previewers/...  URLs used below. We recommend that you use the instructions available at the GlobalDataverseCommunityConsortium repository for new installations. For existing installations, the Dataverse API can be used to list registered externaltools (curl ht<i></i>tp://localhost:8080/api/admin/externalTools) and then delete relevant tools by id number (e.g. curl -X DELETE ht<i></i>tp://localhost:8080/api/admin/externalTools/1 ) before installing the tools at the new location by running the curl commands in the ([GDCC repository's README file](https://github.com/GlobalDataverseCommunityConsortium/dataverse-previewers/blob/master/README.md)).
+
 You should be able to cut/paste any/all of the commands below to run on your Dataverse machine:
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
@@ -91,6 +94,26 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \\"contentType\\":\\"audio/mp3\\"
+>}"
+
+>curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
+>"{
+>  \\"displayName\\":\\"Play Audio\\",
+>  \\"description\\":\\"Listen to an audio file.\\",
+>  \\"scope\\":\\"file\\",
+>  \\"type\\":\\"explore\\",
+>  \\"hasPreviewMode\\":\\"true\\",
+>  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
+>  \\"toolParameters\\": {
+>      \\"queryParameters\\":[
+>        {\\"fileid\\":\\"{fileId}\\"},
+>        {\\"siteUrl\\":\\"{siteUrl}\\"},
+>        {\\"key\\":\\"{apiToken}\\"},
+>        {\\"datasetid\\":\\"{datasetId}\\"},
+>        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>      ]
+>    },
+>  \\"contentType\\":\\"audio/mpeg\\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
