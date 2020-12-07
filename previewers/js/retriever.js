@@ -164,6 +164,8 @@ function addStandardPreviewHeader(file, title, authors) {
     $('body').append($('<div/>').html("Previewers originally developed by <a href='https://qdr.syr.edu'>QDR</a> and maintained at <a href='https://github.com/QualitativeDataRepository/dataverse-previewers'>https://github.com/QualitativeDataRepository/dataverse-previewers</a>. Feedback and contributions welcome.").attr('id','footer'));
 	
 	if (previewMode !== 'true') {
+	options = {"stripIgnoreTag":true,
+           "stripIgnoreTagBody":['script','head']};  // Custom rules
 		filePageUrl = queryParams.get("siteUrl") + "/file.xhtml?";
 		if (file.persistentId.length == 0) {
 			filePageUrl = filePageUrl + "fileId=" + file.id;
@@ -176,7 +178,7 @@ function addStandardPreviewHeader(file, title, authors) {
 				$('<a/>').attr('href', filePageUrl).text(file.filename)).attr('id',
 				'filename'));
 		if ((file.description != null) && (file.description.length > 0)) {
-			header.append($('<div/>').html("Description: " + file.description));
+			header.append($('<div/>').html(filterXSS("Description: " + file.description),options));
 		}
 		header.append($('<div/>').text("In ").append(
 				$('<span/>').attr('id', 'dataset').append(
