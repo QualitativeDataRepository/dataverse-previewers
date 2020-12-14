@@ -38,342 +38,342 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Read Text\\",
->  \\"description\\":\\"Read the text file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Read Text\",
+>  \"description\":\"Read the text file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"textPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"text/plain\\"
+>  \"contentType\":\"text/plain\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Html\\",
->  \\"description\\":\\"View the html file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HtmlPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Html\",
+>  \"description\":\"View the html file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"htmlPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HtmlPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"text/html\\"
+>  \"contentType\":\"text/html\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Play Audio\\",
->  \\"description\\":\\"Listen to an audio file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Play Audio\",
+>  \"description\":\"Listen to an audio file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"audioPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"audio/mp3\\"
+>  \"contentType\":\"audio/mp3\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Play Audio\\",
->  \\"description\\":\\"Listen to an audio file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Play Audio\",
+>  \"description\":\"Listen to an audio file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"audioPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"audio/mpeg\\"
+>  \"contentType\":\"audio/mpeg\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Play Audio\\",
->  \\"description\\":\\"Listen to an audio file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Play Audio\",
+>  \"description\":\"Listen to an audio file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"audioPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"audio/ogg\\"
+>  \"contentType\":\"audio/ogg\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Image\\",
->  \\"description\\":\\"Preview an image file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Image\",
+>  \"description\":\"Preview an image file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"imagePreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"image/gif\\"
+>  \"contentType\":\"image/gif\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Image\\",
->  \\"description\\":\\"Preview an image file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Image\",
+>  \"description\":\"Preview an image file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"imagePreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"image/jpeg\\"
+>  \"contentType\":\"image/jpeg\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Image\\",
->  \\"description\\":\\"Preview an image file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Image\",
+>  \"description\":\"Preview an image file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"imagePreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"image/png\\"
+>  \"contentType\":\"image/png\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Read Document\\",
->  \\"description\\":\\"Read a pdf document.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/PDFPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Read Document\",
+>  \"description\":\"Read a pdf document.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"pdfPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/PDFPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"application/pdf\\"
+>  \"contentType\":\"application/pdf\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Play Video\\",
->  \\"description\\":\\"Watch a video file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Play Video\",
+>  \"description\":\"Watch a video file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"videoPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"video/mp4\\"
+>  \"contentType\":\"video/mp4\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Play Video\\",
->  \\"description\\":\\"Watch a video file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Play Video\",
+>  \"description\":\"Watch a video file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"videoPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"video/ogg\\"
+>  \"contentType\":\"video/ogg\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"Play Video\\",
->  \\"description\\":\\"Watch a video file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"Play Video\",
+>  \"description\":\"Watch a video file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"videoPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"video/quicktime\\"
+>  \"contentType\":\"video/quicktime\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Data\\",
->  \\"description\\":\\"View the spreadsheet data.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Data\",
+>  \"description\":\"View the spreadsheet data.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"spreadsheetPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"text/comma-separated-values\\"
+>  \"contentType\":\"text/comma-separated-values\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Data\\",
->  \\"description\\":\\"View the spreadsheet data.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Data\",
+>  \"description\":\"View the spreadsheet data.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"spreadsheetPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"text/tab-separated-values\\"
+>  \"contentType\":\"text/tab-separated-values\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Stata File\\",
->  \\"description\\":\\"View the Stata file as text.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Stata File\",
+>  \"description\":\"View the Stata file as text.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"textPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"application/x-stata-syntax\\"
+>  \"contentType\":\"application/x-stata-syntax\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View R file\\",
->  \\"description\\":\\"View the R file as text.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View R file\",
+>  \"description\":\"View the R file as text.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"textPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"type/x-r-syntax\\"
+>  \"contentType\":\"type/x-r-syntax\"
 >}"
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
 >"{
->  \\"displayName\\":\\"View Annotations\\",
->  \\"description\\":\\"View the annotation entries in a file.\\",
->  \\"scope\\":\\"file\\",
->  \\"type\\":\\"explore\\",
->  \\"hasPreviewMode\\":\\"true\\",
->  \\"toolUrl\\":\\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html\",
->  \\"toolParameters\\": {
->      \\"queryParameters\\":[
->        {\\"fileid\\":\\"{fileId}\\"},
->        {\\"siteUrl\\":\\"{siteUrl}\\"},
->        {\\"key\\":\\"{apiToken}\\"},
->        {\\"datasetid\\":\\"{datasetId}\\"},
->        {\\"datasetversion\\":\\"{datasetVersion}\\"}
+>  \"displayName\":\"View Annotations\",
+>  \"description\":\"View the annotation entries in a file.\",
+>  \"scope\":\"file\",
+>  \"toolName\":\"annotationPreviewer\",
+>  \"type\":\"preview\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html\",
+>  \"toolParameters\": {
+>      \"queryParameters\":[
+>        {\"fileid\":\"{fileId}\"},
+>        {\"siteUrl\":\"{siteUrl}\"},
+>        {\"key\":\"{apiToken}\"},
+>        {\"datasetid\":\"{datasetId}\"},
+>        {\"datasetversion\":\"{datasetVersion}\"}
 >      ]
 >    },
->  \\"contentType\\":\\"application/x-json-hypothesis\\"
+>  \"contentType\":\"application/x-json-hypothesis\"
 >}"
 
 
