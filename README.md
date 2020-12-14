@@ -37,13 +37,13 @@ If you are interested in adding additional previewers, or in maintaining/enhanci
 You should be able to cut/paste any/all of the commands below to run on your Dataverse machine:
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Read Text\",
 >  \"description\":\"Read the text file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"textPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -54,16 +54,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"text/plain\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Html\",
 >  \"description\":\"View the html file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"htmlPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HtmlPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HtmlPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -74,16 +74,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"text/html\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Play Audio\",
 >  \"description\":\"Listen to an audio file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"audioPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -94,16 +94,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"audio/mp3\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Play Audio\",
 >  \"description\":\"Listen to an audio file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"audioPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -114,16 +114,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"audio/mpeg\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Play Audio\",
 >  \"description\":\"Listen to an audio file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"audioPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -134,16 +134,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"audio/ogg\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Image\",
 >  \"description\":\"Preview an image file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"imagePreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -154,16 +154,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"image/gif\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Image\",
 >  \"description\":\"Preview an image file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"imagePreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -174,16 +174,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"image/jpeg\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Image\",
 >  \"description\":\"Preview an image file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"imagePreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -194,16 +194,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"image/png\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Read Document\",
 >  \"description\":\"Read a pdf document.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"pdfPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/PDFPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/PDFPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -214,16 +214,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"application/pdf\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Play Video\",
 >  \"description\":\"Watch a video file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"videoPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -234,16 +234,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"video/mp4\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Play Video\",
 >  \"description\":\"Watch a video file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"videoPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -254,16 +254,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"video/ogg\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"Play Video\",
 >  \"description\":\"Watch a video file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"videoPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -274,16 +274,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"video/quicktime\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Data\",
 >  \"description\":\"View the spreadsheet data.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"spreadsheetPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -294,16 +294,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"text/comma-separated-values\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Data\",
 >  \"description\":\"View the spreadsheet data.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"spreadsheetPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -314,16 +314,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"text/tab-separated-values\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Stata File\",
 >  \"description\":\"View the Stata file as text.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"textPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -334,16 +334,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"application/x-stata-syntax\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View R file\",
 >  \"description\":\"View the R file as text.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"textPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -354,16 +354,16 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"type/x-r-syntax\"
->}"
+>}'
 
 >curl -X POST -H 'Content-type: application/json' http://localhost:8080/api/admin/externalTools -d \\
->"{
+>'{
 >  \"displayName\":\"View Annotations\",
 >  \"description\":\"View the annotation entries in a file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"annotationPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html\",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
@@ -374,7 +374,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >      ]
 >    },
 >  \"contentType\":\"application/x-json-hypothesis\"
->}"
+>}'
 
 
 
