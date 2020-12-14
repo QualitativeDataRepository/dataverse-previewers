@@ -363,7 +363,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"scope\":\"file\",
 >  \"toolName\":\"annotationPreviewer\",
 >  \"type\":\"preview\",
->  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html\",
+>  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
 >        {\"fileid\":\"{fileId}\"},
