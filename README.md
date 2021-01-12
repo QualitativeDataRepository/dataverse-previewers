@@ -42,7 +42,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Read the text file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"textPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -62,7 +62,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"View the html file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"htmlPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HtmlPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -82,7 +82,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Listen to an audio file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"audioPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -102,7 +102,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Listen to an audio file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"audioPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -122,7 +122,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Listen to an audio file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"audioPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/AudioPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -142,7 +142,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Preview an image file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"imagePreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -162,7 +162,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Preview an image file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"imagePreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -182,7 +182,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Preview an image file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"imagePreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/ImagePreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -202,7 +202,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Read a pdf document.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"pdfPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/PDFPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -222,7 +222,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Watch a video file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"videoPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -242,7 +242,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Watch a video file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"videoPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -262,7 +262,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"Watch a video file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"videoPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/VideoPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -282,7 +282,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"View the spreadsheet data.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"spreadsheetPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -302,7 +302,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"View the spreadsheet data.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"spreadsheetPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/SpreadsheetPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -322,7 +322,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"View the Stata file as text.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"textPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -342,7 +342,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"View the R file as text.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"textPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
@@ -362,7 +362,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"description\":\"View the annotation entries in a file.\",
 >  \"scope\":\"file\",
 >  \"toolName\":\"annotationPreviewer\",
->  \"type\":\"preview\",
+>  \"types\":\"preview\",
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/HypothesisPreview.html",
 >  \"toolParameters\": {
 >      \"queryParameters\":[
