@@ -321,7 +321,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"displayName\":\"View Stata File\",
 >  \"description\":\"View the Stata file as text.\",
 >  \"scope\":\"file\",
->  \"toolName\":\"textPreviewer\",
+>  \"toolName\":\"stataPreviewer\",
 >  \"types\":[\"preview\"],
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
 >  \"toolParameters\": {
@@ -341,7 +341,7 @@ You should be able to cut/paste any/all of the commands below to run on your Dat
 >  \"displayName\":\"View R file\",
 >  \"description\":\"View the R file as text.\",
 >  \"scope\":\"file\",
->  \"toolName\":\"textPreviewer\",
+>  \"toolName\":\"rPreviewer\",
 >  \"types\":[\"preview\"],
 >  \"toolUrl\":\"https://qualitativedatarepository.github.io/dataverse-previewers/previewers/TextPreview.html",
 >  \"toolParameters\": {
