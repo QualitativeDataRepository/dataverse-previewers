@@ -66,6 +66,7 @@ function startPreview(retrieveFile) {
                                 .get("fileid")) {
                                 fileIndex = entry;
                                 callPreviewerScript(retrieveFile, datafiles[fileIndex].dataFile, title, authors);
+                                }
                             }
                         },
                         error: function(jqXHR, textStatus, errorThrown) {
