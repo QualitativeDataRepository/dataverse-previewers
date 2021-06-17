@@ -65,7 +65,7 @@ function startPreview(retrieveFile) {
                             if (JSON.stringify(datafiles[entry].dataFile.id) === queryParams
                                 .get("fileid")) {
                                 fileIndex = entry;
-                                callPreviewerScript(retrieveFile, datafiles[fileIndex].dataFile, title, authors);
+                                callPreviewerScript(retrieveFile, fileUrl, datafiles[fileIndex].dataFile, title, authors);
                                 }
                             }
                         },
@@ -85,7 +85,7 @@ function startPreview(retrieveFile) {
         }
     }
 
-    function callPreviewerScript(retrieveFile, fileMetadata, title, authors) {
+    function callPreviewerScript(retrieveFile, fileUrl, fileMetadata, title, authors) {
         if (retrieveFile) {
             $.ajax({
                 type: 'GET',
