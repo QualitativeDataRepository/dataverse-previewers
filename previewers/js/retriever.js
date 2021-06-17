@@ -22,7 +22,7 @@ function startPreview(retrieveFile) {
         versionUrl = versionUrl + "?key=" + apiKey;
     }
 
-    if (inFrame()) {
+    if (inIframe()) {
         callPreviewerScript(retrieveFile, {}, '', '');
     } else {
         // Get metadata for dataset/version/file
