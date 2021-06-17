@@ -23,7 +23,7 @@ function startPreview(retrieveFile) {
     }
 
     if (inIframe()) {
-        callPreviewerScript(retrieveFile, {}, '', '');
+        callPreviewerScript(retrieveFile, fileUrl, {}, '', '');
     } else {
         // Get metadata for dataset/version/file
         $.ajax({
