@@ -65,7 +65,7 @@ function startPreview(retrieveFile) {
                             if (JSON.stringify(datafiles[entry].dataFile.id) === queryParams
                                 .get("fileid")) {
                                 fileIndex = entry;
-                                callPreviewerScript(retrieveFile, datafiles[fileIndex].dataFile, title, authors) {}
+                                callPreviewerScript(retrieveFile, datafiles[fileIndex].dataFile, title, authors);
                             }
                         },
                         error: function(jqXHR, textStatus, errorThrown) {
