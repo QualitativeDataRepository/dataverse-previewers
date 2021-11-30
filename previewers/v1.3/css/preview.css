@@ -1,15 +1,15 @@
 body {
-        font-family:AntoniaH2;
+    font-family:AntoniaH2;
 }
 
 body a {
-        color: #4b74ff;
+    color: #4b74ff;
 }
 
 .page-title {
     display: inline-block;
     width: 58%;
-    text-align:center;
+    text-align: center;
     color: #4b74ff;
 }
 
@@ -18,37 +18,38 @@ body a {
 }
 
 .preview-header {
-    font-size:14px;
+    font-size: 14px;
     color: darkslategray;
     overflow-wrap: break-word;
     margin-bottom: 10px;
     background: #E8E8ED;
     border-color: #4B74FF;
     border-style: solid;
-    border-width:1px;
+    border-width: 1px;
     padding: 15px 15px 5px 15px;
 }
 
 .preview-header div {
     margin: 10px 5px 5px 0px;
 }
+
 .preview-header #filename {
-font-size: 16px;
+    font-size: 16px;
 }
 
 .preview-header #dataset {
-font-style: italic;
+    font-style: italic;
 }
 
 .preview-note {
-    float:right;
+    float: right;
     font-size: 12px;
-    padding-top:20px;
+    padding-top: 20px;
 }
 
 .preview-container {
-margin-left: 40px;
-} 
+    margin-left: 40px;
+}
 
 .preview {
     margin: 0 auto;
@@ -56,13 +57,13 @@ margin-left: 40px;
 }
 
 .preview audio {
-    margin:20px auto;
+    margin: 20px auto;
     display: table;
 }
 
 .preview video {
-    margin:20px auto;
-    min-width:600px;
+    margin: 20px auto;
+    min-width: 600px;
     display: table;
 }
 
@@ -70,20 +71,20 @@ margin-left: 40px;
     display: inline-block;
     margin-left: 40px;
     width: 240px;
-    min-height:140px;
+    min-height: 140px;
 }
 
 #footer {
     font-size: x-small;
     float: right;
 }
-}
 
 .annotation-note {
-    float:right;
+    float: right;
     font-size: 12px;
-    padding-top:20px;
+    padding-top: 20px;
 }
+
 .annotation-card {
     font-size: 13px;
     line-height: 15px;
@@ -92,15 +93,17 @@ margin-left: 40px;
     list-style: none;
     padding: 15px;
     margin-bottom: 10px;
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
+    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1);
     background: #fff;
     overflow-wrap: break-word;
 }
+
 .annotation-card__text {
     overflow-wrap: break-word;
 }
+
 .annotation-card__text img {
-max-width:100%;
+    max-width: 100%;
 }
 
 .annotation-card__quote {
@@ -114,6 +117,7 @@ max-width:100%;
     border-left: 3px solid #dbdbdb;
     margin-bottom: 10px;
 }
+
 .annotation-card__tags {
     display: -ms-flexbox;
     display: flex;
@@ -122,6 +126,7 @@ max-width:100%;
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
 }
+
 .annotation-card__tag {
     text-decoration: none;
     border: 1px solid #dbdbdb;
@@ -136,9 +141,9 @@ max-width:100%;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .annotation_raw {
-        max-height:500px;
-        word-break:break-all;
-        overflow-y:auto;
+    max-height: 500px;
+    word-break: break-all;
+    overflow-y: auto;
 }
-                                                        
