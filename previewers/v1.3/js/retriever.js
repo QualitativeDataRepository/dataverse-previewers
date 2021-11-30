@@ -189,7 +189,7 @@ function startPreview(retrieveFile) {
         }
         //Footer
     var footer = $.i18n("footer");
-    $('body').append($('<div/>').html(footer).attr('id', 'footer'));
+    $('body').append($('<footer/>').html(footer).attr('id', 'footer'));
 
         if (previewMode !== 'true') {
             options = {

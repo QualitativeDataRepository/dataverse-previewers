@@ -14,7 +14,7 @@ addStandardPreviewHeader(file, title, authors);
         .attr('style','max-width:100%')
         .attr('src',fileUrl)
         .attr('id','previewImage')
-        .attr('alt', file.name)
+        .attr('alt', file.filename)
     );
 
     $("#previewImage")
