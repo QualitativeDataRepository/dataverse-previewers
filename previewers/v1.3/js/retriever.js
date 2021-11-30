@@ -165,15 +165,6 @@ function startPreview(retrieveFile) {
 
                 .append(
                     $('<link/>')
-                    .attr('rel', 'manifest')
-                    .attr(
-                        'href',
-                        queryParams.get("siteUrl") +
-                        '/javax.faces.resource/images/fav/site.webmanifest.xhtml')
-                        .attr('crossorigin','use-credentials'))
-
-                .append(
-                    $('<link/>')
                     .attr('color', '#da532c')
                     .attr('rel', 'mask-icon')
                     .attr(
