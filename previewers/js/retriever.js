@@ -151,7 +151,7 @@ function startPreview(retrieveFile) {
                     .attr(
                         'href',
                         queryParams.get("siteUrl") +
-                        '/javax.faces.resource/images/site.webmanifest.xhtml'))
+                        '/javax.faces.resource/images/fav/site.webmanifest'))
 
                 .append(
                     $('<link/>')
