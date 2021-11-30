@@ -1,18 +1,23 @@
 
 $(document).ready(function() {
-startPreview(true);
+    startPreview(true);
 });
+
+function translateBaseHtmlPage() {
+    var annotationsText = $.i18n( "annotationsText" );
+    $( '.annotationsText' ).text( annotationsText );
+}
 
 function writeContentAndData(data, fileUrl, file, title, authors) {
     addStandardPreviewHeader(file,title, authors);
     
   var json = JSON.parse(data);
-	$(".preview-note").text(
-			json.total + " annotations, retrieved on " + file.creationDate);
-	$("<div/>").attr('id','incontext').addClass("btn btn-default").append(
-		      $("<a/>").attr("href", json.rows[0].links.incontext).text(
-	          "View Annotations In Context")).insertBefore($('.preview-header>.btn')[0]);
-			
+    $(".preview-note").text(
+            json.total + " annotations, retrieved on " + file.creationDate);
+    $("<div/>").attr('id','incontext').addClass("btn btn-default").append(
+              $("<a/>").attr("href", json.rows[0].links.incontext).text(
+              "View Annotations In Context")).insertBefore($('.preview-header>.btn')[0]);
+
   // Order by TextPositionSelector.start
   json.rows.sort(annotationCompare);
 

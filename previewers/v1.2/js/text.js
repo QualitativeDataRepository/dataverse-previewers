@@ -1,6 +1,11 @@
 $(document).ready(function() {
-startPreview(true);
+    startPreview(true);
 });
+
+function translateBaseHtmlPage() {
+    var textPreviewText = $.i18n( "textPreviewText" );
+    $( '.textPreviewText' ).text( textPreviewText );
+}
 
 function writeContentAndData(data, fileUrl, file, title, authors) {
     addStandardPreviewHeader(file,title, authors);

@@ -17,6 +17,18 @@ document.getElementById('next').addEventListener('click', onNextPage);
 startPreview(false);
 });
 
+function translateBaseHtmlPage() {
+      //PDF Previewer has prev, next, and Page text on it along with the previewer title
+      var pdfPreviewText = $.i18n( "pdfPreviewText" ); 
+      $( '.pdfPreviewText' ).text( pdfPreviewText );
+      var prev = $.i18n( "prev" ); 
+      $( '#prev' ).text( prev );
+      var next = $.i18n( "next" ); 
+      $( '#next' ).text( next );
+      var pageText = $.i18n( "pageText" ); 
+      $( '.pageText' ).text( pageText );
+}
+
 function writeContent(fileUrl, file, title, authors) {
 addStandardPreviewHeader(file, title, authors);
 
@@ -25,7 +37,7 @@ addStandardPreviewHeader(file, title, authors);
 var pdfjsLib = window['pdfjs-dist/build/pdf'];
 
 // The workerSrc property shall be specified.
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/dataverse-previewers/previewers/js/pdf.worker.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.js';
 
 /**
  * Asynchronously downloads PDF.
@@ -76,7 +88,7 @@ function renderPage(num) {
 
 /**
  * If another page rendering in progress, waits until the rendering is
- * finised. Otherwise, executes rendering immediately.
+ * finished. Otherwise, executes rendering immediately.
  */
 function queueRenderPage(num) {
   if (pageRendering) {
