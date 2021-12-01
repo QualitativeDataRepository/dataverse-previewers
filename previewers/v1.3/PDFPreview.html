@@ -27,34 +27,36 @@
 </head>
 
 <body class="container">
-  <img id='logo' alt=''>
-  <h1 class="page-title pdfPreviewText">PDF Preview</h1>
-  <div class='preview-container'>
-    <div class='preview-header'></div>
-    <div class='preview'>
-      <div>
-        <button id="prev">Previous</button>
-        <button id="next">Next</button>
-        &nbsp; &nbsp;
-        <span class="pageText">Page:</span> <span id="page_num"></span> / <span id="page_count"></span>
+  <main>
+    <img id='logo' alt=''>
+    <h1 class="page-title pdfPreviewText">PDF Preview</h1>
+    <div class='preview-container'>
+      <div class='preview-header'></div>
+      <div class='preview'>
+        <div>
+          <button id="prev">Previous</button>
+          <button id="next">Next</button>
+          &nbsp; &nbsp;
+          <span class="pageText">Page:</span> <span id="page_num"></span> / <span id="page_count"></span>
+        </div>
+        <div class="lds-spinner">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <canvas id="the-canvas"></canvas>
       </div>
-      <div class="lds-spinner">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-      </div>
-      <canvas id="the-canvas"></canvas>
     </div>
-  </div>
+  </main>
 </body>
 
 </html>
