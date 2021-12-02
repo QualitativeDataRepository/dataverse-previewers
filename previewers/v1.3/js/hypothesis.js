@@ -53,7 +53,7 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
                           converter
                               .makeHtml(json.rows[row].text))));
       var tags = ($('<div class="annotation-card__tags" title="Tags">'))
-          .appendTo(list.last());
+          .appendTo(list.children().last());
       for ( var j in json.rows[row].tags) {
         tags.append($('<div class="annotation-card__tag">').text(
             json.rows[row].tags[j]));
@@ -62,8 +62,8 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
     $('.annotation-card__text a').attr("rel", "noopener nofollow").attr(
         "target", "_blank");
     //QDR specific - Add accessibility for existing entries - see #
-    $('.annotation-card__text a[href=https://qdr.syr.edu/guidance/ati]').attr("aria-label", "QDR ATI Guidance");
-    $('.annotation-card__text img[src=https://qdr.syr.edu/drupal_data/public/ati_banner_long]').attr("alt", "QDR ATI Banner");
+    $('.annotation-card__text a[href="https://qdr.syr.edu/guidance/ati"]').attr("aria-label", "QDR ATI Guidance");
+    $('.annotation-card__text img[src="https://qdr.syr.edu/drupal_data/public/ati_banner_long"]').attr("alt", "QDR ATI Banner");
   }
 }
 
