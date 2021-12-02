@@ -63,7 +63,7 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
         "target", "_blank");
     //QDR specific - Add accessibility for existing entries - see #
     $('.annotation-card__text a[href="https://qdr.syr.edu/guidance/ati"]').attr("aria-label", "QDR ATI Guidance");
-    $('.annotation-card__text img[src="https://qdr.syr.edu/drupal_data/public/ati_banner_long"]').attr("alt", "QDR ATI Banner");
+    $('.annotation-card__text img[src="https://qdr.syr.edu/drupal_data/public/ati_banner_long.png"]').attr("alt", "QDR ATI Banner");
   }
 }
 
