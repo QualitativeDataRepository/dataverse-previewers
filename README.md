@@ -21,7 +21,7 @@ Also note that using the commands below means that your installation will automa
 
 There are two options to update to new versions:
 
-##### API Method
+### API Method
 
 Use the Dataverse API to list all of the registered previewers and to then delete each old version. Then follow the new installation instructions
 
@@ -30,12 +30,11 @@ and, for each tool registered, delete them by id number:
 
     curl -X DELETE http://localhost:8080/api/admin/externalTools/<id>
 
-##### Database method
+### Database method
 
 Alternately, one can update the toolurl column in the externaltool table via SQL to change the repository and/or the version used. For example:
 
     update externaltool set toolurl=REPLACE(toolurl, 'globaldataversecommunityconsortium.github.io/dataverse-previewers/previewers', 'gdcc.github.io/dataverse-previewers/previewers/v1.1');
-
 
 ## How do they work?
 
@@ -66,7 +65,7 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 
 [juancorr](https://github.com/juancorr) added internationalization and provided a Spanish translation for the existing previewers.
 
-[kaitlinnewson](https://github.com/kaitlinnewson) provided a French translation for the existing previewers.
+[kaitlinnewson](https://github.com/kaitlinnewson) provided a French translation for the existing previewers, and contributed the GeoJSON previewer.
 
 ## How can I help?
 
