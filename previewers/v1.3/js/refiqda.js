@@ -1,6 +1,6 @@
 
 $(document).ready(function() {
-    startPreview(true);
+    startPreview(false);
 });
 
 function translateBaseHtmlPage() {
@@ -8,7 +8,9 @@ function translateBaseHtmlPage() {
     $('.refiqdaPreviewText').text(refiqdaPreviewText);
 }
 var codeMap = new Map();
-function writeContentAndData(data, fileUrl, file, title, authors) {
+var sourceMap = new Map();
+
+function writeContent(fileUrl, file, title, authors) {
     addStandardPreviewHeader(file, title, authors);
     options = {
         "stripIgnoreTag": true,
@@ -16,6 +18,8 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
     };  // Custom rules
 
     parser = new DOMParser();
+    
+    QQQQQQQQQQQQQQQQ - get from project file
     xmlDoc = parser.parseFromString(data, "text/xml");
 
 
@@ -68,15 +72,15 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
 
         for (let source of sources) {
             if (source.nodeName.endsWith("Source")) {
-
+                sourceMap.set(source.getAttribute("guid"), source);
                 let selections = getSelections(source);
                 if (selections != null && selections.length != 0) {
                     selections.forEach(function(selection) {
-                        addRow(sourceTable, source.getAttribute("name"), source.nodeName, selection.getAttribute("name"), getCodeNames(selection));
+                        addRow(sourceTable, createSourceReference(source, fileUrl), source.nodeName, selection.getAttribute("name"), getCodeNames(selection));
                     });
                 }
                 else {
-                    addRow(sourceTable, source.getAttribute("name"), source.nodeName, "Whole Document", "");
+                    addRow(sourceTable, createSourceReference(source, fileUrl), source.nodeName, "Whole Document", "");
                 }
             }
 
@@ -84,36 +88,110 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
         $(".sourcetable").DataTable();
     }
 
-}
-/*
-var sources = codebook[0].getElementsByTagName("TextSource");
-for (let source of sources) {
-$('.preview').append($("<div/>").html("<p>Source: " + source.getAttribute('name') + "</p>"));
-}
-var sets = codebook[0].getElementsByTagName("Set");
-for (let set of sets) {
-                let sdiv = $('<p/>');
-        sdiv.html("<p>Set: " + set.getAttribute('name') + "</p>");
-        $('.preview').append(sdiv);
-        var members=set.getElementsByTagName("MemberCode");
-        for(let member of members) {
-let foundCode = xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']");
-                        if(foundCode !== null) {
-                        sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']").getAttribute('name')));
-                        } else {
-                        sdiv.append($('<p/>').html("Code with GUID: " + member.getAttribute('targetGUID') + " not found in file"));
+    let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
+    if (sets != null) {
+        let setBlock = $('<div/>').width("60%").appendTo($(".preview"));
+        setBlock.append($("<p>").html("<h2>Sets</h2>"));
+        let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
+        setTable.addClass("settable compact stripe");
+
+        for (let set of sets) {
+                console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
+            let codeNames = '';
+            let sourceNames = '';
+       if(!set.nodeName.endsWith("#text")) {
+            let members=set.getElementsByTagName("MemberCode");
+            for(let member of members) {
+                let codeId = member.getAttribute('targetGUID') ;
+                let code = codeMap.get(codeId);
+                if (code != null) {
+                    codeNames = codeNames + ' ' + code.getAttribute("name");
+                }
+            }
+
+            members=set.getElementsByTagName("MemberSource");
+            for(let member of members) {
+                let sourceId = member.getAttribute('targetGUID');
+                let source = sourceMap.get(sourceId);
+                if (source != null) {
+                    sourceNames = sourceNames + ' ' + source.getAttribute("name");
+                }
+            }
+
+            addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
+       }
         }
+        $(".settable").DataTable();
+    }
+
+    let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
+    if (graphs != null) {
+        let graphBlock = $('<div/>').width("60%").appendTo($(".preview"));
+        graphBlock.append($("<p>").html("<h2>Graphs</h2>"));
+        let elements = [];
+        for (let graph of graphs) {
+        if(!graph.nodeName.endsWith("#text")) {
+            let vertexes=graph.getElementsByTagName("Vertex");
+            for(let vertex of vertexes) {
+               var data={};
+               data.id = vertex.getAttribute("guid");
+               data.name= vertex.getAttribute("name");
+                    var gnode = {};
+
+                    gnode.data=data;
+               elements.push(gnode);
+               }
+            let edges=graph.getElementsByTagName("Edge");
+            for(let edge of edges) {
+               var data={};
+               data.id = edge.getAttribute("guid");
+                    data.name="";
+               data.source= edge.getAttribute("sourceVertex");
+               data.target= edge.getAttribute("targetVertex");
+                    var gnode = {};
+                    gnode.data=data;
+               elements.push(gnode);
+               }
+             }
+             }
+        let cyContainer = $('<div/>').width("100%").height("400px").appendTo(graphBlock);
+
+        var cy = cytoscape({
+  container: cyContainer, // container to render in
+                elements: elements,
+
+                style: [ // the stylesheet for the graph
+    {
+      selector: 'node',
+      style: {
+        'background-color': '#666',
+        'label': 'data(name)'
+      }
+    },
+
+    {
+      selector: 'edge',
+      style: {
+        'width': 3,
+        'line-color': '#ccc',
+        'target-arrow-color': '#ccc',
+        'target-arrow-shape': 'triangle',
+        'curve-style': 'bezier'
+      }
+    }
+  ],
+
+  layout: {
+    name: 'cose',
+    rows: 1
+  },
+                  zoom: 1,
+  pan: { x: 0, y: 0 },
+});
 }
-        var membersS=set.getElementsByTagName("MemberSource");
-        for(let memberS of membersS) {
-             let foundSource = xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']");
-                        if(foundSource !== null) {
-             sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']").getAttribute('name')));
-                        } else {
-                        sdiv.append($('<p/>').html("Source with GUID: " + memberS.getAttribute('targetGUID') + " not found in file"));
-        }
-        }
-}A*/
+
+}
+
 function createTable() {
     let table = $("<table/>");
     let tr = $("<tr/>").appendTo($("<thead/>").appendTo(table));
@@ -155,4 +233,14 @@ function getCodeNames(selection) {
         }
     }
     return codeNames;
+}
+
+function createSourceReference(source, fileUrl) {
+    let path = source.getAttribute("plainTextPath");
+    if (!path) {
+        path = source.getAttribute("path");
+    }
+    path = path.replace("internal://", "sources/");
+
+    return '<a href="' + fileUrl + '&zipentry=' + path + '">' + source.getAttribute("name") + '</a>';
 }
