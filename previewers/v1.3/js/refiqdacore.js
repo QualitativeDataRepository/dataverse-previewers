@@ -261,7 +261,10 @@ function createSourceReference(source, fileUrl) {
     if (!path) {
         path = source.getAttribute("path");
     }
-    path = path.replace("internal://", "sources/");
-
-    return '<a href="' + fileUrl + '&zipentry=' + path + '">' + source.getAttribute("name") + '</a>';
+    if(fileUrl) {
+        path = path.replace("internal://", "sources/");
+        return '<a href="' + fileUrl + '&zipentry=' + path + '">' + source.getAttribute("name") + '</a>';
+    } else {
+            return '<span title="' + path + '">' + source.getAttribute("name") + '</span>';
+    }
 }
