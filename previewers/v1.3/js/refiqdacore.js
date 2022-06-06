@@ -18,7 +18,6 @@ function parseData(e) {
 
 
     var codebook = xmlDoc.getElementsByTagName("Project");
-    //    var codes = codebook[0].getElementsByTagName("Code");
     var codes = xmlDoc.getElementsByTagName("Code");
     if (codes != null) {
         let codeBlock = $('<div/>').width("60%").appendTo($(".preview"));
@@ -83,105 +82,108 @@ function parseData(e) {
         $(".sourcetable").DataTable();
     }
 
-    let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
-    if (sets != null) {
-        let setBlock = $('<div/>').width("60%").appendTo($(".preview"));
-        setBlock.append($("<p>").html("<h2>Sets</h2>"));
-        let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
-        setTable.addClass("settable compact stripe");
+    if (xmlDoc.getElementsByTagName("Sets")[0]) {
+        let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
+        if (sets != null) {
+            let setBlock = $('<div/>').width("60%").appendTo($(".preview"));
+            setBlock.append($("<p>").html("<h2>Sets</h2>"));
+            let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
+            setTable.addClass("settable compact stripe");
 
-        for (let set of sets) {
-            console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
-            let codeNames = '';
-            let sourceNames = '';
-            if (!set.nodeName.endsWith("#text")) {
-                let members = set.getElementsByTagName("MemberCode");
-                for (let member of members) {
-                    let codeId = member.getAttribute('targetGUID');
-                    let code = codeMap.get(codeId);
-                    if (code != null) {
-                        codeNames = codeNames + ' ' + code.getAttribute("name");
+            for (let set of sets) {
+                console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
+                let codeNames = '';
+                let sourceNames = '';
+                if (!set.nodeName.endsWith("#text")) {
+                    let members = set.getElementsByTagName("MemberCode");
+                    for (let member of members) {
+                        let codeId = member.getAttribute('targetGUID');
+                        let code = codeMap.get(codeId);
+                        if (code != null) {
+                            codeNames = codeNames + ' ' + code.getAttribute("name");
+                        }
                     }
-                }
 
-                members = set.getElementsByTagName("MemberSource");
-                for (let member of members) {
-                    let sourceId = member.getAttribute('targetGUID');
-                    let source = sourceMap.get(sourceId);
-                    if (source != null) {
-                        sourceNames = sourceNames + ' ' + source.getAttribute("name");
+                    members = set.getElementsByTagName("MemberSource");
+                    for (let member of members) {
+                        let sourceId = member.getAttribute('targetGUID');
+                        let source = sourceMap.get(sourceId);
+                        if (source != null) {
+                            sourceNames = sourceNames + ' ' + source.getAttribute("name");
+                        }
                     }
-                }
 
-                addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
+                    addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
+                }
             }
+            $(".settable").DataTable();
         }
-        $(".settable").DataTable();
     }
+    if (xmlDoc.getElementsByTagName("Graphs")[0]) {
+        let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
+        if (graphs != null) {
+            let graphBlock = $('<div/>').width("60%").appendTo($(".preview"));
+            graphBlock.append($("<p>").html("<h2>Graphs</h2>"));
+            let elements = [];
+            for (let graph of graphs) {
+                if (!graph.nodeName.endsWith("#text")) {
+                    let vertexes = graph.getElementsByTagName("Vertex");
+                    for (let vertex of vertexes) {
+                        var data = {};
+                        data.id = vertex.getAttribute("guid");
+                        data.name = vertex.getAttribute("name");
+                        var gnode = {};
 
-    let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
-    if (graphs != null) {
-        let graphBlock = $('<div/>').width("60%").appendTo($(".preview"));
-        graphBlock.append($("<p>").html("<h2>Graphs</h2>"));
-        let elements = [];
-        for (let graph of graphs) {
-            if (!graph.nodeName.endsWith("#text")) {
-                let vertexes = graph.getElementsByTagName("Vertex");
-                for (let vertex of vertexes) {
-                    var data = {};
-                    data.id = vertex.getAttribute("guid");
-                    data.name = vertex.getAttribute("name");
-                    var gnode = {};
-
-                    gnode.data = data;
-                    elements.push(gnode);
-                }
-                let edges = graph.getElementsByTagName("Edge");
-                for (let edge of edges) {
-                    var data = {};
-                    data.id = edge.getAttribute("guid");
-                    data.name = "";
-                    data.source = edge.getAttribute("sourceVertex");
-                    data.target = edge.getAttribute("targetVertex");
-                    var gnode = {};
-                    gnode.data = data;
-                    elements.push(gnode);
+                        gnode.data = data;
+                        elements.push(gnode);
+                    }
+                    let edges = graph.getElementsByTagName("Edge");
+                    for (let edge of edges) {
+                        var data = {};
+                        data.id = edge.getAttribute("guid");
+                        data.name = "";
+                        data.source = edge.getAttribute("sourceVertex");
+                        data.target = edge.getAttribute("targetVertex");
+                        var gnode = {};
+                        gnode.data = data;
+                        elements.push(gnode);
+                    }
                 }
             }
-        }
-        let cyContainer = $('<div/>').width("100%").height("400px").attr('id','cy').appendTo(graphBlock);
-        cyContainer.css("background-color", "aliceblue");
-        var cy = cytoscape({
-            container: cyContainer, // container to render in
-            elements: elements,
-            style: [ // the stylesheet for the graph
-                {
-                    selector: 'node',
-                    style: {
-                        'background-color': '#666',
-                        'label': 'data(name)'
+            let cyContainer = $('<div/>').width("100%").height("400px").attr('id', 'cy').appendTo(graphBlock);
+            cyContainer.css("background-color", "aliceblue");
+            var cy = cytoscape({
+                container: cyContainer, // container to render in
+                elements: elements,
+                style: [ // the stylesheet for the graph
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#666',
+                            'label': 'data(name)'
+                        }
+                    },
+
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 3,
+                            'line-color': '#ccc',
+                            'target-arrow-color': '#ccc',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
                     }
+                ],
+
+                layout: {
+                    name: 'cose',
+                    rows: 1
                 },
-
-                {
-                    selector: 'edge',
-                    style: {
-                        'width': 3,
-                        'line-color': '#ccc',
-                        'target-arrow-color': '#ccc',
-                        'target-arrow-shape': 'triangle',
-                        'curve-style': 'bezier'
-                    }
-                }
-            ],
-
-            layout: {
-                name: 'cose',
-                rows: 1
-            },
-            zoom: 1,
-            pan: { x: 0, y: 0 },
-        });
+                zoom: 1,
+                pan: { x: 0, y: 0 },
+            });
+        }
     }
 }
 
