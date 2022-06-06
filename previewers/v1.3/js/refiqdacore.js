@@ -149,8 +149,8 @@ function parseData(e) {
                 }
             }
         }
-        let cyContainer = $('<div/>').width("100%").height("400px").appendTo(graphBlock);
-
+        let cyContainer = $('<div/>').width("100%").height("400px").attr('id','cy').appendTo(graphBlock);
+        cyContainer.css("background-color", "aliceblue");
         var cy = cytoscape({
             container: cyContainer, // container to render in
             elements: elements,
@@ -185,35 +185,6 @@ function parseData(e) {
     }
 }
 
-/*
-var sources = codebook[0].getElementsByTagName("TextSource");
-for (let source of sources) {
-$('.preview').append($("<div/>").html("<p>Source: " + source.getAttribute('name') + "</p>"));
-}
-var sets = codebook[0].getElementsByTagName("Set");
-for (let set of sets) {
-                                let sdiv = $('<p/>');
-                sdiv.html("<p>Set: " + set.getAttribute('name') + "</p>");
-                $('.preview').append(sdiv);
-                var members=set.getElementsByTagName("MemberCode");
-                for(let member of members) {
-let foundCode = xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']");
-                                                if(foundCode !== null) {
-                                                sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']").getAttribute('name')));
-                                                } else {
-                                                sdiv.append($('<p/>').html("Code with GUID: " + member.getAttribute('targetGUID') + " not found in file"));
-                }
-}
-                var membersS=set.getElementsByTagName("MemberSource");
-                for(let memberS of membersS) {
-                         let foundSource = xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']");
-                                                if(foundSource !== null) {
-                         sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']").getAttribute('name')));
-                                                } else {
-                                                sdiv.append($('<p/>').html("Source with GUID: " + memberS.getAttribute('targetGUID') + " not found in file"));
-                }
-                }
-}A*/
 function createTable() {
     let table = $("<table/>");
     let tr = $("<tr/>").appendTo($("<thead/>").appendTo(table));
