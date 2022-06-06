@@ -5,8 +5,10 @@ function writeContent(fileUrl, file, title, authors) {
         "stripIgnoreTagBody": ['script', 'head']
     };  // Custom rules
     var request = new XMLHttpRequest();
-    console.log('About to Get ' + fileUrl);
-    request.open('GET', fileUrl, true);
+    
+    zipUrl=fileUrl;
+    console.log('About to Get ' + fileUrl + '&zipentry=project.qde');
+     request.open('GET', fileUrl + '&zipentry=project.qde', true);
     request.responseType = 'blob';
 	console.log('Getting file');
     request.onload = function() {
@@ -16,5 +18,4 @@ function writeContent(fileUrl, file, title, authors) {
         reader.readAsText(request.response);
     };
     request.send();
-
 }
