@@ -19,6 +19,7 @@ function startPreview(retrieveFile) {
     // Hide header and citation to embed on Dataverse file landing page.
     previewMode = queryParams.get("preview");
     locale = queryParams.get("locale");
+    
     if (locale == null) {
         locale = 'en';
     }
@@ -29,22 +30,20 @@ function startPreview(retrieveFile) {
     document.documentElement.setAttribute('lang', locale);
 
     i18n.load('i18n/' + i18n.locale + '.json', i18n.locale).done(
-        function () {
+        function() {
             //Call previewer-specific translation code
             translateBaseHtmlPage();
-        }
-    );
 
-    if (apiKey != null) {
-        fileUrl = fileUrl + "&key=" + apiKey;
-        versionUrl = versionUrl + "?key=" + apiKey;
-    }
+            if (apiKey != null) {
+                fileUrl = fileUrl + "&key=" + apiKey;
+                versionUrl = versionUrl + "?key=" + apiKey;
+            }
 
-    if (inIframe()) {
-        callPreviewerScript(retrieveFile, fileUrl, {}, '', '');
-    } else {
-        // Get metadata for dataset/version/file
-        $.ajax({
+            if (inIframe()) {
+                callPreviewerScript(retrieveFile, fileUrl, {}, '', '');
+            } else {
+                // Get metadata for dataset/version/file
+                $.ajax({
                     dataType: "json",
                     url: versionUrl,
                     // headers: { 'X-Dataverse-key': apiKey },
@@ -84,24 +83,25 @@ function startPreview(retrieveFile) {
                                 .get("fileid")) {
                                 fileIndex = entry;
                                 callPreviewerScript(retrieveFile, fileUrl, datafiles[fileIndex].dataFile, title, authors);
-                                }
                             }
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            reportFailure("Unable to retrieve metadata.", textStatus);
-
                         }
-                    });
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        reportFailure("Unable to retrieve metadata.", textStatus);
+                    }
+                });
             }
-    }
-
-    function inIframe() {
-        try {
-            return window.self !== window.top;
-        } catch (e) {
-            return true;
         }
+    );
+}
+
+function inIframe() {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
     }
+}
 
     function callPreviewerScript(retrieveFile, fileUrl, fileMetadata, title, authors) {
         if (retrieveFile) {
