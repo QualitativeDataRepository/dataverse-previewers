@@ -10,9 +10,10 @@ function translateBaseHtmlPage() {
 var codeMap = new Map();
 var sourceMap = new Map();
 var zipUrl = '';
+var tableWidth = '80%';
 
-function parseData(e) {
-    var data = e.target.result;
+function parseData(data) {
+//    var data = e.target.result;
     parser = new DOMParser();
     xmlDoc = parser.parseFromString(data, "text/xml");
 
@@ -20,7 +21,7 @@ function parseData(e) {
     var codebook = xmlDoc.getElementsByTagName("Project");
     var codes = xmlDoc.getElementsByTagName("Code");
     if (codes != null) {
-        let codeBlock = $('<div/>').width("60%").appendTo($(".preview"));
+        let codeBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         codeBlock.append($("<p>").html("Codes"));
         let codeTable = createTable("Code", "Color", "Codable").appendTo(codeBlock);
         codeTable.addClass("codetable compact stripe");
@@ -56,10 +57,10 @@ function parseData(e) {
     }
 
 
-
+  if (xmlDoc.getElementsByTagName("Sources")[0]) {
     let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
     if (sources != null) {
-        let sourceBlock = $('<div/>').width("60%").appendTo($(".preview"));
+        let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         sourceBlock.append($("<p>").html("<h2>Sources</h2>"));
         let sourceTable = createTable("Name", "Type", "Selection", "Codes").appendTo(sourceBlock);
         sourceTable.addClass("sourcetable compact stripe");
@@ -80,12 +81,20 @@ function parseData(e) {
 
         }
         $(".sourcetable").DataTable();
+            //Initial page
+            $("a[data-entry-index]").click(downloadFile);
+            //For new pages
+            $('.sourcetable').on( 'draw.dt', function () {
+              $("a[data-entry-index]").off('click');
+              $("a[data-entry-index]").click(downloadFile);
+            });
     }
+}
 
     if (xmlDoc.getElementsByTagName("Sets")[0]) {
         let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
         if (sets != null) {
-            let setBlock = $('<div/>').width("60%").appendTo($(".preview"));
+            let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
             setBlock.append($("<p>").html("<h2>Sets</h2>"));
             let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
             setTable.addClass("settable compact stripe");
@@ -122,7 +131,7 @@ function parseData(e) {
     if (xmlDoc.getElementsByTagName("Graphs")[0]) {
         let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
         if (graphs != null) {
-            let graphBlock = $('<div/>').width("60%").appendTo($(".preview"));
+            let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
             graphBlock.append($("<p>").html("<h2>Graphs</h2>"));
             let elements = [];
             for (let graph of graphs) {
@@ -236,7 +245,9 @@ function createSourceReference(source, fileUrl) {
     }
     if(fileUrl) {
         path = path.replace("internal://", "sources/");
-        return '<a href="' + fileUrl + '&zipentry=' + path + '">' + source.getAttribute("name") + '</a>';
+        var index = entryMap[path];
+        return '<a href="#" data-entry-index="' + index + '">' + source.getAttribute("name") + '<span class="icon glyphicon glyphicon-download-alt"></span></a>';
+        
     } else {
             return '<span title="' + path + '">' + source.getAttribute("name") + '</span>';
     }
