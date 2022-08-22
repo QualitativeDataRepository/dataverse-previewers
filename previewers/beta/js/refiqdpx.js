@@ -1,32 +1,16 @@
 function writeContent(fileUrl, file, title, authors) {
     addStandardPreviewHeader(file, title, authors);
-    options = {
-        "stripIgnoreTag": true,
-        "stripIgnoreTagBody": ['script', 'head']
-    };  // Custom rules
-    var request = new XMLHttpRequest();
-
-    zipUrl=fileUrl;
-//    console.log('About to Get ' + fileUrl + '&zipentry=project.qde');
-//     request.open('GET', fileUrl + '&zipentry=project.qde', true);
-//    request.responseType = 'blob';
-//      console.log('Getting file');
-//    request.onload = function() {
-//        var reader = new FileReader();
-
-//        reader.onload = parseData;
-//        reader.readAsText(request.response);
-//    };
-//    request.send();
-readZip(fileUrl);
+    readZip(fileUrl);
 }
 
-
-const MAX_ENTRIES_EXPANDED = 2000;
 let entries;
 const entryMap = {};
 
 async function readZip(fileUrl) {
+        wait = $('<div/>').attr('id', 'waiting');
+        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').appendTo(wait);
+        $('<span/>').text(' Reading QPDX file. Parsing Contents...').appendTo(wait);
+        wait.appendTo($('.preview'));
 
     try {
         //Just a workaround, as current Dataverse delivers https links for localhost
@@ -55,7 +39,9 @@ async function readZip(fileUrl) {
 
                   },
                 });
-                projectBlob.then(text => parseData(text));
+                projectBlob.then(text => parseData(text)).catch((err)=> {
+                    document.getElementById('waiting').innerHTML= "<span>Unable to continue: " + err + "</span>";
+                    });
               }
               else if (!entry.directory) {
                  entryMap[entry.filename] = index;
@@ -70,9 +56,8 @@ async function readZip(fileUrl) {
     catch (err) {
         //Display error message
         const errorMsg = document.createTextNode("Zip file structure could not be read (" + err + "). You can still download the zip file.");
-//        document.getElementById('zip-preview').appendChild(errorMsg);
+        document.getElementById('waiting').innerHTML="<span>Unable to continue: " + errorMsg + "</span>";
         console.log(err);
-
 
     }
     finally {
@@ -86,7 +71,6 @@ async function readZip(fileUrl) {
 async function downloadFile(event) {
     const target = event.currentTarget;
     let href = target.getAttribute("href");
-    //Check - retrieve blob the first time only
     if (target.dataset.entryIndex !== undefined && !target.download) {
             console.log('Downloading');
         target.removeAttribute("href");
@@ -119,7 +103,7 @@ async function download(entry, li, a) {
                 },
             }))
             var index = a.getAttribute("data-entry-index");
-            //Set href and download on all nodes with the same index
+            console.log("index: " + index);
             $("a[data-entry-index='" + index + "']").attr('href',blobURL);
              $("a[data-entry-index='" + index + "']").attr('download',a.text);
             const clickEvent = new MouseEvent("click");
@@ -130,7 +114,6 @@ async function download(entry, li, a) {
             }
         } finally {
             li.classList.remove("busy");
-//            setProgressBarValue(0);
         }
     }
 }
