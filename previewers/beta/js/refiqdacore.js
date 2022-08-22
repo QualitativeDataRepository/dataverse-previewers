@@ -1,3 +1,9 @@
+var userMap = new Map();
+var codeMap = new Map();
+var sourceMap = new Map();
+var noteMap = new Map();
+var tableWidth = '80%';
+
 $(document).ready(function() {
     startPreview(false);
 });
@@ -7,18 +13,41 @@ function translateBaseHtmlPage() {
     $('.refiqdaPreviewText').text(refiqdaPreviewText);
 }
 
-var codeMap = new Map();
-var sourceMap = new Map();
 var zipUrl = '';
-var tableWidth = '80%';
 
-function parseData(data) {
+var wait;
+var cy;
+
+function parseData (data) {
+        $('#waiting').remove();
+        wait = $('<div/>').attr('id', 'waiting');
+        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').appendTo(wait);
+        $('<span/>').text('Found Project File. Parsing Contents...').appendTo(wait);
+        wait.appendTo($('.preview'));
+
+        new Promise((resolve) => setTimeout(resolve, 500)).then(() => {parseData2(data)});
+}
+function parseData2(data) {
 //    var data = e.target.result;
     parser = new DOMParser();
     xmlDoc = parser.parseFromString(data, "text/xml");
 
+    var users = xmlDoc.getElementsByTagName("User");
 
-    var codebook = xmlDoc.getElementsByTagName("Project");
+    if (users != null) {
+        let userBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        userBlock.append($("<p>").html("Users"));
+        let userTable = createTable("Name").appendTo(userBlock);
+        userTable.addClass("usertable compact stripe");
+
+        for (let user of users) {
+            addRow(userTable, user.getAttribute("name"));
+            userMap.set(user.getAttribute("guid"), user);
+
+        }
+        $(".usertable").DataTable();
+    }
+    //    var codes = codebook[0].getElementsByTagName("Code");
     var codes = xmlDoc.getElementsByTagName("Code");
     if (codes != null) {
         let codeBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
@@ -81,121 +110,183 @@ function parseData(data) {
 
         }
         $(".sourcetable").DataTable();
-            //Initial page
+if (typeof downloadFile === 'function') {
             $("a[data-entry-index]").click(downloadFile);
-            //For new pages
+$("a[data-entry-index]").each(function() {console.log('Here: ' + $(this).attr('data-entry-index'))});
             $('.sourcetable').on( 'draw.dt', function () {
-              $("a[data-entry-index]").off('click');
-              $("a[data-entry-index]").click(downloadFile);
+                    console.log("Draw!!!!");
+$("a[data-entry-index]").each(function(){console.log('There: ' + $(this).attr('data-entry-index'))});
+            $("a[data-entry-index]").off('click');
+            $("a[data-entry-index]").click(downloadFile);
             });
     }
-}
-
-    if (xmlDoc.getElementsByTagName("Sets")[0]) {
-        let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
-        if (sets != null) {
-            let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-            setBlock.append($("<p>").html("<h2>Sets</h2>"));
-            let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
-            setTable.addClass("settable compact stripe");
-
-            for (let set of sets) {
-                console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
-                let codeNames = '';
-                let sourceNames = '';
-                if (!set.nodeName.endsWith("#text")) {
-                    let members = set.getElementsByTagName("MemberCode");
-                    for (let member of members) {
-                        let codeId = member.getAttribute('targetGUID');
-                        let code = codeMap.get(codeId);
-                        if (code != null) {
-                            codeNames = codeNames + ' ' + code.getAttribute("name");
-                        }
-                    }
-
-                    members = set.getElementsByTagName("MemberSource");
-                    for (let member of members) {
-                        let sourceId = member.getAttribute('targetGUID');
-                        let source = sourceMap.get(sourceId);
-                        if (source != null) {
-                            sourceNames = sourceNames + ' ' + source.getAttribute("name");
-                        }
-                    }
-
-                    addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
-                }
-            }
-            $(".settable").DataTable();
-        }
     }
-    if (xmlDoc.getElementsByTagName("Graphs")[0]) {
-        let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
-        if (graphs != null) {
-            let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-            graphBlock.append($("<p>").html("<h2>Graphs</h2>"));
-            let elements = [];
-            for (let graph of graphs) {
-                if (!graph.nodeName.endsWith("#text")) {
-                    let vertexes = graph.getElementsByTagName("Vertex");
-                    for (let vertex of vertexes) {
-                        var data = {};
-                        data.id = vertex.getAttribute("guid");
-                        data.name = vertex.getAttribute("name");
-                        var gnode = {};
+  }
 
-                        gnode.data = data;
-                        elements.push(gnode);
-                    }
-                    let edges = graph.getElementsByTagName("Edge");
-                    for (let edge of edges) {
-                        var data = {};
-                        data.id = edge.getAttribute("guid");
-                        data.name = "";
-                        data.source = edge.getAttribute("sourceVertex");
-                        data.target = edge.getAttribute("targetVertex");
-                        var gnode = {};
-                        gnode.data = data;
-                        elements.push(gnode);
-                    }
+
+            var notes = xmlDoc.getElementsByTagName("Note");
+
+    if (notes != null) {
+        let noteBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        noteBlock.append($("<p>").html("Notes"));
+        let noteTable = createTable("Name", "Content", "Description", "Authors").appendTo(noteBlock);
+        noteTable.addClass("notetable compact stripe");
+
+        for (let note of notes) {
+                let ptc = note.getElementsByTagName("PlainTextContent");
+                if(ptc!=null) {
+                        ptc = ptc[0].childNodes[0];
+                }
+                let desc = note.getElementsByTagName("Description");
+                if(desc!=null) {
+                        desc = desc[0].childNodes[0];
+                }
+
+             addRow(noteTable, note.getAttribute("name"),ptc,desc,userMap.get(note.getAttribute("creatingUser")).getAttribute("name") );
+           noteMap.set(note.getAttribute("guid"), note);
+
+        }
+        $(".notetable").DataTable();
+    }
+
+    let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
+    if (sets != null) {
+        let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        setBlock.append($("<p>").html("<h2>Sets</h2>"));
+        let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
+        setTable.addClass("settable compact stripe");
+
+        for (let set of sets) {
+                console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
+            let codeNames = '';
+            let sourceNames = '';
+       if(!set.nodeName.endsWith("#text")) {
+            let members=set.getElementsByTagName("MemberCode");
+            for(let member of members) {
+                let codeId = member.getAttribute('targetGUID') ;
+                let code = codeMap.get(codeId);
+                if (code != null) {
+                    codeNames = codeNames + ' ' + code.getAttribute("name");
                 }
             }
-            let cyContainer = $('<div/>').width("100%").height("400px").attr('id', 'cy').appendTo(graphBlock);
-            cyContainer.css("background-color", "aliceblue");
-            var cy = cytoscape({
-                container: cyContainer, // container to render in
+
+            members=set.getElementsByTagName("MemberSource");
+            for(let member of members) {
+                let sourceId = member.getAttribute('targetGUID');
+                let source = sourceMap.get(sourceId);
+                if (source != null) {
+                    sourceNames = sourceNames + ' ' + source.getAttribute("name");
+                }
+            }
+
+            addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
+       }
+        }
+        $(".settable").DataTable();
+    }
+
+    if( xmlDoc.getElementsByTagName("Graphs")[0]) {
+            let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
+    if (graphs != null) {
+        let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        graphBlock.append($("<p>").html("<h2>Graphs</h2>").append($('<span/>').attr('id', 'reset').text('Reset').addClass('btn btn-default')));
+
+        let elements = [];
+        for (let graph of graphs) {
+        if(!graph.nodeName.endsWith("#text")) {
+            let vertexes=graph.getElementsByTagName("Vertex");
+            for(let vertex of vertexes) {
+               var data={};
+               data.id = vertex.getAttribute("guid");
+               data.name= vertex.getAttribute("name");
+                    var gnode = {};
+
+                    gnode.data=data;
+               elements.push(gnode);
+               }
+            let edges=graph.getElementsByTagName("Edge");
+            for(let edge of edges) {
+               var data={};
+               data.id = edge.getAttribute("guid");
+                    data.name="";
+               data.source= edge.getAttribute("sourceVertex");
+               data.target= edge.getAttribute("targetVertex");
+                    var gnode = {};
+                    gnode.data=data;
+               elements.push(gnode);
+               }
+             }
+             }
+        let cyContainer = $('<div/>').width("100%").height("400px").attr('id','cy').appendTo(graphBlock);
+cyContainer.css("background-color", "aliceblue");
+        cy = cytoscape({
+  container: cyContainer, // container to render in
                 elements: elements,
                 style: [ // the stylesheet for the graph
-                    {
-                        selector: 'node',
-                        style: {
-                            'background-color': '#666',
-                            'label': 'data(name)'
-                        }
-                    },
+    {
+      selector: 'node',
 
-                    {
-                        selector: 'edge',
-                        style: {
-                            'width': 3,
-                            'line-color': '#ccc',
-                            'target-arrow-color': '#ccc',
-                            'target-arrow-shape': 'triangle',
-                            'curve-style': 'bezier'
-                        }
-                    }
-                ],
+      style: {
+        'background-color': '#666',
+        'label': 'data(name)'
+      }
+    },
 
-                layout: {
-                    name: 'cose',
-                    rows: 1
-                },
-                zoom: 1,
-                pan: { x: 0, y: 0 },
-            });
-        }
+    {
+      selector: 'edge',
+      style: {
+        'width': 3,
+        'line-color': '#ccc',
+        'target-arrow-color': '#ccc',
+        'target-arrow-shape': 'triangle',
+        'curve-style': 'bezier'
+      }
     }
+  ],
+
+  layout: {
+    name: 'cose',
+    rows: 1
+  },
+                  zoom: 1,
+  pan: { x: 0, y: 0 },
+});
+            $('#reset').click(function() {cy.fit()});
 }
 
+}
+$('#waiting').remove();
+}
+
+/*
+var sources = codebook[0].getElementsByTagName("TextSource");
+for (let source of sources) {
+$('.preview').append($("<div/>").html("<p>Source: " + source.getAttribute('name') + "</p>"));
+}
+var sets = codebook[0].getElementsByTagName("Set");
+for (let set of sets) {
+                let sdiv = $('<p/>');
+        sdiv.html("<p>Set: " + set.getAttribute('name') + "</p>");
+        $('.preview').append(sdiv);
+        var members=set.getElementsByTagName("MemberCode");
+        for(let member of members) {
+let foundCode = xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']");
+                        if(foundCode !== null) {
+                        sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']").getAttribute('name')));
+                        } else {
+                        sdiv.append($('<p/>').html("Code with GUID: " + member.getAttribute('targetGUID') + " not found in file"));
+        }
+}
+        var membersS=set.getElementsByTagName("MemberSource");
+        for(let memberS of membersS) {
+             let foundSource = xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']");
+                        if(foundSource !== null) {
+             sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']").getAttribute('name')));
+                        } else {
+                        sdiv.append($('<p/>').html("Source with GUID: " + memberS.getAttribute('targetGUID') + " not found in file"));
+        }
+        }
+}A*/
 function createTable() {
     let table = $("<table/>");
     let tr = $("<tr/>").appendTo($("<thead/>").appendTo(table));
@@ -216,7 +307,7 @@ function getSelections(source) {
     let selections = [];
     for (let child of children) {
         if (child.nodeName.endsWith("Selection")) {
-            console.log(child.getAttribute("name"));
+        //    console.log(child.getAttribute("name"));
             selections.push(child);
         }
     }
@@ -244,11 +335,12 @@ function createSourceReference(source, fileUrl) {
         path = source.getAttribute("path");
     }
     if(fileUrl) {
-        path = path.replace("internal://", "sources/");
-        var index = entryMap[path];
+    path = path.replace("internal://", "sources/");
+            var index = entryMap[path];
         return '<a href="#" data-entry-index="' + index + '">' + source.getAttribute("name") + '<span class="icon glyphicon glyphicon-download-alt"></span></a>';
-        
+
     } else {
             return '<span title="' + path + '">' + source.getAttribute("name") + '</span>';
     }
 }
+
