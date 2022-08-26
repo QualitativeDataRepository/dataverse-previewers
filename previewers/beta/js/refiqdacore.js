@@ -3,6 +3,9 @@ var codeMap = new Map();
 var sourceMap = new Map();
 var noteMap = new Map();
 var tableWidth = '80%';
+var selectedGUIDs = new Array();
+var noteDataTable;
+var userDataTable;
 
 $(document).ready(function() {
     startPreview(false);
@@ -18,49 +21,107 @@ var zipUrl = '';
 var wait;
 var cy;
 
-function parseData (data) {
-        $('#waiting').remove();
-        wait = $('<div/>').attr('id', 'waiting');
-        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').appendTo(wait);
-        $('<span/>').text('Found Project File. Parsing Contents...').appendTo(wait);
-        wait.appendTo($('.preview'));
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        console.log('filtering');
+    var filterTerm = $('#filterby');
+    if (settings.nTable.id == filterTerm.val() || filterTerm.val()=='None') {
+        return true;
+    } else {
+        // get current selections - just keep GUIDs and just look for those GUIDs somewhere (data-* attributes?) or worry about the type of object involved and filter per table type?
+            console.log('Deciding');
+            console.log(data[0]);
+            //console.log($('.notetable tbody tr:eq('+dataIndex+')').html());
+           let found=false;
+selectedGUIDs.forEach(guid => {console.log("Looking for " + guid); if(data[0].includes(guid)) {console.log('found');found= true;}});
+        return found;
+        }
+    });
 
-        new Promise((resolve) => setTimeout(resolve, 500)).then(() => {parseData2(data)});
+
+function parseData(data) {
+    $('#waiting').remove();
+    wait = $('<div/>').attr('id', 'waiting');
+    $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
+    $('<span/>').text('Found Project File. Parsing Contents...').appendTo(wait);
+    wait.appendTo($('.preview'));
+
+    new Promise((resolve) => setTimeout(resolve, 500)).then(() => { parseData2(data) });
 }
 function parseData2(data) {
-//    var data = e.target.result;
+    //    var data = e.target.result;
     parser = new DOMParser();
     xmlDoc = parser.parseFromString(data, "text/xml");
+
+    let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+    filterBlock.append($("<h2/>").html("Enable Filtering By"));
+    filterBlock.append($('<select/>').prop('id', 'filterby'));
+    $('#filterby').append($('<option/>').prop('value', 'None').text('No Filtering'));
 
     var users = xmlDoc.getElementsByTagName("User");
 
     if (users != null) {
+        $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
         let userBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        userBlock.append($("<p>").html("Users"));
-        let userTable = createTable("Name").appendTo(userBlock);
+        userBlock.append($("<p>").html("<h2>Users</h2>"));
+        let userTable = createTable("Users", "Name").appendTo(userBlock);
         userTable.addClass("usertable compact stripe");
 
         for (let user of users) {
-            addRow(userTable, user.getAttribute("name"));
+                console.log("adding user row");
+                let tr= addRow(userTable, user.getAttribute("name"));
+            tr.attr('data-guid',user.getAttribute("guid"));
             userMap.set(user.getAttribute("guid"), user);
 
         }
-        $(".usertable").DataTable();
+            console.log('Done with users');
+        userDataTable = $(".usertable").DataTable({
+                select: $('#filterby').val()=='Users'
+        });
+            userDataTable.on('select deselect', function(e, dt, type, indexes) {
+            if (type === 'row') {
+                var data = userDataTable.rows(indexes).data().pluck('id');
+                userDataTable[type](indexes).nodes().to$().addClass('custom-selected');
+                          console.log('uG: ' + userDataTable[ type ]( indexes ).nodes().to$().attr( 'data-guid' ));
+                console.log(userDataTable.rows({ selected: true }).count());
+                    console.log("clearing sG in user");
+                selectedGUIDs = new Array();
+                userDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) })
+;
+                    selectedGUIDs.forEach(guid => {console.log('Added ' + guid);});
+                // do something with the ID of the selected items
+                    noteDataTable.draw();
+            }
+        });
+
     }
+        console.log("Starting codes");
     //    var codes = codebook[0].getElementsByTagName("Code");
     var codes = xmlDoc.getElementsByTagName("Code");
     if (codes != null) {
+        $('#filterby').append($('<option/>').prop('value', 'Codes').text('Codes'));
+
         let codeBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        codeBlock.append($("<p>").html("Codes"));
-        let codeTable = createTable("Code", "Color", "Codable").appendTo(codeBlock);
+        codeBlock.append($("<h2/>").html("Codes"));
+        let codeTable = createTable("Codes", "Code", "Description", "Color", "Codable").appendTo(codeBlock);
         codeTable.addClass("codetable compact stripe");
 
         for (let code of codes) {
-            addRow(codeTable, code.getAttribute("name"), code.getAttribute("color"), code.getAttribute("isCodable"));
+            let desc = code.getElementsByTagName("Description");
+            if(desc[0]!=null) {
+                    desc = desc[0].childNodes[0];
+                    console.log(desc);
+            } else {
+                desc="";
+            }
+                console.log("adding code row");
+            let tr = addRow(codeTable, code.getAttribute("name"), desc, code.getAttribute("color"), code.getAttribute("isCodable"));
+            tr.attr('data-guid',code.getAttribute("guid"));
             codeMap.set(code.getAttribute("guid"), code);
 
         }
-        $(".codetable").DataTable({
+
+        let table = $(".codetable").DataTable({
+                select:true,
             "columnDefs": [
                 {
                     // The `data` parameter refers to the data for the cell (defined by the
@@ -69,7 +130,7 @@ function parseData2(data) {
                     "render": function(data, type, row) {
                         return '<span class="colortile" style="background-color:' + data + '">&nbsp;</span>';
                     },
-                    "targets": 1
+                    "targets": 2
                 },
                 {
                     // The `data` parameter refers to the data for the cell (defined by the
@@ -79,218 +140,236 @@ function parseData2(data) {
                         return '<input class="codable" disabled type="checkbox" checked="' + data + '"/>';
                     },
                     "width": "20%",
-                    "targets": 2
+                    "targets": 3
                 },
             ]
         });
-    }
-
-
-  if (xmlDoc.getElementsByTagName("Sources")[0]) {
-    let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
-    if (sources != null) {
-        let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        sourceBlock.append($("<p>").html("<h2>Sources</h2>"));
-        let sourceTable = createTable("Name", "Type", "Selection", "Codes").appendTo(sourceBlock);
-        sourceTable.addClass("sourcetable compact stripe");
-
-        for (let source of sources) {
-            if (source.nodeName.endsWith("Source")) {
-                sourceMap.set(source.getAttribute("guid"), source);
-                let selections = getSelections(source);
-                if (selections != null && selections.length != 0) {
-                    selections.forEach(function(selection) {
-                        addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, selection.getAttribute("name"), getCodeNames(selection));
-                    });
-                }
-                else {
-                    addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, "Whole Document", "");
-                }
+        table.on('select deselect', function(e, dt, type, indexes) {
+            if (type === 'row') {
+                var data = table.rows(indexes).data().pluck('id');
+                table[type](indexes).nodes().to$().addClass('custom-selected');
+                          console.log('guid'+ table[ type ]( indexes ).nodes().to$().attr( 'data-guid' ));
+                console.log(table.rows({ selected: true }).count());
+                selectedGUIDs = new Array();
+                    console.log('sg cleared in codes');
+                table.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
+                    selectedGUIDs.forEach(guid => {console.log('Added ' + guid);});
+                // do something with the ID of the selected items
             }
+        });
 
-        }
-        $(".sourcetable").DataTable();
-if (typeof downloadFile === 'function') {
-            $("a[data-entry-index]").click(downloadFile);
-$("a[data-entry-index]").each(function() {console.log('Here: ' + $(this).attr('data-entry-index'))});
-            $('.sourcetable').on( 'draw.dt', function () {
+    }
+
+
+    if (xmlDoc.getElementsByTagName("Sources")[0]) {
+        let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
+        if (sources != null) {
+            $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
+            let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+            sourceBlock.append($("<h2/>").html("Sources"));
+            let sourceTable = createTable("Sources", "Name", "Type", "Selection", "Codes").appendTo(sourceBlock);
+            sourceTable.addClass("sourcetable compact stripe");
+
+            for (let source of sources) {
+                if (source.nodeName.endsWith("Source")) {
+                    sourceMap.set(source.getAttribute("guid"), source);
+                    let selections = getSelections(source);
+                    if (selections != null && selections.length != 0) {
+                        selections.forEach(function(selection) {
+                            addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, selection.getAttribute("name"), getCodeNames(selection));
+                        });
+                    }
+                    else {
+                        addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, "Whole Document", "");
+                    }
+                }
+
+            }
+            $(".sourcetable").DataTable();
+            if (typeof downloadFile === 'function') {
+                $("a[data-entry-index]").click(downloadFile);
+                $("a[data-entry-index]").each(function() { console.log('Here: ' + $(this).attr('data-entry-index')) });
+                $('.sourcetable').on('draw.dt', function() {
                     console.log("Draw!!!!");
-$("a[data-entry-index]").each(function(){console.log('There: ' + $(this).attr('data-entry-index'))});
-            $("a[data-entry-index]").off('click');
-            $("a[data-entry-index]").click(downloadFile);
-            });
+                    $("a[data-entry-index]").each(function() { console.log('There: ' + $(this).attr('data-entry-index')) });
+                    $("a[data-entry-index]").off('click');
+                    $("a[data-entry-index]").click(downloadFile);
+                });
+            }
+        }
     }
-    }
-  }
 
 
-            var notes = xmlDoc.getElementsByTagName("Note");
+    var notes = xmlDoc.getElementsByTagName("Note");
 
     if (notes != null) {
+        $('#filterby').append($('<option/>').prop('value', 'Notes').text('Notes'));
         let noteBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        noteBlock.append($("<p>").html("Notes"));
-        let noteTable = createTable("Name", "Content", "Description", "Authors").appendTo(noteBlock);
+        noteBlock.append($("<h2/>").html("Notes"));
+        let noteTable = createTable("Notes", "Related", "Name", "Content", "Description", "Authors").appendTo(noteBlock);
         noteTable.addClass("notetable compact stripe");
 
         for (let note of notes) {
-                let ptc = note.getElementsByTagName("PlainTextContent");
-                if(ptc!=null) {
-                        ptc = ptc[0].childNodes[0];
-                }
-                let desc = note.getElementsByTagName("Description");
-                if(desc!=null) {
-                        desc = desc[0].childNodes[0];
-                }
+            let ptc = note.getElementsByTagName("PlainTextContent");
+            if (ptc[0] != null) {
+                ptc = ptc[0].childNodes[0];
+            }
+            let desc = note.getElementsByTagName("Description");
+            if (desc[0] != null) {
+                desc = desc[0].childNodes[0];
+            }
+            let matches = '';
+if(note.getAttribute("creatingUser")) {
+matches = matches + note.getAttribute("creatingUser");
+}
+if(note.getAttribute("modifyingUser")) {
+matches = matches + note.getAttribute("modifyingUser");
+}
 
-             addRow(noteTable, note.getAttribute("name"),ptc,desc,userMap.get(note.getAttribute("creatingUser")).getAttribute("name") );
-           noteMap.set(note.getAttribute("guid"), note);
+            let tr = addRow(noteTable,matches, note.getAttribute("name"), ptc, desc, userMap.get(note.getAttribute("creatingUser")).getAttribute
+("name"));
+            tr.attr('data-guid',note.getAttribute("guid"));
+            tr.attr('data-matches',matches);
+
+            noteMap.set(note.getAttribute("guid"), note);
 
         }
-        $(".notetable").DataTable();
+        noteDataTable= $(".notetable").DataTable({
+                columnDefs:[{target:0,visible:false,seachable:false}]
+        });
     }
 
     let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
     if (sets != null) {
+        $('#filterby').append($('<option/>').prop('value', 'Sets').text('Sets'));
         let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        setBlock.append($("<p>").html("<h2>Sets</h2>"));
-        let setTable = createTable("Name", "Sources", "Codes").appendTo(setBlock);
+        setBlock.append($("<h2/>").html("Sets"));
+        let setTable = createTable("Sets", "Name", "Sources", "Codes").appendTo(setBlock);
         setTable.addClass("settable compact stripe");
 
         for (let set of sets) {
-                console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
+            console.log(set.nodeName + set.parentNode.nodeName + set.parentNode.nodeValue);
             let codeNames = '';
             let sourceNames = '';
-       if(!set.nodeName.endsWith("#text")) {
-            let members=set.getElementsByTagName("MemberCode");
-            for(let member of members) {
-                let codeId = member.getAttribute('targetGUID') ;
-                let code = codeMap.get(codeId);
-                if (code != null) {
-                    codeNames = codeNames + ' ' + code.getAttribute("name");
+            if (!set.nodeName.endsWith("#text")) {
+                let members = set.getElementsByTagName("MemberCode");
+                for (let member of members) {
+                    let codeId = member.getAttribute('targetGUID');
+                    let code = codeMap.get(codeId);
+                    if (code != null) {
+                        codeNames = codeNames + ' ' + code.getAttribute("name");
+                    }
                 }
-            }
 
-            members=set.getElementsByTagName("MemberSource");
-            for(let member of members) {
-                let sourceId = member.getAttribute('targetGUID');
-                let source = sourceMap.get(sourceId);
-                if (source != null) {
-                    sourceNames = sourceNames + ' ' + source.getAttribute("name");
+                members = set.getElementsByTagName("MemberSource");
+                for (let member of members) {
+                    let sourceId = member.getAttribute('targetGUID');
+                    let source = sourceMap.get(sourceId);
+                    if (source != null) {
+                        sourceNames = sourceNames + ' ' + source.getAttribute("name");
+                    }
                 }
-            }
 
-            addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
-       }
+                addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
+            }
         }
         $(".settable").DataTable();
     }
 
-    if( xmlDoc.getElementsByTagName("Graphs")[0]) {
-            let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
-    if (graphs != null) {
-        let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        graphBlock.append($("<p>").html("<h2>Graphs</h2>").append($('<span/>').attr('id', 'reset').text('Reset').addClass('btn btn-default')));
+    if (xmlDoc.getElementsByTagName("Graphs")[0]) {
+        let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
+        if (graphs != null) {
+            let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+            graphBlock.append($("<h2/>").html("Graphs").append($('<span/>').attr('id', 'reset').text('Reset').addClass('btn btn-default')));
 
-        let elements = [];
-        for (let graph of graphs) {
-        if(!graph.nodeName.endsWith("#text")) {
-            let vertexes=graph.getElementsByTagName("Vertex");
-            for(let vertex of vertexes) {
-               var data={};
-               data.id = vertex.getAttribute("guid");
-               data.name= vertex.getAttribute("name");
-                    var gnode = {};
+            let elements = [];
+            for (let graph of graphs) {
+                if (!graph.nodeName.endsWith("#text")) {
+                    let vertexes = graph.getElementsByTagName("Vertex");
+                    for (let vertex of vertexes) {
+                        var data = {};
+                        data.id = vertex.getAttribute("guid");
+                        data.name = vertex.getAttribute("name");
+                        var gnode = {};
 
-                    gnode.data=data;
-               elements.push(gnode);
-               }
-            let edges=graph.getElementsByTagName("Edge");
-            for(let edge of edges) {
-               var data={};
-               data.id = edge.getAttribute("guid");
-                    data.name="";
-               data.source= edge.getAttribute("sourceVertex");
-               data.target= edge.getAttribute("targetVertex");
-                    var gnode = {};
-                    gnode.data=data;
-               elements.push(gnode);
-               }
-             }
-             }
-        let cyContainer = $('<div/>').width("100%").height("400px").attr('id','cy').appendTo(graphBlock);
-cyContainer.css("background-color", "aliceblue");
-        cy = cytoscape({
-  container: cyContainer, // container to render in
+                        gnode.data = data;
+                        elements.push(gnode);
+                    }
+                    let edges = graph.getElementsByTagName("Edge");
+                    for (let edge of edges) {
+                        var data = {};
+                        data.id = edge.getAttribute("guid");
+                        data.name = "";
+                        data.source = edge.getAttribute("sourceVertex");
+                        data.target = edge.getAttribute("targetVertex");
+                        var gnode = {};
+                        gnode.data = data;
+                        elements.push(gnode);
+                    }
+                }
+            }
+            let cyContainer = $('<div/>').width("100%").height("400px").attr('id', 'cy').appendTo(graphBlock);
+            cyContainer.css("background-color", "aliceblue");
+            cy = cytoscape({
+                container: cyContainer, // container to render in
                 elements: elements,
                 style: [ // the stylesheet for the graph
-    {
-      selector: 'node',
+                    {
+                        selector: 'node',
 
-      style: {
-        'background-color': '#666',
-        'label': 'data(name)'
-      }
-    },
+                        style: {
+                            'background-color': '#666',
+                            'label': 'data(name)'
+                        }
+                    },
 
-    {
-      selector: 'edge',
-      style: {
-        'width': 3,
-        'line-color': '#ccc',
-        'target-arrow-color': '#ccc',
-        'target-arrow-shape': 'triangle',
-        'curve-style': 'bezier'
-      }
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 3,
+                            'line-color': '#ccc',
+                            'target-arrow-color': '#ccc',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    }
+                ],
+
+                layout: {
+                    name: 'cose',
+                    rows: 1
+                },
+                zoom: 1,
+                pan: { x: 0, y: 0 },
+            });
+            $('#reset').click(function() { cy.fit() });
+        }
+
     }
-  ],
 
-  layout: {
-    name: 'cose',
-    rows: 1
-  },
-                  zoom: 1,
-  pan: { x: 0, y: 0 },
-});
-            $('#reset').click(function() {cy.fit()});
-}
+    $("#filterby")
+        .change(function() {
+            var str = "";
+            $("#filterby option:selected").each(function() {
+                console.log('Changed to ' + $(this).text());
+                    userDataTable.destroy();
+                     userDataTable = $(".usertable").DataTable({
+                select: $('#filterby').val()=='Users'
+        });
 
-}
-$('#waiting').remove();
-}
 
-/*
-var sources = codebook[0].getElementsByTagName("TextSource");
-for (let source of sources) {
-$('.preview').append($("<div/>").html("<p>Source: " + source.getAttribute('name') + "</p>"));
+//                  userDataTable.draw();
+            });
+        });
+
+
+    $('#waiting').remove();
 }
-var sets = codebook[0].getElementsByTagName("Set");
-for (let set of sets) {
-                let sdiv = $('<p/>');
-        sdiv.html("<p>Set: " + set.getAttribute('name') + "</p>");
-        $('.preview').append(sdiv);
-        var members=set.getElementsByTagName("MemberCode");
-        for(let member of members) {
-let foundCode = xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']");
-                        if(foundCode !== null) {
-                        sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + member.getAttribute('targetGUID') + "']").getAttribute('name')));
-                        } else {
-                        sdiv.append($('<p/>').html("Code with GUID: " + member.getAttribute('targetGUID') + " not found in file"));
-        }
-}
-        var membersS=set.getElementsByTagName("MemberSource");
-        for(let memberS of membersS) {
-             let foundSource = xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']");
-                        if(foundSource !== null) {
-             sdiv.append($('<p/>').html(xmlDoc.querySelector("[guid='" + memberS.getAttribute('targetGUID') + "']").getAttribute('name')));
-                        } else {
-                        sdiv.append($('<p/>').html("Source with GUID: " + memberS.getAttribute('targetGUID') + " not found in file"));
-        }
-        }
-}A*/
 function createTable() {
     let table = $("<table/>");
+    table.prop('id', arguments[0]);
     let tr = $("<tr/>").appendTo($("<thead/>").appendTo(table));
-    for (var i = 0; i < arguments.length; i++) {
+    for (var i = 1; i < arguments.length; i++) {
         tr.append($("<th/>").text(arguments[i]));
     }
     let tableBody = $("<tbody/>").appendTo(table);
@@ -301,13 +380,15 @@ function addRow(table) {
     for (var i = 1; i < arguments.length; i++) {
         tr.append($("<td/>").html(arguments[i]));
     }
+        return tr;
 }
+
 function getSelections(source) {
     let children = source.getElementsByTagName("*");
     let selections = [];
     for (let child of children) {
         if (child.nodeName.endsWith("Selection")) {
-        //    console.log(child.getAttribute("name"));
+            //    console.log(child.getAttribute("name"));
             selections.push(child);
         }
     }
@@ -334,13 +415,12 @@ function createSourceReference(source, fileUrl) {
     if (!path) {
         path = source.getAttribute("path");
     }
-    if(fileUrl) {
-    path = path.replace("internal://", "sources/");
-            var index = entryMap[path];
+    if (fileUrl) {
+        path = path.replace("internal://", "sources/");
+        var index = entryMap[path];
         return '<a href="#" data-entry-index="' + index + '">' + source.getAttribute("name") + '<span class="icon glyphicon glyphicon-download-alt"></span></a>';
 
     } else {
-            return '<span title="' + path + '">' + source.getAttribute("name") + '</span>';
+        return '<span title="' + path + '">' + source.getAttribute("name") + '</span>';
     }
 }
-
