@@ -6,6 +6,9 @@ var tableWidth = '80%';
 var selectedGUIDs = new Array();
 var noteDataTable;
 var userDataTable;
+var codeDataTable;
+var sourceDataTable;
+var setDataTable;
 var tables = new Array();
 
 $(document).ready(function() {
@@ -40,24 +43,27 @@ $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         let found = false;
         selectedGUIDs.forEach(guid => {
             console.log("Looking for " + guid);
-            var curGuid = settings.nTBody.parentElement.childNodes[1].childNodes[dataIndex].dataset.guid;
+            //var curGuid = settings.nTBody.parentElement.childNodes[1].childNodes[0].dataset.guid;
+
+            //var curGuid = findDataAttribute('data-guid', settings.aoData[dataIndex].nTr.attributes);
+            var curGuid = findDataAttribute('data-guid', settings.aoData[dataIndex].nTr.attributes);
+                console.log('Examining ' + curGuid);
             //If the current row includes a selected guid in its list of related items (forward/child relationships) then show it
-            let matches = $('[data-guid="' + curGuid + '"]').attr('data-matches');
-                console.log(curGuid + ' forward: ' + matches);
-                if(typeof matches ==='undefined') {
-                        matches='';
-                }
+//          let matches = $('[data-guid="' + curGuid + '"]').attr('data-matches');
+            let matches = findDataAttribute('data-matches', settings.aoData[dataIndex].nTr.attributes);
+                console.log('Forward Matching: ' + matches);
             if (matches.includes(guid)) {
                 console.log('found'); found = true;
             } else {
                 //if the guid for the current row shows up in the list of forward/child relationships for one of the selected items, show it
                 let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches');
-console.log(typeof revMatches);
                      if(typeof revMatches ==='undefined') {
                         revMatches='';
                 }
-                console.log('reverse: ' + revMatches);
+console.log('Rev matches: ' + revMatches);
+console.log('curGUID: ' + curGuid);
                 if (revMatches.includes(curGuid)) {
+                        console.log('rev found');
                     found = true;
                 }
 
@@ -66,6 +72,14 @@ console.log(typeof revMatches);
         return found;
     }
 });
+
+function findDataAttribute(name, attrNamedNodeMap) {
+        let attr = attrNamedNodeMap[name];
+        if (typeof attr !== 'undefined') {
+                return attr.nodeValue;
+        }
+        return '';
+}
 
 // Start parsing project file
 // This function just adds a loading icon and initial text to the page and then calls parseData2
@@ -163,8 +177,8 @@ function parseData2(data) {
 
         }
 
-        let codeDataTable = $(".codetable").DataTable({
-            select: true,
+        codeDataTable = $(".codetable").DataTable({
+            select: $('#filterby').val() == 'Codes',
             "columnDefs": [
                 {
                     // The `data` parameter refers to the data for the cell (defined by the
@@ -229,20 +243,22 @@ function parseData2(data) {
                         selections.forEach(function(selection) {
                             let selectionMatches = sourceMatches + selection.getAttribute("creatingUser")+selection.getAttribute("modifyingUser");
                             selectionMatches = selectionMatches + getCodeRelatedGUIDs(selection);
-                            tr = addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, selection.getAttribute("name"), getCodeNames(selection));
+                            tr = addRow(sourceTable, createSourceReference(source, zipUrl), selection.nodeName, selection.getAttribute("name"), getCodeNames(selection));
                             tr.attr('data-guid', selection.getAttribute("guid"));
                             tr.attr('data-matches', selectionMatches);
                         });
                     }
-                    else {
+                    //else {
                         tr = addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, "Whole Document", "");
                         tr.attr('data-guid', source.getAttribute("guid"));
                         tr.attr('data-matches', sourceMatches);
-                    }
+                    //}
                 }
 
             }
-            let sourceDataTable = $(".sourcetable").DataTable();
+            sourceDataTable = $(".sourcetable").DataTable({
+                select: $('#filterby').val() == 'Sources'
+            });
             if (typeof downloadFile === 'function') {
                 $("a[data-entry-index]").click(downloadFile);
                 $("a[data-entry-index]").each(function() { console.log('Here: ' + $(this).attr('data-entry-index')) });
@@ -306,6 +322,7 @@ function parseData2(data) {
 
         }
         noteDataTable = $(".notetable").DataTable({
+            select: $('#filterby').val() == 'Notes'
             //columnDefs:[{target:0,visible:false,seachable:false}]
         });
         tables.push(noteDataTable);
@@ -364,7 +381,9 @@ function parseData2(data) {
                     tr.attr('data-guid', set.getAttribute('guid'));
             }
         }
-        let setDataTable = $(".settable").DataTable();
+        setDataTable = $(".settable").DataTable({
+                select: $('#filterby').val() == 'Sets'
+            });
         tables.push(setDataTable);
         setDataTable.on('select deselect', function(e, dt, type, indexes) {
             if (type === 'row') {
@@ -453,15 +472,35 @@ function parseData2(data) {
 
     }
 
+//Apparently, whether a table is selectable or not can only be set when it is created, so we need to destroy/recreate the DataTables on any filter change
     $("#filterby")
         .change(function() {
             var str = "";
             $("#filterby option:selected").each(function() {
                 console.log('Changed to ' + $(this).text());
+                //Todo - use array or map? Or createDataTableX methods
                 userDataTable.destroy();
                 userDataTable = $(".usertable").DataTable({
                     select: $('#filterby').val() == 'Users'
                 });
+                codeDataTable.destroy();
+                codeDataTable = $(".codetable").DataTable({
+            select: $('#filterby').val() == 'Codes'
+        });
+                sourceDataTable.destroy();
+                sourceDataTable = $(".sourcetable").DataTable({
+                select: $('#filterby').val() == 'Sources'
+            });
+
+                noteDataTable.destroy();
+                noteDataTable = $(".notetable").DataTable({
+            select: $('#filterby').val() == 'Notes'
+            //columnDefs:[{target:0,visible:false,seachable:false}]
+        });
+                setDataTable.destroy();
+                setDataTable = $(".settable").DataTable({
+                select: $('#filterby').val() == 'Sets'
+            });
 
 
                 //                  userDataTable.draw();
@@ -511,7 +550,6 @@ function getCodeRelatedGUIDs(selection) {
             codeGUIDs= codeGUIDs + codeId + userId;
         }
     }
-        console.log("Found guids: " + codeGUIDs);
     return codeGUIDs;
 }
 
