@@ -72,6 +72,8 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 
 [kaitlinnewson](https://github.com/kaitlinnewson) provided a French translation for the existing previewers, and contributed the GeoJSON previewer.
 
+[Max Planck Digital Library](https://github.com/MPDL) contributed the ZIP Previewer.
+
 ## How can I help?
 
 If you are interested in adding additional previewers, or in maintaining/enhancing existing ones, contact us at [dataverse-dev@googlegroups.com](mailto:dataverse-dev@googlegroups.com) or work through github to fork/make pull-requests against the repository.
