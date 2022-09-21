@@ -1,0 +1,18 @@
+{
+    "displayName": "Explore with MyBinder",
+    "description": "Explore with MyBinder",
+    "toolName": "mybinder",
+    "scope": "file",
+    "types": [
+      "explore"
+    ],
+    "toolUrl": "https://edmond.mpdl.mpg.de/dataverse-previewers/explorers/mybinder.html",
+    "contentType": "application/x-ipynb+json",
+    "toolParameters": {
+      "queryParameters": [
+        {
+          "doi": "{datasetPid}"
+        }
+      ]
+    }
+  }
