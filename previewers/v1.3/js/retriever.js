@@ -4,6 +4,7 @@ var version = null;
 var fileDownloadUrl = null;
 var previewMode = null;
 var locale = null;
+var ncmlTool = false;
 
 function startPreview(retrieveFile) {
     // Retrieve tool launch parameters from URL
@@ -24,6 +25,11 @@ function startPreview(retrieveFile) {
     }
     var i18n = $.i18n();
     i18n.locale = locale;
+    // figure out if this is the NcML tool
+    var toolUrl = new URL(window.location);
+    if (toolUrl.pathname.endsWith("NcmlPreview.html")) {
+        ncmlTool = true;
+    }
 
     // Set the html lang attribute
     document.documentElement.setAttribute('lang', locale);
@@ -123,6 +129,25 @@ function startPreview(retrieveFile) {
                 }
             });
 
+        } else if (ncmlTool) {
+            var ncmlUrl = queryParams.get("siteUrl") + "/api/access/datafile/" + queryParams.get("fileid") + "/auxiliary/NcML/0.1";
+            $.ajax({
+                type: 'GET',
+                dataType: 'text',
+                crosssite: true,
+                url: ncmlUrl,
+                success: function (data, status) {
+                    writeContentAndData(data, fileUrl,
+                        fileMetadata,
+                        title, authors);
+                },
+                error: function (request, status, error) {
+                    reportFailure(
+                        "Unable to retrieve NcML file.",
+                        status);
+                }
+            });
+            return;
         } else {
             writeContent(fileUrl,
                 fileMetadata, title,
