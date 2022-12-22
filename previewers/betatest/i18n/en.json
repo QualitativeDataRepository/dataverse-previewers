@@ -16,11 +16,13 @@
 	"textPreviewText": "Text Preview",
 	"videoPreviewText": "Video Preview",
 	"zipPreviewText": "ZIP Preview",
+	"ncmlPreviewText": "NcML Preview",
 	"prev": "Previous",
 	"next": "Next",
 	"pageText": "Page:",
 	"versionText": "version",
 	"descriptionText": "Description: ",
+	"ncmlErrorText": "Unable to retrieve NcML file. ",
 	"footer": "Previewers originally developed by <a href=\"https://qdr.syr.edu\">QDR</a> and maintained at <a href=\"https://github.com/gdcc/dataverse-previewers\">https://github.com/gdcc/dataverse-previewers</a>. Feedback and contributions welcome.",
 	"errorText" : "Please try again. The most common issue is that your login has timed out. If the problem persists, please contact the support team of this data repository. Please include any status code included at the end of this message: "
 }
