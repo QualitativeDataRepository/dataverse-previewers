@@ -9,7 +9,7 @@ function translateBaseHtmlPage() {
 
 function writeContent(fileUrl, file, title, authors) {
     addStandardPreviewHeader(file, title, authors);
-    var mdUrl = queryParams.get("siteUrl") + "/api/access/datafile/" + queryParams.get("fileid") + "/auxiliary/Markdown/1.0.1";
+    var mdUrl = queryParams.get("siteUrl") + "/api/access/datafile/" + queryParams.get("fileid");
 
     $.ajax({
         type: 'GET',
