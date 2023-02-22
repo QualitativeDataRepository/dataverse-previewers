@@ -11,5 +11,5 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
     addStandardPreviewHeader(file, title, authors);
     const converter = new showdown.Converter();
     const html = converter.makeHtml(data);
-    $('.preview').append($("<textarea/>").html(html));
+    $('.preview').append($("<div/>").html(html));
 }
