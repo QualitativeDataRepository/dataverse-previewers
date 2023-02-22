@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    startPreview(false);
+    startPreview(true);
 });
 
 function translateBaseHtmlPage() {
