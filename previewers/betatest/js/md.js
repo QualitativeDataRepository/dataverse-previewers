@@ -25,9 +25,9 @@ function writeContent(fileUrl, file, title, authors) {
             }
             ).attr('style', 'width:100%;height:100%;')
             );
-},
-error: function (request, status, error) {
-    reportFailure($.i18n("mdErrorText"), error);
-}
+        },
+        error: function (request, status, error) {
+            reportFailure($.i18n("mdErrorText"), error);
+        }
     });
 }
