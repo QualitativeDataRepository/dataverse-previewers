@@ -69,9 +69,9 @@ body a {
 
 #logo {
     display: inline-block;
-    margin-left: 40px;
+    margin: 10px 10px 10px 40px;
     width: 240px;
-    min-height: 140px;
+    min-height: 120px;
 }
 
 #footer {
