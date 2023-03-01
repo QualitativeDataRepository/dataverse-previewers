@@ -19,7 +19,6 @@ function startPreview(retrieveFile) {
     // Hide header and citation to embed on Dataverse file landing page.
     previewMode = queryParams.get("preview");
     locale = queryParams.get("locale");
-    
     if (locale == null) {
         locale = 'en';
     }
@@ -30,7 +29,7 @@ function startPreview(retrieveFile) {
     document.documentElement.setAttribute('lang', locale);
 
     i18n.load('i18n/' + i18n.locale + '.json', i18n.locale).done(
-        function() {
+        function () {
             //Call previewer-specific translation code
             translateBaseHtmlPage();
 

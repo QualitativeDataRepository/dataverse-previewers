@@ -2,8 +2,8 @@
 
 A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
 
-<img align="right" width="30%" src="https://github.com/GlobalDataverseCommunityConsortium/dataverse-previewers/blob/master/examples/previewInPage.PNG?raw=true">
-<img width="65%" src="https://github.com/GlobalDataverseCommunityConsortium/dataverse-previewers/blob/master/examples/datasetdisplay.png?raw=true">
+<img align="right" width="30%" src="https://github.com/gdcc/dataverse-previewers/blob/master/examples/previewInPage.PNG?raw=true">
+<img width="65%" src="https://github.com/gdcc/dataverse-previewers/blob/master/examples/datasetdisplay.png?raw=true">
 
 ## Installation
 
@@ -13,7 +13,7 @@ For updates such as enabling Internationalization, which change the parameters y
 
 There is one command per mimetype you wish to preview (i.e. multiple commands to cover different types of images.) You can run any/all of the commands as you like. Note that the Hypothesis annotation previewer assumes a custom mimetype and may not be useful for most Dataverses (contact [QDR](mailto:qdr@syr.edu) for more information). Dataverse 4.11+ is required.
 
-Note that Dataverse installations configured to redirect to S3 storage for file downloads will need to enable CORS at the storage layer as well as the application layer (the latter is enabled by default). (See, for example, [Amazon's CORS configuration guidance](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/add-cors-configuration.html)).
+Note that Dataverse installations configured to redirect to S3 storage for file downloads will need to enable CORS at the storage layer as well as the application layer (the latter is enabled by default). (See, for example, [Amazon's CORS configuration guidance](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/add-cors-configuration.html)). See also the [page on CORS](https://github.com/gdcc/dataverse-previewers/wiki/Using-Previewers-with-download-redirects-from-S3) in the wiki.
 
 Also note that using the commands below means that your installation will automatically start using updated versions of the previewers when the master branch of this repository is updated. We intend to announce upcoming changes on the dataverse-community@google-groups.com mailing list, but if you do not want this behavior, you can download the previewers and host them on your own server, adjusting the curl commands below to reference your local copies.
 
@@ -21,7 +21,7 @@ Also note that using the commands below means that your installation will automa
 
 There are two options to update to new versions:
 
-##### API Method
+### API Method
 
 Use the Dataverse API to list all of the registered previewers and to then delete each old version. Then follow the new installation instructions
 
@@ -30,11 +30,15 @@ and, for each tool registered, delete them by id number:
 
     curl -X DELETE http://localhost:8080/api/admin/externalTools/<id>
 
-##### Database method
+### Database method
 
 Alternately, one can update the toolurl column in the externaltool table via SQL to change the repository and/or the version used. For example:
 
     update externaltool set toolurl=REPLACE(toolurl, 'globaldataversecommunityconsortium.github.io/dataverse-previewers/previewers', 'gdcc.github.io/dataverse-previewers/previewers/v1.1');
+
+or, to just change between versions after you've switched to using the gdcc repository:
+
+    update externaltool set toolurl=REPLACE(toolurl, 'v1.2', 'v1.3');
 
 
 ## How do they work?
@@ -66,7 +70,11 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 
 [juancorr](https://github.com/juancorr) added internationalization and provided a Spanish translation for the existing previewers.
 
-[kaitlinnewson](https://github.com/kaitlinnewson) provided a French translation for the existing previewers.
+[kaitlinnewson](https://github.com/kaitlinnewson) provided a French translation for the existing previewers, and contributed the GeoJSON previewer.
+
+[Max Planck Digital Library](https://github.com/MPDL) contributed the ZIP Previewer.
+
+[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer.
 
 ## How can I help?
 
@@ -76,7 +84,7 @@ The wiki now contains a [How To Create a Previewer](https://github.com/gdcc/data
 
 Contributors are expected to keep the master branch in a 'production-ready' state, as Dataverse instances may be using the html, javascript, and css files there directly via their github.io URLs (see curl commands below).
 
-By committing code to the repository, Contributors are agreeing to make it available under the [MIT Open Source license](https://globaldataversecommunityconsortium.github.io/dataverse-previewers/LICENSE).
+By committing code to the repository, Contributors are agreeing to make it available under the [MIT Open Source license](https://gdcc/dataverse-previewers/LICENSE).
 
 ## Curl commands to configure these tools with your Dataverse instance
 

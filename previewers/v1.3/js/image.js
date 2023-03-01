@@ -1,5 +1,5 @@
 $(document).ready(function() {
-startPreview(false);
+    startPreview(false);
 });
 
 function translateBaseHtmlPage() {
@@ -8,7 +8,7 @@ function translateBaseHtmlPage() {
 }
 
 function writeContent(fileUrl, file, title, authors) {
-addStandardPreviewHeader(file, title, authors);
+    addStandardPreviewHeader(file, title, authors);
 
     $('.preview').append($('<img/>')
         .attr('style','max-width:100%')
@@ -18,9 +18,9 @@ addStandardPreviewHeader(file, title, authors);
     );
 
     $("#previewImage")
-    .wrap('<span style="display:inline-block"></span>')
-    .css('display', 'block')
-    .parent()
+        .wrap('<span style="display:inline-block"></span>')
+        .css('display', 'block')
+        .parent()
         .zoom({on:'grab'}
     );
 
