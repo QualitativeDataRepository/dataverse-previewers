@@ -208,7 +208,7 @@ function startPreview(retrieveFile) {
         var versionText = $.i18n("versionText");
         var descriptionText = $.i18n("descriptionText");
         filePageUrl = queryParams.get("siteUrl") + "/file.xhtml?";
-        if (file.persistentId.length == 0) {
+        if (!("persistentId" in file) || file.persistentId.length == 0) {
             filePageUrl = filePageUrl + "fileId=" + file.id;
         } else {
             filePageUrl = filePageUrl + "persistentId=" + file.persistentId;
