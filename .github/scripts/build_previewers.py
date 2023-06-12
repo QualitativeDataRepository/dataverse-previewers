@@ -18,7 +18,7 @@ def _check_metadata_extension(source_dir):
         )
 
 
-def build_react_app(source_dir, TARGET_DIR, REPO_DIR):
+def build_react_app(source_dir, TARGET_DIR):
     """Builds the react app and copies the files to the target directory
 
     Args:
@@ -72,12 +72,12 @@ if __name__ == "__main__":
     react_previewers = [
         os.path.join(BASE_DIR, path)
         for path in os.listdir(BASE_DIR)
-        if not path.startswith(".")
+        if not path.startswith(".") and path != "README.md"
     ]
 
     for source_dir in react_previewers:
         # Build the react app
-        build_react_app(source_dir, TARGET_DIR, REPO_DIR)
+        build_react_app(source_dir, TARGET_DIR)
 
         # Return to the repository directory
         os.chdir(REPO_DIR)
