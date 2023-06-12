@@ -18,4 +18,15 @@ jobs:
         uses: actions/setup-node@v3
       - name: Run script and build apps
         run: python3 ./.github/scripts/build_previewers.py
+      - name: Push built previewers
+        run: |
+          if [[ `git status --porcelain` ]]; then
+            git add --all
+            git config --global user.name 'Previewer Builder'
+            git config --global user.email 'builder@bot.com'
+            git commit -am "Previewer update"
+            git push
+          else
+            echo "Nothing changed!"
+          fi
         
