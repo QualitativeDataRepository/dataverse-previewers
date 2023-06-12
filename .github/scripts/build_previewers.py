@@ -47,6 +47,8 @@ if __name__ == "__main__":
     REPO_DIR = os.getcwd()
     TARGET_DIR = os.path.join(REPO_DIR, "previewers", "react-previewers")
 
+    print(REPO_DIR)
+
     # Get all the react previewers
     react_previewers = [
         os.path.join(BASE_DIR, path)
