@@ -17,8 +17,8 @@ export default defineConfig({
         main: './HDF5Preview.html',
       },
       output: {
-        entryFileNames: 'hdf5.js',
-        assetFileNames: 'hdf5.css',
+        entryFileNames: 'js/hdf5.js',
+        assetFileNames: 'css/hdf5.css',
       }
     }
   },
