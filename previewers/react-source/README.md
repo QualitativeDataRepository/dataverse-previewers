@@ -12,8 +12,8 @@ build:
 - npm install
 - npm run build
 files:
-- ./dist/hdf5.js
-- ./dist/hdf5.css
+- ./dist/js/hdf5.js
+- ./dist/css/hdf5.css
 - ./dist/HDF5Preview.html
 ```
 
@@ -30,3 +30,12 @@ files:
 1. Copy your developed app into the `react-source` directory.
 2. Attach a `previewer-meta.yml` or `previewer-meta.yaml` file that includes all necessary informations on build and files.
 3. Upon push the CI workflow will run and build your code.
+
+> **Warning**
+> Please make sure, that upon building your resulting `html` file points to the necessary `js` and `css` files. Otherwise the page wont work since, the built files will be moved based on the given extension:
+>
+> * `css` to `previewers/betatest/css`
+> * `js` to `previewers/betatest/js`
+> * `html` to `previewers/betatest/`
+>
+> For an example, in `previewers/react-source/HDF5Previewer` the `vite.config.js` file has been adjusted to produce files already in the desired structure and thus no additional actions are necessary. You may adjust this based on the bundler you are using.
