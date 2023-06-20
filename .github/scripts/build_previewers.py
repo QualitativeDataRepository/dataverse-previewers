@@ -35,7 +35,13 @@ def build_react_app(source_dir, TARGET_DIR):
 
     # Read the previewers metadata
     metadata = yaml.safe_load(open(metadata_file))
-    dist_path = os.path.join(TARGET_DIR, metadata["name"].lower())
+
+    # Create path map to deploy the necessary files
+    extension_paths = {
+        "js": os.path.join(TARGET_DIR, "js"),
+        "css": os.path.join(TARGET_DIR, "css"),
+        "html": TARGET_DIR,
+    }
 
     # Get the hash of the source directory
     source_hash = dirhash(metadata["checkdir"], "sha256")
@@ -43,14 +49,8 @@ def build_react_app(source_dir, TARGET_DIR):
     if metadata.get("checksum") == source_hash:
         print(f"No changes detected for {metadata['name']}")
         return
-    else:
-        print(f"Changes detected for {metadata['name']} updating checksum")
-        metadata["checksum"] = source_hash
-        yaml.safe_dump(metadata, open(metadata_file, "w"), sort_keys=False)
 
-    if not os.path.exists(dist_path):
-        # Create the previewer directory if it doesn't exist
-        os.mkdir(dist_path)
+    print(f"Changes detected for {metadata['name']} - Building previewer")
 
     for command in metadata["build"]:
         # Run the build commands
@@ -59,14 +59,21 @@ def build_react_app(source_dir, TARGET_DIR):
     for file in metadata["files"]:
         # Copy the files to the target directory
         fname = os.path.basename(file)
-        shutil.copy(file, os.path.join(dist_path, fname))
+        extension = fname.split(".")[-1]
+        shutil.copy(file, os.path.join(extension_paths[extension], fname))
+
+    # Update checksum in metadata file
+    metadata["checksum"] = source_hash
+    yaml.safe_dump(metadata, open(metadata_file, "w"), sort_keys=False)
+
+    print("Successfully built previewer - Checksum updated")
 
 
 if __name__ == "__main__":
     # Build the react previewers
     BASE_DIR = "./previewers/react-source/"
     REPO_DIR = os.getcwd()
-    TARGET_DIR = os.path.join(REPO_DIR, "previewers", "react-previewers")
+    TARGET_DIR = os.path.join(REPO_DIR, "previewers", "betatest")
 
     # Get all the react previewers
     react_previewers = [
