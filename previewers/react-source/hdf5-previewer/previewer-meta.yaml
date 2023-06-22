@@ -1,6 +1,6 @@
 name: HDF5-Previewer
 checkdir: ./src
-checksum: 39ff4cd413e0bf563bc8711df912cac74cf66a1ec1d16dbedcd147f4c9dcceff
+checksum: 7e45f108cbc678a9b308330d04c0e79103b2e1c74f97a3440313aa4d78119d1a
 build:
 - npm install
 - npm run build
