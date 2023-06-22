@@ -30,12 +30,19 @@ function Loader({ onH5File }: Props) {
 
   // Construct Dataverse file URL
   const url = `${siteURL}/api/access/datafile/${fileID}`
+
+  // Construct headers and add apiToken, if given
+  const headers: { [key: string]: string } = {}
+
+  if (APIToken) {
+    // Add apiToken to headers
+    headers['X-Dataverse-key'] = APIToken
+  }
+
   const [{ loading, error }, execute] = useAxios<ArrayBuffer>(
     {
       url,
-      headers: {
-        "X-Dataverse-key": APIToken,
-      },
+      headers: headers,
       responseType: 'arraybuffer'
     },
     { manual: true, }
@@ -51,6 +58,15 @@ function Loader({ onH5File }: Props) {
   useEffect(() => {
     void fetchFile();
   }, [url, fetchFile]);
+
+  if (error) {
+    return (
+      <div className='loader'>
+        <FiLoader className={styles.urlLoader} size="30px" aria-label="Error..." />
+        <h4 className={styles.loaderHeading}>Something went wrong with the request!</h4>
+      </div>
+    )
+  }
 
   return (
     <div className='loader'>
