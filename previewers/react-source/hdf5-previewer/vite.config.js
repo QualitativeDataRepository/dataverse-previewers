@@ -4,6 +4,7 @@ import { checker } from 'vite-plugin-checker';
 import eslintPlugin from 'vite-plugin-eslint';
 
 export default defineConfig({
+  base: "./",
   server: { open: true },
   preview: { open: true },
   plugins: [react(), eslintPlugin(), checker({ typescript: true })],
