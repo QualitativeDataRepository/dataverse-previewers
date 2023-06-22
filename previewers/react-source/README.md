@@ -32,7 +32,7 @@ files:
 3. Upon push the CI workflow will run and build your code.
 
 > **Warning**
-> Please make sure, that upon building your resulting `html` file points to the necessary `js` and `css` files. Otherwise the page wont work since, the built files will be moved based on the given extension:
+> Please make sure, that upon building your resulting `html` file points to the necessary `js` and `css` files using *relative* paths. Otherwise the page wont work since, the built files will be moved based on the given extension:
 >
 > * `css` to `previewers/betatest/css`
 > * `js` to `previewers/betatest/js`
