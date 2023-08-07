@@ -8,19 +8,46 @@ $(document).ready(function () {
         // Preview the HTML file
         startPreview(true);
     } else {
-        // Redirect back to the dataset
+        // Redirect to the file page
         queryParams = new URLSearchParams(window.location.search.substring(1));
-        let siteURL = queryParams.get("siteUrl")
-        let datasetId = queryParams.get("datasetid")
+        var siteUrl = queryParams.get("siteUrl");
+        var fileID = queryParams.get("fileid");
+        var versionUrl = siteUrl + "/api/datasets/"
+            + queryParams.get("datasetid") + "/versions/"
+            + queryParams.get("datasetversion");
 
-        if (siteURL.endsWith("/")) {
-            siteURL = siteURL.substring(0, siteURL.length - 1)
-        }
-
-        let redirectUrl = siteURL + "/dataset.xhtml?id=" + datasetId
-        window.location.replace(redirectUrl);
+        fetchMetaAndRedirect(versionUrl, fileID, siteUrl);
     }
 });
+
+function fetchMetaAndRedirect(versionURL, fileID, siteUrl) {
+    $.ajax({
+        type: 'GET',
+        dataType: "json",
+        crosssite: true,
+        url: versionURL,
+        success: function (data, status) {
+            console.log(data);
+            redirectToFilePage(data, siteUrl, fileID);
+        },
+        error: function (request, status, error) {
+            alert("Could not find persistent ID for file. Redirecting to the Dataverse page.")
+            window.location.replace(siteUrl);
+        }
+    });
+}
+
+function redirectToFilePage(data, siteUrl, fileID) {
+    // Search for the file ID in the JSON
+    const files = data.data.files
+    const persistentFile = files.find(file => file.dataFile.id == fileID)
+    const persistentFileId = persistentFile.dataFile.persistentId
+    const fileVersion = persistentFile.version
+
+    // Redirect to the file page
+    const fileUrl = siteUrl + "/file.xhtml?persistentId=" + persistentFileId + "&version=" + fileVersion
+    window.location.replace(fileUrl);
+}
 
 function translateBaseHtmlPage() {
     var htmlPreviewText = $.i18n("htmlPreviewText");
