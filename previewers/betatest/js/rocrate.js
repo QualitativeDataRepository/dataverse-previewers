@@ -3,8 +3,7 @@ $(document).ready(function () {
 });
 
 function translateBaseHtmlPage() {
-    var mdPreviewText = $.i18n("mdPreviewText");
-    $('.mdPreviewText').text(mdPreviewText);
+    $('.rocratePreviewText').text($.i18n("rocratePreviewText"));
 }
 
 function writeContentAndData(data, fileUrl, file, title, authors) {
