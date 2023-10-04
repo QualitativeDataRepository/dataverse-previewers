@@ -127,7 +127,7 @@
       load();
   };
   
-  
+  load(); // needed for Dataverse UI -> otherwise the previewer is not refreshed
   
   async function updatePage() {
       var hash = location.hash;
