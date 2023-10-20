@@ -15,6 +15,6 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
     scripts.append(s1);
     var s2 = document.createElement("script");
     s2.type = "text/javascript";
-    s2.src = "js/ro-crate-dynamic.js";
+    s2.src = "js/ro-crate-dynamic.min.js";
     scripts.append(s2);
 }
