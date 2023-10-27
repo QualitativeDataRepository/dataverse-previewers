@@ -9,8 +9,6 @@ function translateBaseHtmlPage() {
 
 function writeContentAndData(data, fileUrl, file, title, authors) {
     addStandardPreviewHeader(file,title, authors);
-    options = {"stripIgnoreTag":true,
-        "stripIgnoreTagBody":['script','head']};  // Custom rules
-
-    $('.preview').append($("<div/>").html(filterXSS(data,options)));
+    //QDR is a curated repository and as such, it allows original (but curated) HTML to be displayed without removing some tags 
+    $('.preview').append($("<div/>").html(data));
 }
