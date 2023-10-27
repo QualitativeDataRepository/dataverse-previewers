@@ -29,7 +29,7 @@ function startPreview(retrieveFile) {
     document.documentElement.setAttribute('lang', locale);
 
     i18n.load('i18n/' + i18n.locale + '.json', i18n.locale).done(
-        function () {
+        function() {
             //Call previewer-specific translation code
             translateBaseHtmlPage();
 
@@ -87,11 +87,13 @@ function startPreview(retrieveFile) {
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         reportFailure("Unable to retrieve metadata.", textStatus);
+
                     }
                 });
             }
         }
     );
+
 }
 
 function inIframe() {
@@ -206,7 +208,7 @@ function inIframe() {
         var versionText = $.i18n("versionText");
         var descriptionText = $.i18n("descriptionText");
         filePageUrl = queryParams.get("siteUrl") + "/file.xhtml?";
-        if (file.persistentId.length == 0) {
+        if (!("persistentId" in file) || file.persistentId.length == 0) {
             filePageUrl = filePageUrl + "fileId=" + file.id;
         } else {
             filePageUrl = filePageUrl + "persistentId=" + file.persistentId;
