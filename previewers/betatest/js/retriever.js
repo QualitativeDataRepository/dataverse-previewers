@@ -8,69 +8,12 @@ var locale = null;
 function startPreview(retrieveFile) {
     // Retrieve tool launch parameters from URL
     var params = new URLSearchParams(window.location.search.substring(1));
-    if (params.has("callback")) {
-        var callback = atob(params.get("callback"));
-        // Get metadata for dataset/version/file
-        $.ajax({
-            dataType: "json",
-            url: callback,
-            crossite: true,
-            success: function(json, status) {
-                queryParams = json.data.queryParameters;
-                if(params.has('preview')) {
-                    queryParams.preview = params.get('preview');
-                }
-                var urls = json.data.signedUrls;
-                for (var i in urls) {
-                    var url = urls[i];
-                    switch (url.name) {
-                        case 'retrieveFileContents':
-                            queryParams.fileUrl = url.signedUrl;
-                            break;
-                        case 'downloadFile':
-                            queryParams.fileDownloadUrl = url.signedUrl;
-                            break;
-                        case 'getDatasetVersionMetadata':
-                            queryParams.versionUrl = url.signedUrl;
-                            break;
-                        default:
-                    }
-                }
-                continuePreview(retrieveFile, queryParams);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                reportFailure("Unable to retrieve metadata.", textStatus);
 
-            }
-        });
-
-    } else {
-        params.forEach((value, key) => {
-            queryParams[key] = value;
-        });
-        var fileUrl = queryParams.siteUrl + "/api/access/datafile/"
-            + queryParams.fileid + "?gbrecs=true";
-        var fileDownloadUrl = queryParams.siteUrl + "/api/access/datafile/"
-            + queryParams.fileid + "?gbrecs=false";
-        var versionUrl = queryParams.siteUrl + "/api/datasets/"
-            + queryParams.datasetid + "/versions/"
-            + queryParams.datasetversion;
-        var apiKey = queryParams.key;
-        if (apiKey != null) {
-            fileUrl = fileUrl + "&key=" + apiKey;
-            fileDownloadUrl = fileUrl + "&key=" + apiKey;
-            versionUrl = versionUrl + "?key=" + apiKey;
-        }
-        queryParams.fileUrl = fileUrl;
-        queryParams.fileDownloadUrl = fileDownloadUrl;
-        queryParams.versionUrl = versionUrl;
-        continuePreview(retrieveFile, queryParams);
-    }
-}
-function continuePreview(retrieveFile, queryParams) {
     // Hide header and citation to embed on Dataverse file landing page.
-    previewMode = queryParams.preview;
-    locale = queryParams.locale;
+    previewMode = params.get('preview');
+    // i18n setup
+    locale = params.get('locale');
+
     if (locale == null) {
         locale = 'en';
     }
@@ -82,62 +25,121 @@ function continuePreview(retrieveFile, queryParams) {
 
     i18n.load('i18n/' + i18n.locale + '.json', i18n.locale).done(
         function() {
-            //Call previewer-specific translation code
-            translateBaseHtmlPage();
-
-            if (inIframe()) {
-                callPreviewerScript(retrieveFile, queryParams.fileUrl, {}, '', '');
-            } else {
+            if (params.has("callback")) {
+                var callback = atob(params.get("callback"));
                 // Get metadata for dataset/version/file
                 $.ajax({
                     dataType: "json",
-                    url: queryParams.versionUrl,
+                    url: callback,
                     crossite: true,
                     success: function(json, status) {
-                        var mdFields = json.data.metadataBlocks.citation.fields;
-
-                        var title = "";
-                        var authors = "";
-                        datasetUrl = json.data.storageIdentifier;
-                        datasetUrl = datasetUrl
-                            .substring(datasetUrl.indexOf("//") + 2);
-                        version = queryParams.datasetversion;
-                        if (version === ":draft") {
-                            version = "DRAFT";
+                        queryParams = json.data.queryParameters;
+                        if (params.has('preview')) {
+                            queryParams.preview = params.get('preview');
                         }
-
-                        for (var field in mdFields) {
-                            if (mdFields[field].typeName === "title") {
-                                title = mdFields[field].value;
-                            }
-                            if (mdFields[field].typeName === "author") {
-                                var authorFields = mdFields[field].value;
-                                for (var author in authorFields) {
-                                    if (authors.length > 0) {
-                                        authors = authors + "; ";
-                                    }
-                                    authors = authors
-                                        + authorFields[author].authorName.value;
-                                }
+                        var urls = json.data.signedUrls;
+                        for (var i in urls) {
+                            var url = urls[i];
+                            switch (url.name) {
+                                case 'retrieveFileContents':
+                                    queryParams.fileUrl = url.signedUrl;
+                                    break;
+                                case 'downloadFile':
+                                    queryParams.fileDownloadUrl = url.signedUrl;
+                                    break;
+                                case 'getDatasetVersionMetadata':
+                                    queryParams.versionUrl = url.signedUrl;
+                                    break;
+                                default:
                             }
                         }
-                        var datafiles = json.data.files;
-                        var fileIndex = 0;
-                        for (var entry in datafiles) {
-                            if (JSON.stringify(datafiles[entry].dataFile.id) == queryParams.fileid) {
-                                fileIndex = entry;
-                                callPreviewerScript(retrieveFile, queryParams.fileUrl, datafiles[fileIndex].dataFile, title, authors);
-                            }
-                        }
+                        continuePreview(retrieveFile, queryParams);
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        reportFailure("Unable to retrieve metadata.", textStatus);
+                        reportFailure("Unable to use callback.", textStatus);
 
                     }
                 });
+
+            } else {
+                params.forEach((value, key) => {
+                    queryParams[key] = value;
+                });
+                var fileUrl = queryParams.siteUrl + "/api/access/datafile/"
+                    + queryParams.fileid + "?gbrecs=true";
+                var fileDownloadUrl = queryParams.siteUrl + "/api/access/datafile/"
+                    + queryParams.fileid + "?gbrecs=false";
+                var versionUrl = queryParams.siteUrl + "/api/datasets/"
+                    + queryParams.datasetid + "/versions/"
+                    + queryParams.datasetversion;
+                var apiKey = queryParams.key;
+                if (apiKey != null) {
+                    fileUrl = fileUrl + "&key=" + apiKey;
+                    fileDownloadUrl = fileUrl + "&key=" + apiKey;
+                    versionUrl = versionUrl + "?key=" + apiKey;
+                }
+                queryParams.fileUrl = fileUrl;
+                queryParams.fileDownloadUrl = fileDownloadUrl;
+                queryParams.versionUrl = versionUrl;
+                continuePreview(retrieveFile, queryParams);
             }
-        }
-    );
+        });
+}
+function continuePreview(retrieveFile, queryParams) {
+    //Call previewer-specific translation code
+    translateBaseHtmlPage();
+
+    if (inIframe()) {
+        callPreviewerScript(retrieveFile, queryParams.fileUrl, {}, '', '');
+    } else {
+        // Get metadata for dataset/version/file
+        $.ajax({
+            dataType: "json",
+            url: queryParams.versionUrl,
+            crossite: true,
+            success: function(json, status) {
+                var mdFields = json.data.metadataBlocks.citation.fields;
+
+                var title = "";
+                var authors = "";
+                datasetUrl = json.data.storageIdentifier;
+                datasetUrl = datasetUrl
+                    .substring(datasetUrl.indexOf("//") + 2);
+                version = queryParams.datasetversion;
+                if (version === ":draft") {
+                    version = "DRAFT";
+                }
+
+                for (var field in mdFields) {
+                    if (mdFields[field].typeName === "title") {
+                        title = mdFields[field].value;
+                    }
+                    if (mdFields[field].typeName === "author") {
+                        var authorFields = mdFields[field].value;
+                        for (var author in authorFields) {
+                            if (authors.length > 0) {
+                                authors = authors + "; ";
+                            }
+                            authors = authors
+                                + authorFields[author].authorName.value;
+                        }
+                    }
+                }
+                var datafiles = json.data.files;
+                var fileIndex = 0;
+                for (var entry in datafiles) {
+                    if (JSON.stringify(datafiles[entry].dataFile.id) == queryParams.fileid) {
+                        fileIndex = entry;
+                        callPreviewerScript(retrieveFile, queryParams.fileUrl, datafiles[fileIndex].dataFile, title, authors);
+                    }
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                reportFailure("Unable to retrieve metadata.", textStatus);
+
+            }
+        });
+    }
 
 }
 
@@ -277,7 +279,7 @@ function addStandardPreviewHeader(file, title, authors) {
                                 $('<span/>').text(byText)).append(
                                     $('<span/>').text(authors).attr('id', 'authors')));
         header.append($("<div/>").addClass("btn btn-default").html(
-            "<a href='" + fileDownloadUrl + "'>" + downloadFileText + "</a>"));
+            "<a href='" + queryParams.fileDownloadUrl + "'>" + downloadFileText + "</a>"));
         header.append($("<div/>").addClass("btn btn-default").html(
             "<a href=\"javascript:window.close();\">" + closePreviewText + "</a>"));
         if (file.creationDate != null) {
