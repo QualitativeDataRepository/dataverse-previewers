@@ -2,6 +2,8 @@
 
 A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
 
+As of Dataverse 6.1, Previewers can use temporary signedUrls when accessing restricted files rather than long-lived API tokens. (SignedUrls were introduced in Dataverse 5.13 but did not work with Dataset PrivateUrl access until 6.1)
+
 <img align="right" width="30%" src="https://github.com/gdcc/dataverse-previewers/blob/master/examples/previewInPage.PNG?raw=true">
 <img width="65%" src="https://github.com/gdcc/dataverse-previewers/blob/master/examples/datasetdisplay.png?raw=true">
 
@@ -52,7 +54,7 @@ They will also place your logo in the upper left corner (240px wide x 140px high
 
 ## Known Limitations
 
-To preview restricted content, a user must have permission to view the relevant dataset version and download the relevant file and must have created an API Token for themselves in Dataverse. (Viewing public/published content does not require an API Token.) Note that API Tokens should be treated like passwords - if you use previewers on public computers, you may want to 'Recreate' your API Token afterward (to invalidate the previous one). Also note that API Tokens expire - you may need to 'Recreate' one if you have not used it in a while. (Note that later versions of Dataverse change API token management and should create/recreate API tokens as needed.)
+To preview restricted content, a user must have permission to view the relevant dataset version and download the relevant file. (Viewing public/published content does not require authentication/permission.) There are two authentication mechanisms available - passing the user's API Token, or, as of Dataverse v6.1 using signedUrls. Use of signedUrls is highly recommended as they limit Previewers to only the specific API calls listed (usually just for getting the dataset metadata and reading/downloading the file contents.) and have a limited lifetime (configurable, but e.g. an hour). In contrast, API Tokens are long-lived and allow use of any API calls the user has permissions for. Thus API Tokens should be treated like passwords - if you use previewers on public computers, you may want to 'Recreate' your API Token afterward (to invalidate the previous one). Also note that API Tokens expire - you may need to 'Recreate' one if you have not used it in a while. (Note that later versions of Dataverse change API token management and should create/recreate API tokens as needed.) Previewers using signedUrls will be registered with a set of "allowedApiCalls" and will not request the "{apiKey}" parameter - see [Dataverse 6.1+](6.1curlcommands.md) for examples.
 
 File creation date is only shown in the header for Dataverse v4.12+.
   
@@ -92,3 +94,4 @@ By committing code to the repository, Contributors are agreeing to make it avail
 
 - [Dataverse <= v5.1](pre5.2curlcommands.md)
 - [Dataverse 5.2+](5.2curlcommands.md)
+- [Dataverse 6.1+](6.1curlcommands.md)
