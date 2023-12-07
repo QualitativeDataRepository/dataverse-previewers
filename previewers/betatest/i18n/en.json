@@ -19,6 +19,7 @@
 	"zipPreviewText": "ZIP Preview",
 	"mdPreviewText": "Markdown Preview",
 	"ncmlPreviewText": "NcML Preview",
+	"rocratePreviewText": "RO-Crate Preview",
 	"prev": "Previous",
 	"next": "Next",
 	"pageText": "Page:",
