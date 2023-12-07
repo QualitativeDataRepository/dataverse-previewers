@@ -1,4 +1,4 @@
-var queryParams = null;
+var queryParams = {};
 var datasetUrl = null;
 var version = null;
 var fileDownloadUrl = null;
@@ -7,18 +7,13 @@ var locale = null;
 
 function startPreview(retrieveFile) {
     // Retrieve tool launch parameters from URL
-    queryParams = new URLSearchParams(window.location.search.substring(1));
-    var fileUrl = queryParams.get("siteUrl") + "/api/access/datafile/"
-        + queryParams.get("fileid") + "?gbrecs=true";
-    fileDownloadUrl = queryParams.get("siteUrl") + "/api/access/datafile/"
-        + queryParams.get("fileid") + "?gbrecs=false";
-    var versionUrl = queryParams.get("siteUrl") + "/api/datasets/"
-        + queryParams.get("datasetid") + "/versions/"
-        + queryParams.get("datasetversion");
-    var apiKey = queryParams.get("key");
+    var params = new URLSearchParams(window.location.search.substring(1));
+
     // Hide header and citation to embed on Dataverse file landing page.
-    previewMode = queryParams.get("preview");
-    locale = queryParams.get("locale");
+    previewMode = params.get('preview');
+    // i18n setup
+    locale = params.get('locale');
+
     if (locale == null) {
         locale = 'en';
     }
@@ -30,173 +25,224 @@ function startPreview(retrieveFile) {
 
     i18n.load('i18n/' + i18n.locale + '.json', i18n.locale).done(
         function() {
-            //Call previewer-specific translation code
-            translateBaseHtmlPage();
-
-            if (apiKey != null) {
-                fileUrl = fileUrl + "&key=" + apiKey;
-                versionUrl = versionUrl + "?key=" + apiKey;
-            }
-
-            if (inIframe()) {
-                callPreviewerScript(retrieveFile, fileUrl, {}, '', '');
-            } else {
+            if (params.has("callback")) {
+                var callback = atob(params.get("callback"));
                 // Get metadata for dataset/version/file
                 $.ajax({
                     dataType: "json",
-                    url: versionUrl,
-                    // headers: { 'X-Dataverse-key': apiKey },
+                    url: callback,
                     crossite: true,
                     success: function(json, status) {
-                        var mdFields = json.data.metadataBlocks.citation.fields;
-
-                        var title = "";
-                        var authors = "";
-                        datasetUrl = json.data.storageIdentifier;
-                        datasetUrl = datasetUrl
-                            .substring(datasetUrl.indexOf("//") + 2);
-                        version = queryParams.get("datasetversion");
-                        if (version === ":draft") {
-                            version = "DRAFT";
+                        queryParams = json.data.queryParameters;
+                        if (params.has('preview')) {
+                            queryParams.preview = params.get('preview');
                         }
-
-                        for (var field in mdFields) {
-                            if (mdFields[field].typeName === "title") {
-                                title = mdFields[field].value;
-                            }
-                            if (mdFields[field].typeName === "author") {
-                                var authorFields = mdFields[field].value;
-                                for (var author in authorFields) {
-                                    if (authors.length > 0) {
-                                        authors = authors + "; ";
-                                    }
-                                    authors = authors
-                                        + authorFields[author].authorName.value;
-                                }
+                        var urls = json.data.signedUrls;
+                        for (var i in urls) {
+                            var url = urls[i];
+                            switch (url.name) {
+                                case 'retrieveFileContents':
+                                    queryParams.fileUrl = url.signedUrl;
+                                    break;
+                                case 'downloadFile':
+                                    queryParams.fileDownloadUrl = url.signedUrl;
+                                    break;
+                                case 'getDatasetVersionMetadata':
+                                    queryParams.versionUrl = url.signedUrl;
+                                    break;
+                                default:
                             }
                         }
-                        var datafiles = json.data.files;
-                        var fileIndex = 0;
-                        for (var entry in datafiles) {
-                            if (JSON.stringify(datafiles[entry].dataFile.id) === queryParams
-                                .get("fileid")) {
-                                fileIndex = entry;
-                                callPreviewerScript(retrieveFile, fileUrl, datafiles[fileIndex].dataFile, title, authors);
-                            }
-                        }
+                        continuePreview(retrieveFile, queryParams);
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        reportFailure("Unable to retrieve metadata.", textStatus);
+                        reportFailure("Unable to use callback.", textStatus);
 
                     }
                 });
+
+            } else {
+                params.forEach((value, key) => {
+                    queryParams[key] = value;
+                });
+                var fileUrl = queryParams.siteUrl + "/api/access/datafile/"
+                    + queryParams.fileid + "?gbrecs=true";
+                var fileDownloadUrl = queryParams.siteUrl + "/api/access/datafile/"
+                    + queryParams.fileid + "?gbrecs=false";
+                var versionUrl = queryParams.siteUrl + "/api/datasets/"
+                    + queryParams.datasetid + "/versions/"
+                    + queryParams.datasetversion;
+                var apiKey = queryParams.key;
+                if (apiKey != null) {
+                    fileUrl = fileUrl + "&key=" + apiKey;
+                    fileDownloadUrl = fileUrl + "&key=" + apiKey;
+                    versionUrl = versionUrl + "?key=" + apiKey;
+                }
+                queryParams.fileUrl = fileUrl;
+                queryParams.fileDownloadUrl = fileDownloadUrl;
+                queryParams.versionUrl = versionUrl;
+                continuePreview(retrieveFile, queryParams);
             }
-        }
-    );
+        });
+}
+function continuePreview(retrieveFile, queryParams) {
+    //Call previewer-specific translation code
+    translateBaseHtmlPage();
+
+    if (inIframe()) {
+        callPreviewerScript(retrieveFile, queryParams.fileUrl, {}, '', '');
+    } else {
+        // Get metadata for dataset/version/file
+        $.ajax({
+            dataType: "json",
+            url: queryParams.versionUrl,
+            crossite: true,
+            success: function(json, status) {
+                var mdFields = json.data.metadataBlocks.citation.fields;
+
+                var title = "";
+                var authors = "";
+                datasetUrl = json.data.storageIdentifier;
+                datasetUrl = datasetUrl
+                    .substring(datasetUrl.indexOf("//") + 2);
+                version = queryParams.datasetversion;
+                if (version === ":draft") {
+                    version = "DRAFT";
+                }
+
+                for (var field in mdFields) {
+                    if (mdFields[field].typeName === "title") {
+                        title = mdFields[field].value;
+                    }
+                    if (mdFields[field].typeName === "author") {
+                        var authorFields = mdFields[field].value;
+                        for (var author in authorFields) {
+                            if (authors.length > 0) {
+                                authors = authors + "; ";
+                            }
+                            authors = authors
+                                + authorFields[author].authorName.value;
+                        }
+                    }
+                }
+                var datafiles = json.data.files;
+                var fileIndex = 0;
+                for (var entry in datafiles) {
+                    if (JSON.stringify(datafiles[entry].dataFile.id) == queryParams.fileid) {
+                        fileIndex = entry;
+                        callPreviewerScript(retrieveFile, queryParams.fileUrl, datafiles[fileIndex].dataFile, title, authors);
+                    }
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                reportFailure("Unable to retrieve metadata.", textStatus);
+
+            }
+        });
+    }
 
 }
 
-    function inIframe() {
-        try {
-            return window.self !== window.top;
-        } catch (e) {
-            return true;
-        }
+function inIframe() {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
     }
+}
 
-    function callPreviewerScript(retrieveFile, fileUrl, fileMetadata, title, authors) {
-        if (retrieveFile) {
-            $.ajax({
-                type: 'GET',
-                dataType: 'text',
-                // headers: { 'X-Dataverse-key': apiKey},
-                crosssite: true,
-                url: fileUrl,
-                success: function(data, status) {
-                    writeContentAndData(data, fileUrl,
-                        fileMetadata,
-                        title, authors);
-                },
-                error: function(request, status, error) {
-                    reportFailure(
-                        "Unable to retrieve file.",
-                        status);
-                }
-            });
+function callPreviewerScript(retrieveFile, fileUrl, fileMetadata, title, authors) {
+    if (retrieveFile) {
+        $.ajax({
+            type: 'GET',
+            dataType: 'text',
+            crosssite: true,
+            url: fileUrl,
+            success: function(data, status) {
+                writeContentAndData(data, fileUrl,
+                    fileMetadata,
+                    title, authors);
+            },
+            error: function(request, status, error) {
+                reportFailure(
+                    "Unable to retrieve file.",
+                    status);
+            }
+        });
 
-        } else {
-            writeContent(fileUrl,
-                fileMetadata, title,
-                authors);
-        }
+    } else {
+        writeContent(queryParams.fileUrl,
+            fileMetadata, title,
+            authors);
     }
+}
 
-    var filePageUrl = null;
+var filePageUrl = null;
 
-    function addStandardPreviewHeader(file, title, authors) {
-        if (previewMode !== 'true') {
-            // Add favicon from source Dataverse
-            $('head')
-                .append(
-                    $('<link/>')
+function addStandardPreviewHeader(file, title, authors) {
+    if (previewMode !== 'true') {
+        // Add favicon from source Dataverse
+        $('head')
+            .append(
+                $('<link/>')
                     .attr('sizes', '180x180')
                     .attr('rel', 'apple-touch-icon')
                     .attr(
                         'href',
-                        queryParams.get("siteUrl") +
+                        queryParams.siteUrl +
                         '/javax.faces.resource/images/fav/apple-touch-icon.png.xhtml'))
-                .append(
-                    $('<link/>')
+            .append(
+                $('<link/>')
                     .attr('type', 'image/png')
                     .attr('sizes', '16x16')
                     .attr('rel', 'icon')
                     .attr(
                         'href',
-                        queryParams.get("siteUrl") +
+                        queryParams.siteUrl +
                         '/javax.faces.resource/images/fav/favicon-16x16.png.xhtml'))
-                .append(
-                    $('<link/>')
+            .append(
+                $('<link/>')
                     .attr('type', 'image/png')
                     .attr('sizes', '32x32')
                     .attr('rel', 'icon')
                     .attr(
                         'href',
-                        queryParams.get("siteUrl") +
+                        queryParams.siteUrl +
                         '/javax.faces.resource/images/fav/favicon-32x32.png.xhtml'))
 
-                .append(
-                    $('<link/>')
+            .append(
+                $('<link/>')
                     .attr('color', '#da532c')
                     .attr('rel', 'mask-icon')
                     .attr(
                         'href',
-                        queryParams.get("siteUrl") +
+                        queryParams.siteUrl +
                         '/javax.faces.resource/images/fav/safari-pinned-tab.svg.xhtml'))
-                .append(
-                    $('<meta/>')
+            .append(
+                $('<meta/>')
                     .attr('content', '#da532c')
                     .attr('name', 'msapplication-TileColor'))
-                .append(
-                    $('<meta/>')
+            .append(
+                $('<meta/>')
                     .attr('content', '#ffffff')
                     .attr('name', 'theme-color'));
 
-            // Add logo from source Dataverse or use a local one, unless we are in preview mode
-            $('#logo')
-                .attr('src', queryParams.get("siteUrl") + '/logos/preview_logo.png')
-                .attr(
-                    'onerror',
-                    'this.onerror=null;this.src="images/logo_placeholder.png";');
-        }
-        //Footer
+        // Add logo from source Dataverse or use a local one, unless we are in preview mode
+        $('#logo')
+            .attr('src', queryParams.siteUrl + '/logos/preview_logo.png')
+            .attr(
+                'onerror',
+                'this.onerror=null;this.src="images/logo_placeholder.png";');
+    }
+    //Footer
     var footer = $.i18n("footer");
     $('body').append($('<footer/>').html(footer).attr('id', 'footer'));
 
-        if (previewMode !== 'true') {
-            options = {
-                "stripIgnoreTag": true,
-                "stripIgnoreTagBody": ['script', 'head']
-            }; // Custom rules  for filterXSS
+    if (previewMode !== 'true') {
+        options = {
+            "stripIgnoreTag": true,
+            "stripIgnoreTagBody": ['script', 'head']
+        }; // Custom rules  for filterXSS
         //Translated text used in the preview header
 
         var filenameText = $.i18n("filenameText");
@@ -207,7 +253,7 @@ function startPreview(retrieveFile) {
         var closePreviewText = $.i18n("closePreviewText");
         var versionText = $.i18n("versionText");
         var descriptionText = $.i18n("descriptionText");
-        filePageUrl = queryParams.get("siteUrl") + "/file.xhtml?";
+        filePageUrl = queryParams.siteUrl + "/file.xhtml?";
         if (!("persistentId" in file) || file.persistentId.length == 0) {
             filePageUrl = filePageUrl + "fileId=" + file.id;
         } else {
@@ -217,7 +263,7 @@ function startPreview(retrieveFile) {
         var header = $('.preview-header').append($('<div/>'));
         header.append($("<div/>").append($("<span/>").text(filenameText)).append(
             $('<a/>').attr('href', filePageUrl).text(file.filename)).attr('id',
-            'filename'));
+                'filename'));
         if ((file.description != null) && (file.description.length > 0)) {
             header.append($('<div/>').html(filterXSS("<span>" + descriptionText + "</span>" + file.description), options));
         }
@@ -225,7 +271,7 @@ function startPreview(retrieveFile) {
             $('<span/>').attr('id', 'dataset').append(
                 $('<a/>').attr(
                     'href',
-                    queryParams.get("siteUrl")
+                    queryParams.siteUrl
                     + "/dataset.xhtml?persistentId=doi:"
                     + datasetUrl + "&version=" + version).text(
                         title))).append(
@@ -233,7 +279,7 @@ function startPreview(retrieveFile) {
                                 $('<span/>').text(byText)).append(
                                     $('<span/>').text(authors).attr('id', 'authors')));
         header.append($("<div/>").addClass("btn btn-default").html(
-            "<a href='" + fileDownloadUrl + "'>" + downloadFileText + "</a>"));
+            "<a href='" + queryParams.fileDownloadUrl + "'>" + downloadFileText + "</a>"));
         header.append($("<div/>").addClass("btn btn-default").html(
             "<a href=\"javascript:window.close();\">" + closePreviewText + "</a>"));
         if (file.creationDate != null) {
