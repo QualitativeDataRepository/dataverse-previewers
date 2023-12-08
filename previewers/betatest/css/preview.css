@@ -2,12 +2,20 @@
     display: inline-block;
     width: 58%;
     text-align: center;
+    font-size: 36px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 500;
 }
 
 .page-title a {
     color: #56B7CB;
 }
 
+/* Much of .preview-header styling is to replace bootstrap styling.
+This should allow previewers to not use bootstrap which could potentially interfere with the display of the contents.
+This has been done for the Rich Html Previewer, which also has the reverse issue 
+- without these scoped stylings, the content styling could interfere with the header.
+*/
 .preview-header {
     font-size: 14px;
     font-family: sans-serif;
@@ -21,12 +29,64 @@
     padding: 15px 15px 5px 15px;
 }
 
+@media (min-width: 992px) {
+    .preview-header.container {
+        width: 970px;
+    }
+}
+
+@media (min-width: 768px) {
+    preview-header.container {
+        width: 750px;
+    }
+}
+
+.preview-header.container {
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.preview-header .btn {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: normal;
+    text-align: center;
+    vertical-align: middle;
+    touch-action: manipulation;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 1.428571429;
+    border-radius: 0px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.preview-header .btn-default {
+    background-color: white;
+    padding: 6px 12px;
+    border-color: #ccc;
+}
+
 .preview-header a {
     color: #2D6A9F;
 }
 
 .preview-header div {
     margin: 10px 5px 5px 0px;
+}
+
+.preview-header .center {
+    margin: auto;
+    width: fit-content;
+    text-align: center;
+    color: chocolate;
 }
 
 .preview-header #filename {
@@ -68,6 +128,7 @@
     margin-left: 40px;
     width: 240px;
     min-height: 140px;
+    vertical-align: middle;
 }
 
 #footer {
