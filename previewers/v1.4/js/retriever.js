@@ -236,7 +236,7 @@ function addStandardPreviewHeader(file, title, authors) {
     }
     //Footer
     var footer = $.i18n("footer");
-    $('body').append($('<footer/>').html(footer).attr('id', 'footer'));
+    $('body').append($('<footer/>').html(footer).attr('id', 'preview-footer'));
 
     if (previewMode !== 'true') {
         options = {
