@@ -1,6 +1,6 @@
 # Dataverse Previewers
 
-A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
+A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). v1.4 includes 17 previewers covering 34+ MIMEtypes. Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
 
 As of Dataverse 6.1, Previewers can use temporary signedUrls when accessing restricted files rather than long-lived API tokens. (SignedUrls were introduced in Dataverse 5.13 but did not work with Dataset PrivateUrl access until 6.1)
 
