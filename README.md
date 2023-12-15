@@ -1,6 +1,6 @@
 # Dataverse Previewers
 
-A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
+A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). v1.4 includes 17 previewers covering 34+ MIMEtypes. Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
 
 As of Dataverse 6.1, Previewers can use temporary signedUrls when accessing restricted files rather than long-lived API tokens. (SignedUrls were introduced in Dataverse 5.13 but did not work with Dataset PrivateUrl access until 6.1)
 
@@ -91,14 +91,14 @@ Contributors are expected to keep the master branch in a 'production-ready' stat
 
 By committing code to the repository, Contributors are agreeing to make it available under the [MIT Open Source license](https://gdcc/dataverse-previewers/LICENSE).
 
-## Example Curl commands to configure these tools with your Dataverse instance. The examples configure Previewers from the specified location within https://github.io/gdcc/ corresponding to a given branch. TO use older versions or locally installed versions of the previewers, you can change the "toolUrl" being used.
+## Example Curl commands to configure these tools with your Dataverse instance. 
+The examples configure Previewers from the specified location within https://github.io/gdcc/ corresponding to a given branch. To use older versions or locally installed versions of the previewers, you can change the "toolUrl" being used.
 
-Release of v1.4 is expected Dec. 2023
 
-BetaTest Only (for testing, may change, not recommended for a production site):
+Previewers v1.4 (with betatest versions of newer previewers as noted)
 - [Dataverse 6.1+](6.1curlcommands.md) - using SignedUrls
-Previewers v1.3 (with betatest versions of newer previewers as noted)
 - [Dataverse 5.2+](5.2curlcommands.md) - using API tokens, not recommended beyond Dataverse 6.0
-Previewers v1.3 (doesn't include newer previewers, configuration examples intended for Dataverse < v5.2)
+
+Previewers v1.3 (doesn't include newer previewers, configuration examples intended for Dataverse < v5.2. Newer previewers may work with Dataverse < v5.2 but they have not been tested.)
 - [Dataverse <= v5.1](pre5.2curlcommands.md)
 
