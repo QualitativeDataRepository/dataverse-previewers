@@ -121,6 +121,7 @@ This has been done for the Rich Html Previewer, which also has the reverse issue
     margin: 20px auto;
     min-width: 600px;
     display: table;
+    max-width: 100%;
 }
 
 #logo {
