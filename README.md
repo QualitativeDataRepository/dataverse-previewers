@@ -43,7 +43,7 @@ or, to just change between versions after you've switched to using the gdcc repo
     update externaltool set toolurl=REPLACE(toolurl, 'v1.2', 'v1.3');
 
 ## Fully Local Installation
-By default previewers reference several JavaScript libraries from their original web locations. If you would like to have a local installation that don't require access to other websites, you can use the localinstall.sh script. Download the repository to your local machine, change to the root directory where the localinstall.sh script is and run
+By default, previewers reference several JavaScript libraries and style files from their original web locations. If you would like to have a local installation that doesn't require access to other websites, you can use the localinstall.sh script. Download the repository to your local machine, change to the root directory where the localinstall.sh script is and run
 
     ./localinstall.sh previewers/v1.4 https://<your host>/<your base path to the previewers>
 
