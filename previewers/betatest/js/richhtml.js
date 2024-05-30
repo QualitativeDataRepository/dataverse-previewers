@@ -25,9 +25,15 @@ function writeContentAndData(data, fileUrl, file, title, authors) {
         header.append($('<div/>').html($.i18n('richContentWarning')).addClass('center'));
         subheader = $('<div/>').appendTo(header).addClass('center');
         subheader.append($("<div/>").addClass("btn btn-default")
-                 .html("<a href=\"javascript:$('.preview').html(theData);\">" + $.i18n('displayWithRichContent') + "</a>"));
+             .html($('<a/>').html( $.i18n('displayWithRichContent'))
+                 .click(function(){console.log('Click');$('.preview').html(theData);})
+             )
+        );
         subheader.append($("<div/>").addClass("btn btn-default")
-                  .html("<a href=\"javascript:$('.preview').html(filterXSS(theData,options));\">" + $.i18n('displayWithoutRichContent') + "</a>"));
+             .html($('<a/>').html( $.i18n('displayWithoutRichContent'))
+                 .click(function(){console.log('Click');$('.preview').html(filterXSS(theData,options));})
+             )
+        );
     } else {
         //Display filtered content as for normal HTML Previewer
         $('.preview').append($("<div/>").html(filterXSS(data)));
