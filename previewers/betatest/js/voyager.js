@@ -15,5 +15,5 @@ function writeContent(fileUrl, file, title, authors) {
     const fileName = fileUrl.substring(lastIndexOfChar + 1);
     console.log(fileUrl);
     $("voyager-explorer").attr("root", rootUrl).attr("model", fileName);
-    $.getScript("lib/voyager-explorer.min.v0.17.0.gdcc.js");
+    $.getScript("lib/voyager-explorer.min.v0.42.1.gdcc.js");
 }
