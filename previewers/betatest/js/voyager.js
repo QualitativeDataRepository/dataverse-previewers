@@ -14,8 +14,10 @@ function writeContent(fileUrl, file, title, authors) {
     const rootUrl = fileUrl.substring(0, lastIndexOfChar + 1);
     const fileName = fileUrl.substring(lastIndexOfChar + 1);
     console.log(fileUrl);
-    $("voyager-explorer").attr("root", rootUrl).attr("model", fileName);
+    // To use v0.43.0, we have to add the quality attribute
+    // See https://github.com/Smithsonian/dpo-voyager/issues/297
+    $("voyager-explorer").attr("root", rootUrl).attr("model", fileName).attr("quality", "High");
     //For Dataverse 6.4+, this can use the standard script:
     //$.getScript("https://3d-api.si.edu/resources/js/v0.42.1/voyager-explorer.min.js");
-    $.getScript("lib/voyager-explorer.v0.42.1.gdcc.min.js");
+    $.getScript("lib/voyager-explorer.v0.43.0.gdcc.min.js");
 }
