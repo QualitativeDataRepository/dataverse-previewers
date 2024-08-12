@@ -15,5 +15,7 @@ function writeContent(fileUrl, file, title, authors) {
     const fileName = fileUrl.substring(lastIndexOfChar + 1);
     console.log(fileUrl);
     $("voyager-explorer").attr("root", rootUrl).attr("model", fileName);
-    $.getScript("https://3d-api.si.edu/resources/js/v0.43.0/voyager-explorer.min.js");
+    //For Dataverse 6.4+, this can use the standard script:
+    //$.getScript("https://3d-api.si.edu/resources/js/v0.42.1/voyager-explorer.min.js");
+    $.getScript("lib/voyager-explorer.v0.42.1.gdcc.min.js");
 }
