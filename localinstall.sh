@@ -25,7 +25,7 @@ source replace_js.sh
 cat urls_js.txt
 
 echo Downloading local copies of remote CSS files:
-sed -n 's/.*<link.*href="\(http[^"]*\)".*/\1/p' *.html | sort -u | sed -n 's/^\(.*\/\)*\(.*\)/sed -i \x27s,\0\,lib\/\2,\x27 *.html/p' > replace_css.sh
+sed -n 's/.*<link.*href="\(http[^"]*\)".*/\1/p' *.html | sort -u | sed -n 's/^\(.*\/\)*\(.*\)/sed -i \x27s,\0\,css\/\2,\x27 *.html/p' > replace_css.sh
 sed -n 's/.*<link.*href="\(http[^"]*\)".*/\1/p' *.html | sort -u > urls_css.txt
 source replace_css.sh
 cat urls_css.txt
