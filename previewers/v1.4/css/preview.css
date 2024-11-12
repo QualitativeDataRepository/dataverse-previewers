@@ -204,8 +204,3 @@ This has been done for the Rich Html Previewer, which also has the reverse issue
     word-break: break-all;
     overflow-y: auto;
 }
-
-.preview video{
-    max-width: 100%;
-    max-height: 100%;
-}
