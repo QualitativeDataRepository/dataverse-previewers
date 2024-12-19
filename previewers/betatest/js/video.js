@@ -51,7 +51,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
         .filter(item => regex.test(item.label))
         .reduce((map, item) => {
             const lang = item.label.match(regex)[2];
-            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}?gbrecs=true&amp;key=93423e09-848c-47cb-a979-219dafcfa4da`;
+            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}`dropped
             map.set(url, lang);
             return map;
     }, new Map());
