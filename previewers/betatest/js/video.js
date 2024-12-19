@@ -85,7 +85,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
         defaultTrackUrl = trackUrlWithoutLang;
     }
     if (!defaultTrackUrl && subtitles) {
-        defaultTrackUrl = subtitles.values().next().value;
+        defaultTrackUrl = subtitles.keys().next().value;
     }
 
     const videoElement = $("<video/>")
@@ -103,6 +103,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
         } else {
             trackElement.attr("label", "???");
         }
+        console.log("url: ", url, "defaultTrackUrl: ", defaultTrackUrl);
         if (url === defaultTrackUrl) {
             trackElement.attr("default", true);
         }
