@@ -47,12 +47,16 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
     const regex = new RegExp(`${baseName}(\\.([-a-z]+))?\\.vtt$`, 'i')
 
     // create a map of URLs with their (optional) language
+    let trackUrlWithoutLang = null;
     const subtitles = files
         .filter(item => regex.test(item.label))
         .reduce((map, item) => {
             const lang = item.label.match(regex)[2];
-            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}`dropped
+            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}`
             map.set(url, lang);
+            if (!lang) {
+                trackUrlWithoutLang = url;
+            }
             return map;
     }, new Map());
 
@@ -67,7 +71,6 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
 
     // determine default track
     let defaultTrackUrl = null;
-    let trackUrlWithoutLang = null;
     loop: for (const lang of userLanguages) {
         for (const [url, trackLang] of sortedSubtitles) {
             if (trackLang) {
@@ -75,8 +78,6 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
                     defaultTrackUrl = url;
                     break loop;
                 }
-            } else {
-                trackUrlWithoutLang = url;
             }
         }
     }
