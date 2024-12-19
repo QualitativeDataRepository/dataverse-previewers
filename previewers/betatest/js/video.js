@@ -52,7 +52,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
         .filter(item => regex.test(item.label))
         .reduce((map, item) => {
             const lang = item.label.match(regex)[2];
-            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}`
+            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}?gbrecs=true`
             map.set(url, lang);
             if (!lang) {
                 trackUrlWithoutLang = url;
