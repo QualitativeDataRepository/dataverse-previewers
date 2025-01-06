@@ -13,6 +13,11 @@ function writeContent(fileUrl, file, title, authors) {
     const queryParams = new URLSearchParams(window.location.search.substring(1));
     const id = queryParams.get("datasetid");
     const siteUrl = queryParams.get("siteUrl");
+    if (!siteUrl || !id) {
+        // fallback to simple video element in case of signed URLs
+        $(".preview").append($("<video/>") .prop("controls", true) .append($('<source/>').attr("src", fileUrl)))
+        return;
+    }
     const versionUrl = `${siteUrl}/api/datasets/${id}/versions/`
         + queryParams.get("datasetversion");
     const videoId =queryParams.get("fileid") * 1; // converted to number
