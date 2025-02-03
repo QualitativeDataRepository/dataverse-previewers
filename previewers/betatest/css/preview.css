@@ -122,6 +122,7 @@ This has been done for the Rich Html Previewer, which also has the reverse issue
     min-width: 600px;
     display: table;
     max-width: 100%;
+    max-height: 100%;
 }
 
 #logo {
@@ -204,9 +205,4 @@ This has been done for the Rich Html Previewer, which also has the reverse issue
     max-height: 500px;
     word-break: break-all;
     overflow-y: auto;
-}
-
-.preview video{
-    max-width: 100%;
-    max-height: 100%;
 }
