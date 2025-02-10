@@ -13,13 +13,15 @@ function writeContent(fileUrl, file, title, authors) {
     const queryParams = new URLSearchParams(window.location.search.substring(1));
     const id = queryParams.get("datasetid");
     const siteUrl = queryParams.get("siteUrl");
+    const apiKey = queryParams.get("key");
     if (!siteUrl || !id) {
         // fallback to simple video element in case of signed URLs
         $(".preview").append($("<video/>") .prop("controls", true) .append($('<source/>').attr("src", fileUrl)))
         return;
     }
     const versionUrl = `${siteUrl}/api/datasets/${id}/versions/`
-        + queryParams.get("datasetversion");
+        + queryParams.get("datasetversion")
+        + (apiKey?`?key=${apiKey}`:'');
     const videoId =queryParams.get("fileid") * 1; // converted to number
     const userLanguages = [...navigator.languages];
     const locale = queryParams.get("locale");
@@ -33,16 +35,16 @@ function writeContent(fileUrl, file, title, authors) {
         crosssite: true,
         url: versionUrl,
         success: function(data, status) {
-            appendVideoElements(fileUrl, videoId, data.data.files, siteUrl, userLanguages);
+            appendVideoElements(fileUrl, videoId, data.data.files, siteUrl, userLanguages, apiKey);
         },
-        error: function(request, status, error) {
+        error: function(response, status, error) {
             // fallback to simple video element
             $(".preview").append($("<video/>") .prop("controls", true) .append($('<source/>').attr("src", fileUrl)))
         }
     });
 }
 
-function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
+function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages, apiKey) {
 
     const baseName = files // the video file name without extension
         .find(item => item.dataFile.id === videoId)
@@ -57,7 +59,9 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages) {
         .filter(item => regex.test(item.label))
         .reduce((map, item) => {
             const lang = item.label.match(regex)[2];
-            const url = `${siteUrl}/api/access/datafile/${item.dataFile.id}?gbrecs=true`
+            const url = apiKey
+                ?`${siteUrl}/api/access/datafile/${item.dataFile.id}?gbrecs=true&amp;key=${apiKey}`
+                :`${siteUrl}/api/access/datafile/${item.dataFile.id}?gbrecs=true`
             map.set(url, lang);
             if (!lang) {
                 trackUrlWithoutLang = url;
