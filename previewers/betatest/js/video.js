@@ -26,7 +26,7 @@ function writeContent(fileUrl, file, title, authors) {
     const userLanguages = [...navigator.languages];
     const locale = queryParams.get("locale");
     if (locale && !userLanguages.includes(locale)) {
-        userLanguages.unshift(locale); // add as first element
+        userLanguages.unshift(locale); // add query argument as first element
     }
 
     $.ajax({
@@ -67,7 +67,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages, ap
                 trackUrlWithoutLang = url;
             }
             return map;
-    }, new Map());
+        }, new Map());
 
     // sort subtitles by language value, 'de-CH' before 'de'
     const sortedSubtitles = new Map([...subtitles.entries()].sort((a, b) => {
@@ -81,6 +81,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages, ap
     // determine default track
     let defaultTrackUrl = null;
     loop: for (const lang of userLanguages) {
+        // match user preferences with available subtitles
         for (const [url, trackLang] of sortedSubtitles) {
             if (trackLang) {
                 if (trackLang === lang || trackLang.startsWith(lang.replace(/-.*/, ''))) {
@@ -90,10 +91,12 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages, ap
             }
         }
     }
-    if (!defaultTrackUrl) {
+    if (!defaultTrackUrl && subtitles) {
+        // no match found, use track without language
         defaultTrackUrl = trackUrlWithoutLang;
     }
-    if (!defaultTrackUrl && subtitles) {
+    if (!defaultTrackUrl && subtitles.size === 1) {
+        // no match found, and only one track available, use that one
         defaultTrackUrl = subtitles.keys().next().value;
     }
 
@@ -110,7 +113,7 @@ function appendVideoElements(fileUrl, videoId, files, siteUrl, userLanguages, ap
                 .attr("label", trackLang)
                 .attr("srclang", trackLang);
         } else {
-            trackElement.attr("label", "???");
+            trackElement.attr("label", "default");
         }
         console.log("url: ", url, "defaultTrackUrl: ", defaultTrackUrl);
         if (url === defaultTrackUrl) {
