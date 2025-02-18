@@ -9,6 +9,7 @@ function translateBaseHtmlPage() {
 
 function writeContent(fileUrl, file, title, authors) {
     addStandardPreviewHeader(file, title, authors);
+    const queryParams = new URLSearchParams(window.location.search.substring(1));
     var ncmlUrl = queryParams.get("siteUrl") + "/api/access/datafile/" + queryParams.get("fileid") + "/auxiliary/NcML/0.1";
     // copied from text.js
     var whiteList = {
