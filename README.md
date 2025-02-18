@@ -1,6 +1,6 @@
 # Dataverse Previewers
 
-A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
+A collection of data file previewers that conform to the [Dataverse](https://dataverse.org) external tools interface, originally developed by the [Qualitative Data Repository](https://qdr.syr.edu). v1.4 includes 17 previewers covering 34+ MIMEtypes. Earlier versions of Dataverse (v4.11+) make previewers available through the external tools button on Dataset pages (left). Newer versions (v4.18+) also use previewers for embedded display on Datafile pages (right). Even more recent versions (5.2+) can distinguish 'preview' and 'explore' tools and display them in different ways/separate places.
 
 As of Dataverse 6.1, Previewers can use temporary signedUrls when accessing restricted files rather than long-lived API tokens. (SignedUrls were introduced in Dataverse 5.13 but did not work with Dataset PrivateUrl access until 6.1)
 
@@ -42,6 +42,12 @@ or, to just change between versions after you've switched to using the gdcc repo
 
     update externaltool set toolurl=REPLACE(toolurl, 'v1.2', 'v1.3');
 
+## Fully Local Installation
+By default, previewers reference several JavaScript libraries and style files from their original web locations. If you would like to have a local installation that doesn't require access to other websites, you can use the localinstall.sh script. Download the repository to your local machine, change to the root directory where the localinstall.sh script is and run
+
+    ./localinstall.sh previewers/v1.4 https://<your host>/<your base path to the previewers>
+
+and the script will download all external JavaScript and css files required by the previewers for the version you specified and will update the example configuration commands in the 6.1curlcommands.md, 5.2curlcommands.md and pre5.2curlcommands.md files to reference your local URL. In the case above, using the parameters previewers/v1.4 and https://example.com/path would result example curl commands where the TextPreview.html would be available at https://example.com/path/previewers/v1.4/TextPreview.html.
 
 ## How do they work?
 
@@ -66,6 +72,8 @@ The image previewer only works with image/tiff files on some browsers (as of ~Ja
 
 The original tools were developed through the [Qualitative Data Repository](https://qdr.syr.edu) but are being offered to the Dataverse community at large.
 
+[qqmyers](https://github.com/qqmyers) - developer of the original previewer framework, contributions to the Rich Html Previewer, Voyager Previewer, updating to use signed URLs
+
 The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/anncie-pcss).
 
 [pdurbin](https://github.com/pdurbin) updated the retriever.js script to allow previewers to be embedded directly in the Dataverse file pages.
@@ -76,9 +84,12 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 
 [Max Planck Digital Library](https://github.com/MPDL) contributed the ZIP Previewer.
 
-[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer.
+[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer and the RO-Crate previewer.
 
-[Jan Range](https://github.com/JR-1991) contributed the H5Web Previewer.
+[Jan Range](https://github.com/JR-1991) contributed the H5Web Previewer, Rich Html Previewer.
+
+[Paul Boon](https://github.com/PaulBoon) contributed the 3D Previewer.
+
 
 ## How can I help?
 
@@ -90,8 +101,13 @@ Contributors are expected to keep the master branch in a 'production-ready' stat
 
 By committing code to the repository, Contributors are agreeing to make it available under the [MIT Open Source license](https://gdcc/dataverse-previewers/LICENSE).
 
-## Curl commands to configure these tools with your Dataverse instance
+## Example Curl commands to configure these tools with your Dataverse instance. 
+The examples configure Previewers from the specified location within https://github.io/gdcc/ corresponding to a given branch. To use older versions or locally installed versions of the previewers, you can change the "toolUrl" being used.
 
+Previewers v1.4 (with betatest versions of newer previewers as noted, e.g. 3D Previewer)
+- [Dataverse 6.1+](6.1curlcommands.md) - using SignedUrls
+- [Dataverse 5.2+](5.2curlcommands.md) - using API tokens, not recommended beyond Dataverse 6.0
+
+Previewers v1.3 (doesn't include newer previewers, configuration examples intended for Dataverse < v5.2. Newer previewers may work with Dataverse < v5.2 but they have not been tested.)
 - [Dataverse <= v5.1](pre5.2curlcommands.md)
-- [Dataverse 5.2+](5.2curlcommands.md)
-- [Dataverse 6.1+](6.1curlcommands.md)
+
