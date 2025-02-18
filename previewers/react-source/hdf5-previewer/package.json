@@ -21,9 +21,9 @@
     "lint:tsc": "tsc"
   },
   "dependencies": {
-    "@h5web/app": "7.x",
-    "@h5web/h5wasm": "7.x",
-    "axios": "1.6.0",
+    "@h5web/app": "12.x",
+    "@h5web/h5wasm": "12.x",
+    "axios": "1.7.4",
     "axios-hooks": "4.0.0",
     "normalize.css": "8.0.1",
     "react": "17.0.2",
@@ -37,11 +37,11 @@
     "@types/react": "^17.0.56",
     "@types/react-dom": "^17.0.19",
     "@types/react-router-dom": "5.3.3",
-    "@vitejs/plugin-react": "2.2.0",
+    "@vitejs/plugin-react": "4.3.4",
     "eslint": "8.28.0",
     "eslint-config-galex": "4.4.2",
     "typescript": "4.9.4",
-    "vite": "3.2.10",
+    "vite": "6.0.11",
     "vite-plugin-checker": "0.5.6",
     "vite-plugin-eslint": "1.8.1"
   }

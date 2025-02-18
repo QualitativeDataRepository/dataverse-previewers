@@ -23,7 +23,9 @@ function writeContent(fileUrl, file, title, authors) {
           var csv = e.target.result;
           var data = Papa.parse(csv, {
             header: true,
-            skipEmptyLines: true
+            skipEmptyLines: true,
+            quoteChar:'"',
+            delimitersToGuess:['\t',',']
           })
 
           handsontableContainer.innerHTML = '';
