@@ -23,7 +23,7 @@
   "dependencies": {
     "@h5web/app": "14.x",
     "@h5web/h5wasm": "14.x",
-    "axios": "1.8.2",
+    "axios": "1.12.0",
     "axios-hooks": "5.1.1",
     "normalize.css": "8.0.1",
     "react": "17.0.2",
