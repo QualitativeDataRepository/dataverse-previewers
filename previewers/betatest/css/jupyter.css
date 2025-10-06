@@ -105,9 +105,9 @@
 }
 
 /* 
-         * Output cell styling with distinctive left border and background
-         * Visually separates output from input cells for better readability
-         */
+* Output cell styling with distinctive left border and background
+* Visually separates output from input cells for better readability
+*/
 .nb-output {
     margin: var(--notebook-padding);
     padding: var(--notebook-padding);
@@ -165,9 +165,9 @@
 }
 
 /* 
-         * Table styling for data presentation in notebook outputs
-         * Provides clean, readable formatting for tabular data commonly found in data science notebooks
-         */
+* Table styling for data presentation in notebook outputs
+* Provides clean, readable formatting for tabular data commonly found in data science notebooks
+*/
 #notebook table {
     border-collapse: collapse;
     border-spacing: 0;
