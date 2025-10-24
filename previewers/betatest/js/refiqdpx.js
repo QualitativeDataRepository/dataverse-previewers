@@ -8,7 +8,7 @@ const entryMap = {};
 
 async function readZip(fileUrl) {
         wait = $('<div/>').attr('id', 'waiting');
-        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').appendTo(wait);
+        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').attr('id','throbber').appendTo(wait);
         $('<span/>').text(' Reading QPDX file. Parsing Contents...').appendTo(wait);
         wait.appendTo($('.preview'));
 
@@ -25,12 +25,12 @@ async function readZip(fileUrl) {
         entries = await reader.getEntries();
         if (entries.length) {
 
-            entries.forEach(function(entry, index) {
-                let filename = entry.filename;
 
-              if (filename === 'project.qde') {
-
-                var projectBlob = entry.getData(new zip.TextWriter(), {
+            // First pass: Find and process the .qde file
+            const qdeEntry = entries.find(entry => entry.filename.endsWith('.qde'));
+            
+            if (qdeEntry) {
+                var projectBlob = qdeEntry.getData(new zip.TextWriter(), {
                   onprogress: (index, max) => {
 
                     const percent = Math.round(index / max * 100);
@@ -41,12 +41,17 @@ async function readZip(fileUrl) {
                 });
                 projectBlob.then(text => parseData(text)).catch((err)=> {
                     document.getElementById('waiting').innerHTML= "<span>Unable to continue: " + err + "</span>";
-                    });
-              }
-              else if (!entry.directory) {
-                 entryMap[entry.filename] = index;
-              }
-            });
+                });
+
+                // Second pass: Build entry map for all other files
+                entries.forEach(function(entry, index) {
+                    if (!entry.directory && !entry.filename.endsWith('.qde')) {
+                        entryMap[entry.filename] = index;
+                    }
+                });
+            } else {
+                document.getElementById('waiting').innerHTML= "<span>Unable to continue: No .qde file found in archive</span>";
+            }
         }
 
             // close the ZipReader
