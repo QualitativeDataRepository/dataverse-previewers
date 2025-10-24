@@ -63,7 +63,7 @@ function parseData2(data) {
     // Check if it hasn't been registered already to avoid duplicates
     if ($.fn.dataTable && $.fn.dataTable.ext.search.length === 0) {
         $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-            console.log('filtering: '+ dataIndex);
+            console.log('filtering: ' + dataIndex);
             var filterTerm = $('#filterby');
             if (settings.nTable.id == filterTerm.val() || filterTerm.val() == 'None' || selectedGUIDs.length === 0) {
                 return true;
@@ -71,12 +71,17 @@ function parseData2(data) {
                 // get current selections - just keep GUIDs and just look for those GUIDs somewhere
                 console.log('Deciding');
                 console.log(data[0]);
+                //console.log($('.notetable tbody tr:eq('+dataIndex+')').html());
                 let found = false;
                 selectedGUIDs.forEach(guid => {
                     console.log("Looking for " + guid);
+                    //var curGuid = settings.nTBody.parentElement.childNodes[1].childNodes[0].dataset.guid;
+
+                    //var curGuid = findDataAttribute('data-guid', settings.aoData[dataIndex].nTr.attributes);
                     var curGuid = findDataAttribute('data-guid', settings.aoData[dataIndex].nTr.attributes);
                     console.log('Examining ' + curGuid);
-                    //If the current row includes a selected guid in its list of related items (forward/child relationships) then show it
+                    // If the current row includes a selected guid in its list of related items (forward/child relationships) then show it
+                    //let matches = $('[data-guid="' + curGuid + '"]').attr('data-matches');
                     let matches = findDataAttribute('data-matches', settings.aoData[dataIndex].nTr.attributes);
                     console.log('Forward Matching: ' + matches);
                     if (matches.includes(guid)) {
@@ -84,8 +89,8 @@ function parseData2(data) {
                     } else {
                         //if the guid for the current row shows up in the list of forward/child relationships for one of the selected items, show it
                         let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches');
-                        if(typeof revMatches ==='undefined') {
-                            revMatches='';
+                        if (typeof revMatches === 'undefined') {
+                            revMatches = '';
                         }
                         console.log('Rev matches: ' + revMatches);
                         console.log('curGUID: ' + curGuid);
