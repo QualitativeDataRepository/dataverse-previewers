@@ -67,18 +67,34 @@ The CDI Previewer is a comprehensive viewer and editor for DDI-CDI (Data Documen
 previewers/betatest/
 ├── CdiPreview.html          # Main previewer (self-contained)
 └── shapes/
-    └── CDIF-Discovery-Core-Shapes.ttl  # SHACL shapes
+    └── ddi-cdi-official.ttl  # DDI-CDI official SHACL shapes (fallback)
 ```
 
 ## Configuration
 
 ### SHACL Shapes Location
-The previewer loads SHACL shapes from:
-```
-shapes/CDIF-Discovery-Core-Shapes.ttl
-```
+The previewer can load SHACL shapes from multiple sources (selectable via dropdown):
 
-Update this file to modify validation rules, required fields, data types, and property definitions.
+1. **DDI-CDI 1.0 (Official)** - `https://raw.githubusercontent.com/ddi-cdi/ddi-cdi.github.io/main/m2t-ng/DDI-CDI_1-0/encoding/shacl/ddi-cdi.shacl.ttl`
+   - Full DDI-CDI class definitions with `sh:targetClass`
+   - Best integration with the previewer
+   - Works with all CDI types (Activity, DataSet, Variable, etc.)
+
+2. **CDIF Discovery Core** - `https://raw.githubusercontent.com/Cross-Domain-Interoperability-Framework/validation/main/CDIF-Discovery-Core-Shapes.ttl`
+   - Cross-domain metadata profile shapes
+   - Uses `sh:SPARQLTarget` for root nodes (limited previewer support)
+   - Focuses on schema.org Dataset metadata requirements
+   - **Current Limitation**: Property suggestions won't appear for nodes matched via SPARQL targets
+
+3. **Local Built-in** - `shapes/ddi-cdi-official.ttl`
+   - DDI-CDI official shapes cached locally
+   - Fallback when online shapes unavailable
+   - Automatically kept in sync with official release
+
+4. **Custom URL** - User-provided SHACL shape URL
+   - Enter any accessible Turtle (.ttl) file URL
+
+**Recommendation**: Use "DDI-CDI 1.0 (Official)" for files with DDI-CDI types. Use "CDIF Discovery Core" for schema.org-based metadata (note: limited property suggestion support until `sh:SPARQLTarget` is implemented).
 
 ### Dataverse Integration
 The previewer expects these URL parameters:
@@ -153,7 +169,7 @@ CdiPreview.html?testfile=SimpleSample.jsonld
 
 ## SHACL Shape Requirements
 
-The previewer expects SHACL shapes to include:
+The previewer currently supports SHACL shapes with `sh:targetClass` for matching shapes to data nodes:
 
 ```turtle
 # Example property shape
@@ -176,6 +192,8 @@ ex:NodeShape
     sh:property ex:PropertyShape ;
     .
 ```
+
+**Note on sh:SPARQLTarget**: Shapes using `sh:SPARQLTarget` (like CDIF-Discovery-Core-Shapes.ttl) are not yet fully supported. The previewer will still display all data but won't provide SHACL-based property suggestions or classifications for nodes matched via SPARQL targets. This is a planned enhancement.
 
 ## Customization
 
@@ -222,9 +240,11 @@ Key JavaScript functions:
 3. Available test files:
    - SimpleSample.jsonld (minimal example)
    - SimpleSample2.jsonld
-   - se_na2so4-XDI-CDI-CDIF.jsonld (X-ray spectroscopy)
-   - FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld (NEXUS)
+   - se_na2so4-XDI-CDI-CDIF.jsonld (X-ray spectroscopy, uses schema:Dataset)
+   - FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld (NEXUS HDF5, uses schema:Dataset)
    - ESS11-subset_DDICDI.jsonld (large/complete)
+
+**Note**: The XAS examples (`se_na2so4` and `FeXAS`) use `schema:Dataset` as their root type. When using CDIF Discovery Core shapes, property suggestions won't appear because those shapes use `sh:SPARQLTarget` instead of `sh:targetClass`. The data will still display and validate, but SHACL-based editing features will be limited. Switch to "DDI-CDI 1.0 (Official)" shapes for better integration if your data includes DDI-CDI types.
 
 ### Integration Testing
 Test with actual Dataverse instance using curl registration:
@@ -236,14 +256,16 @@ curl -X POST -H 'Content-Type: application/json' \
 
 ## Known Limitations
 
-1. **Controlled Vocabularies**: `sh:in` constraints not yet implemented as dropdowns
-2. **Undo/Reset**: No undo functionality (reload page to discard changes)
-3. **Password Protection**: Edit mode not locked behind authentication
-4. **RDF List Parsing**: `sh:in` lists not fully parsed from RDF
-5. **Large Files**: Performance may degrade with 100+ nodes
+1. **SPARQL Target Support**: Currently only `sh:targetClass` is supported. SHACL shapes using `sh:SPARQLTarget` (like CDIF-Discovery-Core-Shapes) are not yet fully supported for property suggestions and classification
+2. **Controlled Vocabularies**: `sh:in` constraints not yet implemented as dropdowns
+3. **Undo/Reset**: No undo functionality (reload page to discard changes)
+4. **Password Protection**: Edit mode not locked behind authentication
+5. **RDF List Parsing**: `sh:in` lists not fully parsed from RDF
+6. **Large Files**: Performance may degrade with 100+ nodes
 
 ## Future Enhancements
 
+- [ ] Support for `sh:SPARQLTarget` in SHACL shapes (required for CDIF-Discovery-Core-Shapes)
 - [ ] Implement controlled vocabulary dropdowns for `sh:in`
 - [ ] Add undo/reset functionality
 - [ ] Lock edit mode behind API token verification
@@ -253,6 +275,13 @@ curl -X POST -H 'Content-Type: application/json' \
 - [ ] Bulk import/export of property values
 
 ## Troubleshooting
+
+### Files with schema:Dataset not showing SHACL properties
+The CDIF-Discovery-Core-Shapes uses `sh:SPARQLTarget` instead of `sh:targetClass` to identify root dataset nodes. This advanced SHACL feature is not yet supported by the previewer. As a workaround:
+- The previewer will still display all data properties (marked as "EXTRA" in yellow)
+- Validation using the CDIF shapes may still work
+- Property suggestions and SHACL-based input types won't be available
+- Consider using DDI-CDI Official shapes which use `sh:targetClass` for better integration
 
 ### Previewer shows blank/white screen
 - Check browser console for JavaScript errors
