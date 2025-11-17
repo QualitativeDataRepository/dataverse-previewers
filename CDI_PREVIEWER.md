@@ -48,7 +48,8 @@ The CDI Previewer is a comprehensive viewer and editor for DDI-CDI (Data Documen
 - **Professional Styling**: Bootstrap-based responsive design
 
 ### Data Management
-- **Save to Dataverse**: Direct API integration to save changes back to Dataverse
+- **Load Local Files**: Standalone mode allows loading JSON-LD files directly from your computer
+- **Save to Dataverse**: Direct API integration to save changes back to Dataverse (when launched from Dataverse)
 - **Export JSON-LD**: Download modified data as JSON-LD file
 - **Change Tracking**: Visual indicators for modified properties
 - **View/Edit Modes**: Toggle between viewing and editing
@@ -93,11 +94,26 @@ The previewer expects these URL parameters:
 # Production use with Dataverse
 CdiPreview.html?siteUrl=https://dataverse.example.edu&fileid=123&datasetid=456&datasetversion=1.0
 
+# Standalone mode (no parameters)
+https://gdcc.github.io/dataverse-previewers/previewers/betatest/CdiPreview.html
+# or
+https://erykkul.github.io/dataverse-previewers/previewers/betatest/CdiPreview.html
+
 # Local testing
 CdiPreview.html?testfile=SimpleSample.jsonld
 ```
 
 ## Usage Guide
+
+### Standalone Mode (No Dataverse)
+1. Open the previewer directly without parameters:
+   - GitHub Pages: `https://gdcc.github.io/dataverse-previewers/previewers/betatest/CdiPreview.html`
+   - Alternative: `https://erykkul.github.io/dataverse-previewers/previewers/betatest/CdiPreview.html`
+2. Click the "Load Local File" button in the toolbar
+3. Select a CDI JSON-LD file from your computer
+4. The file will be loaded, normalized, and displayed
+5. You can edit, validate, and export the data
+6. Note: "Save to Dataverse" is disabled in standalone mode (use "Export JSON-LD" instead)
 
 ### Viewing Data
 1. Load the previewer with a CDI JSON-LD file
@@ -181,6 +197,15 @@ Key JavaScript functions:
 - `addComplexPropertyToNode()`: Create nested objects
 
 ## Testing
+
+### Standalone Testing
+1. Open the previewer directly in your browser:
+   ```
+   https://gdcc.github.io/dataverse-previewers/previewers/betatest/CdiPreview.html
+   ```
+2. Click "Load Local File" button
+3. Select any CDI JSON-LD file from your computer
+4. Test editing, validation, and export features
 
 ### Local Testing
 1. Start a local web server:
