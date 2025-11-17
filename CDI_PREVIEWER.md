@@ -59,9 +59,16 @@ The CDI Previewer is a comprehensive viewer and editor for DDI-CDI (Data Documen
 ### Libraries Used
 - **jQuery 3.7.1**: DOM manipulation and AJAX
 - **Bootstrap 3.3.7**: UI components and responsive grid (Dataverse standard)
-- **N3.js**: RDF/Turtle parsing for loading SHACL shapes and data conversion
+- **N3.js v1.16.x**: RDF/Turtle parsing for loading SHACL shapes and data conversion
 - **jsonld.js**: JSON-LD normalization, expansion, and RDF conversion
 - **Comunica v3.2.3**: SPARQL query engine for `sh:SPARQLTarget` support (built locally, ~1.9MB minified)
+- **shacl-engine**: Standards-compliant SHACL validation
+
+### Code Quality
+- **Standards Compliance**: SPARQL queries execute unmodified per SPARQL 1.1 standards
+- **Logging System**: Configurable log levels (ERROR, WARN, INFO, DEBUG) with `?debug=true` URL parameter
+- **Production Ready**: Test code removed, debug logging behind feature flag
+- **Maintainable**: Separated HTML/CSS/JS structure, ~2,700 lines total
 
 ### File Structure
 ```
@@ -182,23 +189,13 @@ CdiPreview.html?testfile=SimpleSample.jsonld
 
 ## SHACL Shape Requirements
 
-The previewer currently supports SHACL shapes with `sh:targetClass` for matching shapes to data nodes:
+### Supported Target Types
 
+The previewer supports both standard and advanced SHACL targeting mechanisms:
+
+#### 1. **sh:targetClass** (Standard)
+Matches nodes by RDF type:
 ```turtle
-# Example property shape
-ex:PropertyShape
-    a sh:PropertyShape ;
-    sh:path ex:propertyName ;
-    sh:name "Human Readable Name" ;
-    sh:description "Help text for users" ;
-    sh:datatype xsd:string ;
-    sh:minCount 0 ;  # 0 = optional, 1+ = required
-    sh:maxCount 1 ;  # 1 = single value, omit for multiple
-    sh:node ex:ComplexObjectShape ;  # For nested objects
-    sh:class ex:ClassName ;  # Object type for nested objects
-    .
-
-# Target specific classes
 ex:NodeShape
     a sh:NodeShape ;
     sh:targetClass ex:Dataset ;
@@ -206,29 +203,65 @@ ex:NodeShape
     .
 ```
 
+#### 2. **sh:SPARQLTarget** (Advanced) ✅
+Matches nodes using SPARQL SELECT queries:
+```turtle
+ex:NodeShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT ?this WHERE {
+                ?this a schema:Dataset .
+            }
+        """ ;
+    ] ;
+    sh:property ex:PropertyShape ;
     .
+```
 
-**SPARQL Target Support - IMPLEMENTED ✅**: The previewer fully supports `sh:SPARQLTarget` for advanced node matching. SPARQL queries are executed using [Comunica v3.2.3](https://comunica.dev/) (built locally) to match nodes against complex patterns.
+### SPARQL Target Implementation
 
-### SPARQL Implementation Details
+**Execution Flow:**
 
-**How it works:**
-1. **Shape Loading**: When SHACL shapes are loaded, `parseSparqlTargets()` extracts all `sh:SPARQLTarget` definitions
-2. **Data Loading**: When JSON-LD data is loaded, it's converted to an N3.Store via `jsonLdToN3Store()`
-3. **Query Execution**: `executeSparqlTargets()` runs each SPARQL SELECT query against the data
-4. **Result Caching**: Matched node URIs are stored in `sparqlTargetCache.results[shapeUri]`
-5. **Property Classification**: `classifyProperty()` checks SPARQL cache first, then falls back to `sh:targetClass`
+1. **Shape Loading** (`parseSparqlTargets()`)
+   - Extracts all `sh:SPARQLTarget` definitions from loaded SHACL shapes
+   - Parses `sh:select` query strings from both blank nodes and named nodes
+   - Stores mapping: `sparqlTargetCache.queries[shapeUri] = query`
+
+2. **Data Loading** (`jsonLdToN3Store()`)
+   - Converts JSON-LD to N-Quads format using jsonld.js
+   - Parses N-Quads into N3.Store for RDF querying
+   - Store becomes queryable by Comunica SPARQL engine
+
+3. **Query Execution** (`executeSparqlTargets()`)
+   - Initializes Comunica QueryEngine on first use
+   - Executes all SPARQL SELECT queries in parallel against N3 store
+   - Extracts `?this` variable bindings (matched node URIs)
+   - Stores results: `sparqlTargetCache.results[shapeUri] = Set<nodeURIs>`
+   - Performance: ~60-80ms per dataset, executes once on data load
+
+4. **Property Classification** (`classifyProperty()`)
+   - First checks SPARQL target cache for node matches
+   - Falls back to `sh:targetClass` matching if no SPARQL match
+   - Applies SHACL property constraints from matched shape
+   - Returns classification (SHACL-defined vs extra field)
 
 **Key Features:**
-- Handles both blank nodes and named nodes in shape definitions
-- Converts JSON-LD to RDF quads for SPARQL querying
-- Caches results for performance (avoids re-execution)
-- Falls back gracefully when SPARQL queries fail
+- ✅ **Standards Compliant**: SPARQL 1.1 queries executed as-is (no modification)
+- ✅ **Performance**: Parallel query execution, results cached
+- ✅ **Robust**: Handles both compact (`schema:Dataset`) and expanded URIs (`https://schema.org/Dataset`)
+- ✅ **Graceful Fallback**: Falls back to `sh:targetClass` if SPARQL fails
+- ✅ **Debug Mode**: Add `?debug=true` to URL to see query execution logs
 
-**Test Case**: See `examples/cdi/test-sparql-simple-*` for minimal working example:
-- `test-sparql-simple-shapes.ttl`: Simple shape with SPARQL target matching `schema:Dataset`
-- `test-sparql-simple-data.jsonld`: Two test datasets with schema.org properties
-- Expected: Both datasets matched, properties classified as SHACL-defined (blue)
+**Live Example:**
+The CDIF Discovery Core shapes use SPARQL targets to match `schema:Dataset` nodes. Load any XAS example file (`se_na2so4-XDI-CDI-CDIF.jsonld` or `FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld`) with CDIF shapes selected to see SPARQL matching in action.
+
+**Technical Notes:**
+- Namespace handling: Data and shapes should use consistent namespaces (e.g., both use `https://schema.org/`)
+- Feature flag available: Set `sparqlTargetCache.enabled = false` to disable SPARQL matching
+- Logging: Use `?debug=true` URL parameter to see detailed query execution logs
 
 ## Customization
 
@@ -296,206 +329,54 @@ curl -X POST -H 'Content-Type: application/json' \
 2. **Undo/Reset**: No undo functionality (reload page to discard changes)
 3. **Password Protection**: Edit mode not locked behind authentication
 4. **RDF List Parsing**: `sh:in` lists not fully parsed from RDF
-5. **Large Files**: Performance may degrade with 100+ nodes (SPARQL execution ~200-500ms per dataset)
+5. **Large Files**: Performance may degrade with 100+ nodes
+6. **Namespace Consistency**: SHACL shapes and data should use same namespaces (e.g., both `https://schema.org/`)
 
-## SPARQL Target Support - IMPLEMENTED ✅
+## Debug Mode
 
-### Implementation Summary
-Full support for `sh:SPARQLTarget` in SHACL shapes has been successfully implemented, enabling compatibility with CDIF-Discovery-Core-Shapes and other advanced SHACL definitions that use SPARQL queries to identify target nodes.
+The previewer includes a comprehensive logging system for troubleshooting:
 
-### What Was Implemented
-
-#### Library Integration
-- **Comunica QueryEngine** v4.4.1 added via CDN
-- Client-side SPARQL 1.1 execution in browser
-- ~500KB bundle size (loaded on-demand)
-
-#### Core Features
-1. **SPARQL Target Parsing**: Extracts `sh:SPARQLTarget` and `sh:select` queries from SHACL shapes during shape loading
-2. **Query Execution**: Converts JSON-LD data to RDF quads and executes SPARQL queries using Comunica
-3. **Result Caching**: Stores matched nodes in `sparqlTargetCache` to avoid re-execution
-4. **Parallel Processing**: All SPARQL queries execute simultaneously for optimal performance
-5. **Integration**: Both `classifyProperty()` and `getPropertySuggestions()` check SPARQL matches first, then fall back to `sh:targetClass`
-
-#### Technical Implementation
-- JSON-LD → N-Quads → N3 Store conversion for SPARQL querying
-- SPARQL target cache with shape URI → matched nodes mapping
-- Backward compatible: `sh:targetClass` still works as before
-- Feature flag available (`sparqlTargetCache.enabled`) for easy disable if needed
-
-### Performance
-- SPARQL execution: ~200-500ms per dataset (depending on size)
-- Executes once on data load, results cached
-- Parallel query execution for multiple shapes
-
-### Test Results
-✅ XAS example files (`se_na2so4`, `FeXAS`) now show property suggestions  
-✅ CDIF Discovery Core shapes fully functional  
-✅ schema:Dataset nodes properly matched via SPARQL  
-✅ Backward compatible with existing DDI-CDI shapes
-
----
-
-## Original Implementation Plan (COMPLETED)
-
-<details>
-<summary>View detailed implementation plan that was followed</summary>
-
-### Overview
-Add support for `sh:SPARQLTarget` in SHACL shapes to enable full compatibility with CDIF-Discovery-Core-Shapes and other advanced SHACL definitions that use SPARQL queries to identify target nodes.
-
-### Library Selection: Comunica
-**Package**: `@comunica/query-sparql` v4.4.1  
-**Rationale**:
-- ✅ Full SPARQL 1.1 support (SELECT, FILTER, NOT EXISTS, etc.)
-- ✅ Browser-compatible (client-side execution)
-- ✅ Works with JSON-LD and RDF data
-- ✅ Actively maintained by Ghent University IDLab
-- ✅ Used in production by Solid, CLARIAH, and other major projects
-- ✅ Can query N3 stores and in-memory data
-- ⚠️ ~500KB bundle size (acceptable for advanced features)
-
-### Implementation Steps
-
-#### Phase 1: Library Integration
-1. **Add Comunica via CDN** (lines ~130-150 in CdiPreview.html)
-   - Include `comunica-browser.js` from jsDelivr CDN
-   - Position after N3.js and before custom JavaScript
-
-2. **Initialize QueryEngine** (lines ~700-750)
-   - Create global `comunicaEngine` instance
-   - Configure for in-memory querying
-
-#### Phase 2: SPARQL Target Parsing
-3. **Extend Shape Loading** (lines ~900-1000)
-   - Parse `sh:target` predicates from SHACL shapes
-   - Extract `sh:SPARQLTarget` nodes
-   - Read `sh:select` query strings
-   - Store mapping: `{ shapeUri → sparqlQuery }`
-
-4. **Create SPARQL Target Cache** (new global structure)
-   ```javascript
-   const sparqlTargetCache = {
-     queries: {},      // shapeUri → SPARQL query string
-     results: {},      // shapeUri → Set of matching node URIs
-     executed: false
-   };
-   ```
-
-#### Phase 3: Query Execution
-5. **Execute SPARQL Targets** (new function `executeSparqlTargets()`)
-   - Convert JSON-LD data to RDF quads for Comunica
-   - Execute each SPARQL query against data
-   - Cache results mapping shapes to matching nodes
-   - Call once after data load, before rendering
-
-6. **Optimize Performance**
-   - Execute all SPARQL queries in parallel
-   - Cache results to avoid re-execution
-   - Only re-execute when data changes
-
-#### Phase 4: Integration with Existing Code
-7. **Update `classifyProperty()`** (lines ~1620-1800)
-   - Check SPARQL target cache first
-   - If node matches via SPARQL target, find its shape
-   - Apply existing SHACL property classification logic
-   - Fallback to `sh:targetClass` if no SPARQL match
-
-8. **Update `getPropertySuggestions()`** (lines ~1900-2000)
-   - Check SPARQL target cache for node matches
-   - Return properties from matched shapes
-   - Combine with `sh:targetClass` results
-
-#### Phase 5: Error Handling & UX
-9. **Add Error Handling**
-   - Catch SPARQL syntax errors
-   - Display user-friendly messages
-   - Log detailed errors to console
-   - Graceful fallback to `sh:targetClass` only
-
-10. **Update UI Indicators**
-    - Show loading spinner during SPARQL execution
-    - Display SPARQL target count in shape selector
-    - Add tooltip explaining SPARQL target support
-
-#### Phase 6: Testing & Documentation
-11. **Test with CDIF Shapes**
-    - Load `se_na2so4-XDI-CDI-CDIF.jsonld`
-    - Load `FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld`
-    - Verify property suggestions appear
-    - Confirm SHACL classification works
-
-12. **Update Documentation**
-    - Remove "Known Limitations" about SPARQL targets
-    - Update "SHACL Shape Requirements" section
-    - Add SPARQL query examples
-    - Document performance characteristics
-
-### Technical Details
-
-#### SPARQL Query Execution Flow
-```javascript
-// 1. Parse SPARQL targets from shapes
-const sparqlTargets = parseSparqlTargets(shaclShapesStore);
-
-// 2. Convert JSON-LD to Comunica-compatible format
-const dataSource = convertJsonLdToSource(jsonData);
-
-// 3. Execute queries
-for (const [shapeUri, query] of Object.entries(sparqlTargets)) {
-  const bindings = await comunicaEngine.queryBindings(query, {
-    sources: [dataSource]
-  });
-  
-  const matches = await bindings.toArray();
-  sparqlTargetCache.results[shapeUri] = new Set(
-    matches.map(b => b.get('this').value)
-  );
-}
+**Enable debug mode** by adding `?debug=true` to the URL:
+```
+https://example.com/CdiPreview.html?fileid=123&siteUrl=...&debug=true
 ```
 
-#### Shape Matching Strategy
-```javascript
-function findShapeForNode(nodeId, nodeTypes) {
-  // 1. Check SPARQL target cache
-  for (const [shapeUri, matchedNodes] of Object.entries(sparqlTargetCache.results)) {
-    if (matchedNodes.has(nodeId)) {
-      return shapeUri;
-    }
-  }
-  
-  // 2. Fallback to sh:targetClass
-  return findShapeByTargetClass(nodeTypes);
-}
+**Log Levels:**
+- `ERROR`: Critical errors (always shown)
+- `WARN`: Warnings about potential issues (always shown)
+- `INFO`: Informational messages like "SPARQL execution complete" (always shown)
+- `DEBUG`: Detailed execution logs, query details, node matching (only with `?debug=true`)
+
+**What DEBUG mode shows:**
+- SPARQL query execution details
+- Node matching results ("✓ Node matched via SPARQL target")
+- Property classification logic
+- RDF store statistics
+- Shape loading details
+
+**Example debug output:**
 ```
-
-### Expected Outcomes
-- ✅ Full support for CDIF-Discovery-Core-Shapes
-- ✅ Property suggestions for schema:Dataset nodes
-- ✅ SHACL classification for SPARQL-matched nodes
-- ✅ Backward compatible with `sh:targetClass` shapes
-- ✅ XAS example files fully functional
-
-### Rollback Plan
-If issues arise:
-1. Feature can be disabled via flag: `ENABLE_SPARQL_TARGETS = false`
-2. Graceful fallback to `sh:targetClass` only
-3. No breaking changes to existing functionality
-
-</details>
+DEBUG: Executing SPARQL for shape https://example.org/shapes#DatasetShape
+DEBUG: Created N3 store with 1,234 quads
+DEBUG: ✓ Node xas:dataset1 matched via SPARQL target
+INFO: SPARQL execution complete: 2 total matches in 64.52ms
+```
 
 ---
 
 ## Future Enhancements
 
-- [x] Support for `sh:SPARQLTarget` in SHACL shapes (**COMPLETED** - see implementation summary above)
+- [x] Support for `sh:SPARQLTarget` in SHACL shapes ✅
+- [x] Proper logging system with debug mode ✅
+- [x] Standards-compliant SPARQL execution ✅
 - [ ] Implement controlled vocabulary dropdowns for `sh:in`
 - [ ] Add undo/reset functionality
 - [ ] Lock edit mode behind API token verification
 - [ ] Full RDF list parsing for allowed values
-- [ ] Pagination for large datasets
+- [ ] Pagination for large datasets (100+ nodes)
 - [ ] Diff view showing changes before save
 - [ ] Bulk import/export of property values
+- [ ] Namespace auto-detection and harmonization
 
 ## Troubleshooting
 
@@ -504,10 +385,15 @@ If issues arise:
 - Verify SHACL shapes file is accessible
 - Ensure JSON-LD file is valid
 
-### Properties not showing as SHACL-defined
-- Check that SHACL shape uses `sh:targetClass` matching the node's `@type`
-- Verify property `sh:path` matches property name in data
+### Properties not showing as SHACL-defined (showing yellow instead of blue)
+- **For sh:targetClass shapes**: Check that shape `sh:targetClass` matches the node's `@type`
+- **For sh:SPARQLTarget shapes**: Enable debug mode (`?debug=true`) and check console for:
+  - "SPARQL execution complete: N total matches" - should show >0 matches
+  - "✓ Node {id} matched via SPARQL target" - confirms node was matched
+  - If no matches, verify SPARQL query syntax and namespace consistency
+- Verify property `sh:path` matches property name in data (check for namespace differences)
 - Ensure SHACL file is properly loaded (check network tab)
+- **Namespace issues**: Data and shapes must use same namespaces (e.g., both `https://schema.org/` not mixed http/https)
 
 ### Validation fails with no details
 - Check SHACL shapes syntax in Turtle validator
