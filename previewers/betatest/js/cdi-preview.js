@@ -1345,7 +1345,7 @@
                         null
                     );
                     
-                    if (nodeId === 'xas:485749' && propertyKey === 'name') {
+                    if (currentLogLevel >= LOG_LEVEL.DEBUG && nodeId === 'xas:485749' && propertyKey === 'name') {
                         console.log(`  Shape ${shapeSubject} has ${propertyQuads.length} property definition(s)`);
                     }
                     
@@ -1744,11 +1744,12 @@
             
             // 1. Check SPARQL target cache first (if enabled and executed)
             if (sparqlTargetCache.enabled && sparqlTargetCache.executed && node['@id']) {
-                for (const [shapeUri, matchedNodes] of Object.entries(sparqlTargetCache.results)) {
-                    if (matchedNodes.has(node['@id'])) {
-                        applicableShapes.add(shapeUri);
-                    }
-                }
+                     const expandedNodeId = getExpandedNodeId(node['@id']);
+                     for (const [shapeUri, matchedNodes] of Object.entries(sparqlTargetCache.results)) {
+					if (matchedNodes.has(node['@id']) || matchedNodes.has(expandedNodeId)) {
+						applicableShapes.add(shapeUri);
+					}
+				}
             }
             
             // 2. Also check sh:targetClass (traditional method)

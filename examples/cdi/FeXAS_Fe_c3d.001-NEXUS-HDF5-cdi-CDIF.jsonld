@@ -515,7 +515,7 @@
                         "schema:PropertyValue"
                     ],
                     "schema:name": "energy",
-                    "schame:alternateName": [
+                    "schema:alternateName": [
                         "Monochromator energy",
                         "mono energy"
                     ],

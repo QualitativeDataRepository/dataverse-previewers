@@ -35,6 +35,8 @@ cdifd:CDIFDatasetRecommendedShape a sh:NodeShape ;
 		# +
 		cdifd:nameProperty,
 		# +
+		cdifd:descriptionProperty,
+		# +
 		cdifd:metadataProfileProperty,
 		# +
 		cdifd:otherIdentifierProperty, 
@@ -52,6 +54,8 @@ cdifd:CDIFDatasetRecommendedShape a sh:NodeShape ;
 		# +
 		cdifd:temporalExtentProperty,
 		# +
+		cdifd:variableMeasuredProperty,
+		# +
 		cdifd:rightsProperty, 
 		cdifd:policiesProperty,
 		cdifd:relatedResourceProperty,
@@ -65,6 +69,16 @@ cdifd:CDIFDatasetRecommendedShape a sh:NodeShape ;
 		#cdifd:hasPartProperty,
 		# +
 .
+
+cdifd:descriptionProperty
+# human-readable description of the dataset
+    a sh:PropertyShape ;
+    sh:path schema:description ;
+	sh:minCount 1 ;
+	sh:datatype xsd:string ;
+	sh:severity sh:Info ;
+    sh:message "Provide a human-readable description of the dataset to support discovery and reuse." 
+    .
 cdifd:metadataIdentifierProperty
 # identifier for the graphNode representation, not the entity described by the content of the graph node
     a sh:PropertyShape ;

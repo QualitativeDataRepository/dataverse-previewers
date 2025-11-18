@@ -49,7 +49,7 @@ Result:
 
 ## The Solution
 
-We fixed both problems in the local copy of the CDIF Discovery Core Shapes.
+We fixed both problems in the local copy of the CDIF Discovery Core Shapes, and then made a follow-up adjustment so that more of Steve's dataset properties are clearly recognized as CDIF-defined.
 
 ### 1. HTTPS schema.org everywhere
 
@@ -86,12 +86,38 @@ WHERE {
 
 This preserves the main intent ("apply CDIF discovery rules to schema.org datasets") while supporting realistic CDI graphs where the dataset is linked from other nodes.
 
+### 3. Property-level alignment for core CDIF discovery fields
+
+After the HTTP/HTTPS and SPARQL fixes, our own `cdif_example.jsonld` behaved as expected, but Steve's richer CDI/XAS examples still showed many properties as EXTRA. The remaining issue was **which dataset properties the CDIF dataset NodeShape referred to**.
+
+To strengthen this alignment, we:
+
+- Added a dedicated `cdifd:descriptionProperty`:
+   - `sh:path schema:description` (dataset-level description).
+   - `sh:minCount 1` and `xsd:string` datatype.
+- Wired this property into the main dataset NodeShape's `sh:property` list so `schema:description` is treated as a first-class CDIF discovery field.
+- Wired the existing `cdifd:variableMeasuredProperty` into the same NodeShape, so `schema:variableMeasured` on the dataset is also recognized as SHACL-defined.
+
+These changes mean that for both our minimal example and Steve's CDI/XAS examples, the following properties on the dataset node are now clearly recognized by the shapes:
+
+- `schema:name`
+- `schema:identifier`
+- `schema:description`
+- `schema:license` / `schema:conditionsOfAccess`
+- `schema:keywords`
+- `schema:distribution`
+- `schema:variableMeasured`
+
+In the CDI previewer, these show up as blue REQUIRED/OPTIONAL fields instead of EXTRA, once the shapes are loaded and the SPARQL target has identified the dataset node.
+
 ## Files Changed
 
 ### 1. `previewers/betatest/shapes/CDIF-Discovery-Core-Shapes.ttl`
 - ✅ Changed all `http://schema.org/` to `https://schema.org/`
 - ✅ Fixed in @prefix, SPARQL PREFIX, and sh:prefixes
 - ✅ Relaxed `cdifd:CDIFDatasetRecommendedShape` `sh:SPARQLTarget` to select all `schema:Dataset` nodes (removed `NOT EXISTS { ?s ?p ?this . }` filter)
+ - ✅ Added `cdifd:descriptionProperty` (dataset-level `schema:description`) and wired it into the main dataset NodeShape
+ - ✅ Wired `cdifd:variableMeasuredProperty` into the main dataset NodeShape so `schema:variableMeasured` is SHACL-defined
 
 ### 2. `previewers/betatest/js/cdi-preview.js`
 - ✅ Added: `'cdif-discovery-local': 'shapes/CDIF-Discovery-Core-Shapes.ttl'`
