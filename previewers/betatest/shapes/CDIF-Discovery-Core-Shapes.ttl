@@ -23,12 +23,9 @@ cdifd:CDIFDatasetRecommendedShape a sh:NodeShape ;
 	  sh:select """
       PREFIX schema: <https://schema.org/>
       SELECT DISTINCT ?this
-        WHERE {
-          ?this a schema:Dataset .
-          FILTER (
-            NOT EXISTS { ?s ?p ?this . }
-          )
-        }
+	    WHERE {
+	      ?this a schema:Dataset .
+	    }
 """ ;
 	] ;	
     sh:property	

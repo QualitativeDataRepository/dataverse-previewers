@@ -2,11 +2,15 @@
 
 ## The Problem
 
-Steve reported that when using the CDIF Discovery Core shapes, **"everything was extra"** - all properties were showing as EXTRA (not recognized by SHACL shapes), meaning no validation was working.
+Steve reported that when using the CDIF Discovery Core shapes, **"everything was extra"** - all properties were showing as EXTRA (not recognized by SHACL shapes), meaning no validation was working. Initially this affected all examples; after the HTTPS fix, our own `cdif_example.jsonld` turned blue, but Steve's richer CDI/XAS examples still showed everything as EXTRA.
 
 ## Root Cause
 
-**Namespace mismatch:** The CDIF Discovery Core Shapes used `http://schema.org/` but the data files use `https://schema.org/`. This tiny difference caused the SPARQL target to fail - it couldn't match any `schema:Dataset` nodes, so no properties were validated.
+There turned out to be **two separate issues**.
+
+### 1. Namespace mismatch (HTTP vs HTTPS)
+
+The original CDIF Discovery Core Shapes used `http://schema.org/` but the data files use `https://schema.org/`. This tiny difference caused the SPARQL target to fail - it couldn't match any `schema:Dataset` nodes, so no properties were validated.
 
 ### Why This Matters
 
@@ -22,7 +26,32 @@ So `"schema:name"` becomes `"https://schema.org/name"` (with HTTPS).
 
 The SHACL shapes must use the **exact same namespace** everywhere, or the SPARQL target query returns zero matches.
 
+### 2. Overly strict SPARQL target (root dataset heuristic)
+
+Even after fixing HTTPS, Steve's XAS examples were still not being targeted by the shapes. The reason was the SPARQL `sh:SPARQLTarget` used an additional filter intended to only select a "root" dataset node:
+
+```sparql
+PREFIX schema: <https://schema.org/>
+SELECT DISTINCT ?this
+WHERE {
+   ?this a schema:Dataset .
+   FILTER (
+      NOT EXISTS { ?s ?p ?this . }
+   )
+}
+```
+
+The `NOT EXISTS { ?s ?p ?this . }` condition says: *"only match a dataset if there is no triple anywhere that uses this dataset as an object"*. This heuristic fails for realistic CDI graphs where the main `schema:Dataset` is referenced by metadata records or related resources (e.g., via `schema:about`, `schema:subjectOf`, or other links).
+
+Result:
+- Our simple `cdif_example.jsonld` had a single, unreferenced `schema:Dataset`, so it passed the filter and turned blue.
+- Steve's CDI/XAS examples have a richer graph where the dataset is referenced, so they **failed the filter** and were never selected as SHACL targets, leaving all properties marked as EXTRA.
+
 ## The Solution
+
+We fixed both problems in the local copy of the CDIF Discovery Core Shapes.
+
+### 1. HTTPS schema.org everywhere
 
 Updated the CDIF Discovery Core Shapes file to use HTTPS consistently in **three critical places**:
 
@@ -43,11 +72,26 @@ Updated the CDIF Discovery Core Shapes file to use HTTPS consistently in **three
    )
    ```
 
+### 2. Relaxed SPARQL target for datasets
+
+We then relaxed the SPARQL target so that **all `schema:Dataset` nodes** are considered CDIF discovery targets, even if they are referenced elsewhere in the graph. The new selector removes the `NOT EXISTS` filter:
+
+```sparql
+PREFIX schema: <https://schema.org/>
+SELECT DISTINCT ?this
+WHERE {
+   ?this a schema:Dataset .
+}
+```
+
+This preserves the main intent ("apply CDIF discovery rules to schema.org datasets") while supporting realistic CDI graphs where the dataset is linked from other nodes.
+
 ## Files Changed
 
 ### 1. `previewers/betatest/shapes/CDIF-Discovery-Core-Shapes.ttl`
 - ✅ Changed all `http://schema.org/` to `https://schema.org/`
 - ✅ Fixed in @prefix, SPARQL PREFIX, and sh:prefixes
+- ✅ Relaxed `cdifd:CDIFDatasetRecommendedShape` `sh:SPARQLTarget` to select all `schema:Dataset` nodes (removed `NOT EXISTS { ?s ?p ?this . }` filter)
 
 ### 2. `previewers/betatest/js/cdi-preview.js`
 - ✅ Added: `'cdif-discovery-local': 'shapes/CDIF-Discovery-Core-Shapes.ttl'`
@@ -98,11 +142,10 @@ Properties that should show **BLUE badges** (SHACL Defined):
 
 Hi Steve,
 
-I've fixed the "everything was extra" issue with the CDIF Discovery shapes. The problem was simple but critical:
+I've fixed the "everything was extra" issue with the CDIF Discovery shapes. There were actually **two** subtle problems working together:
 
-**Your data uses `https://schema.org/` but the shapes were using `http://schema.org/`**
-
-This namespace mismatch caused the SPARQL target to fail, so no nodes matched the shapes and everything appeared as EXTRA.
+1. **Namespace mismatch:** your data uses `https://schema.org/` but the shapes were using `http://schema.org/`, so the SPARQL target couldn't find any `schema:Dataset` nodes.
+2. **Overly strict root filter:** the SPARQL target only selected `schema:Dataset` nodes that were *never* used as objects (`NOT EXISTS { ?s ?p ?this . }`). That works for toy examples, but in your CDI/XAS examples the dataset is correctly referenced by metadata/related nodes, so it was filtered out and never validated.
 
 ### The Fix
 
@@ -114,19 +157,30 @@ The CDI Preview now has a "CDIF Discovery Core (Local - Fixed)" option in the dr
 
 ### For Your Official Repository
 
-You may want to apply the same change - just update all instances of `http://schema.org/` to `https://schema.org/` in your shapes file in three places:
+You may want to apply the same changes in your official shapes file:
 
-1. `@prefix schema: <https://schema.org/> .`
-2. `PREFIX schema: <https://schema.org/>` (in SPARQL query)
-3. `sh:namespace "https://schema.org/"` (in sh:prefixes)
+1. Update all instances of `http://schema.org/` to `https://schema.org/` in three places:
+   - `@prefix schema: <https://schema.org/> .`
+   - `PREFIX schema: <https://schema.org/>` (in SPARQL query)
+   - `sh:namespace "https://schema.org/"` (in sh:prefixes)
+2. Relax the `sh:SPARQLTarget` selector so it doesn't exclude datasets that are referenced elsewhere. The simplest option is to drop the `NOT EXISTS` filter and match all `schema:Dataset` nodes:
 
-**Why:** Modern schema.org usage strongly recommends HTTPS, and most JSON-LD implementations default to it now.
+   ```sparql
+   PREFIX schema: <https://schema.org/>
+   SELECT DISTINCT ?this
+   WHERE {
+     ?this a schema:Dataset .
+   }
+   ```
+
+**Why:** modern schema.org usage strongly recommends HTTPS, and realistic CDI graphs will often reference the main dataset node from other nodes (metadata, related resources, etc.). The relaxed selector still targets the right thing (datasets) without assuming they have no incoming links.
 
 ---
 
 ## Summary
 
 ✅ **Fixed:** HTTP → HTTPS namespace mismatch  
+✅ **Fixed:** SPARQL target now matches all `schema:Dataset` nodes (no more false negatives when datasets are referenced)
 ✅ **Ready:** CDI Preview available at `https://erykkul.github.io/dataverse-previewers/previewers/betatest/CdiPreview.html`  
 ✅ **Result:** CDIF Discovery shapes now properly validate metadata files with all required properties showing correct SHACL badges  
 ✅ **Testing:** Use "CDIF Discovery Core (Local - Fixed)" dropdown option and "Load local file" button
