@@ -358,11 +358,78 @@ function renderProperty(key, value, nodeId, nodeTypes) {
   // Value
   const valueContainer = $("<div>").addClass("property-value");
 
+  // Helper: render a nested object value using a small inline node card
+  function renderInlineObject(val) {
+    if (!val || typeof val !== "object" || Array.isArray(val)) return null;
+
+    const inlineCard = $("<div>")
+      .addClass("node-card inline-node-card")
+      .css({
+        "margin-top": "5px",
+        "margin-bottom": "5px",
+      });
+
+    const header = $("<div>").addClass("node-header");
+    const leftSide = $("<div>")
+      .css("display", "flex")
+      .css("align-items", "center");
+
+    leftSide.append(
+      $("<span>")
+        .addClass("glyphicon glyphicon-chevron-down collapse-icon")
+        .css("margin-right", "10px")
+    );
+
+    const nestedId = val["@id"];
+    if (nestedId) {
+      leftSide.append($("<span>").addClass("node-id").text(nestedId));
+    }
+
+    const nestedTypes = Array.isArray(val["@type"])
+      ? val["@type"]
+      : val["@type"]
+      ? [val["@type"]]
+      : [];
+    nestedTypes.forEach((t) => {
+      if (t) {
+        leftSide.append($("<span>").addClass("node-type").text(t));
+      }
+    });
+
+    header.append(leftSide);
+    header.click(function () {
+      inlineCard.toggleClass("collapsed");
+    });
+
+    inlineCard.append(header);
+
+    const body = $("<div>").addClass("node-body");
+    if (!isEditMode) {
+      body.addClass("view-mode");
+    }
+
+    Object.keys(val).forEach((k) => {
+      if (k === "@id" || k === "@type" || k === "@context") return;
+      const nestedRow = renderProperty(k, val[k], nestedId || nodeId, nestedTypes);
+      body.append(nestedRow);
+    });
+
+    inlineCard.append(body);
+    return inlineCard;
+  }
+
   if (Array.isArray(value)) {
     // Array of values
     value.forEach((val, idx) => {
       const valDiv = $("<div>").addClass("array-value");
-      valDiv.append(createValueInput(key, val, nodeId, idx, classification));
+
+      // Try to render nested objects (like schema:Role) as inline node cards
+      const inlineCard = renderInlineObject(val);
+      if (inlineCard) {
+        valDiv.append(inlineCard);
+      } else {
+        valDiv.append(createValueInput(key, val, nodeId, idx, classification));
+      }
 
       // Add delete button in edit mode
       if (isEditMode) {
@@ -411,9 +478,14 @@ function renderProperty(key, value, nodeId, nodeTypes) {
     }
   } else {
     // Single value
-    valueContainer.append(
-      createValueInput(key, value, nodeId, null, classification)
-    );
+    const inlineCard = renderInlineObject(value);
+    if (inlineCard) {
+      valueContainer.append(inlineCard);
+    } else {
+      valueContainer.append(
+        createValueInput(key, value, nodeId, null, classification)
+      );
+    }
 
     // Add delete button in edit mode (for non-required fields only)
     if (isEditMode && !classification.isRequired) {
