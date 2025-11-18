@@ -45,10 +45,11 @@
                 <span class="glyphicon glyphicon-folder-open"></span> Load Local File
             </button>
             <label for="shape-selector" style="margin: 0; white-space: nowrap;">SHACL Shape:</label>
-            <select id="shape-selector" class="form-control" style="width: 250px;">
+            <select id="shape-selector" class="form-control" style="width: 300px;">
                 <option value="ddi-cdi-official">DDI-CDI 1.0 (Official)</option>
-                <option value="cdif-discovery">CDIF Discovery Core</option>
-                <option value="local-fallback">Local Built-in</option>
+                <option value="cdif-discovery">CDIF Discovery Core (Online)</option>
+                <option value="cdif-discovery-local" selected>CDIF Discovery Core (Local - Fixed)</option>
+                <option value="local-fallback">DDI-CDI Local Built-in</option>
                 <option value="custom">Custom URL...</option>
             </select>
             <input type="text" id="custom-shape-url" class="form-control" placeholder="Enter SHACL shape URL" style="width: 300px; display: none;">

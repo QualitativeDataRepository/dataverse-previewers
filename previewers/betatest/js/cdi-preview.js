@@ -49,6 +49,7 @@
         const SHAPE_URLS = {
             'ddi-cdi-official': 'https://raw.githubusercontent.com/ddi-cdi/ddi-cdi.github.io/main/m2t-ng/DDI-CDI_1-0/encoding/shacl/ddi-cdi.shacl.ttl',
             'cdif-discovery': 'https://raw.githubusercontent.com/Cross-Domain-Interoperability-Framework/validation/main/CDIF-Discovery-Core-Shapes.ttl',
+            'cdif-discovery-local': 'shapes/CDIF-Discovery-Core-Shapes.ttl',
             'local-fallback': 'shapes/ddi-cdi-official.ttl'
         };
 
