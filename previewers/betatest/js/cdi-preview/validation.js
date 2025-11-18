@@ -136,9 +136,18 @@ async function validateData() {
     updatePropertyValidation(violations);
   } catch (error) {
     console.error("Validation error:", error);
+    
+    let errorMsg = error.message;
+    
+    // Special handling for SPARQL constraint errors
+    if (error.message.includes("SPARQLConstraintComponent")) {
+      errorMsg = "The selected SHACL shapes contain SPARQL constraints, which are not supported in the browser. " +
+                 "Please use the 'DDI-CDI 1.0 (Official)' shapes instead, which use Core SHACL constraints only.";
+    }
+    
     $("#validation-status").html(
       '<span class="validation-badge invalid">Validation Error: ' +
-        error.message +
+        errorMsg +
         "</span>"
     );
     $("#validation-details").empty();
