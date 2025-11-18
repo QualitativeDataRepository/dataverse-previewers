@@ -359,23 +359,22 @@ function renderProperty(key, value, nodeId, nodeTypes) {
 }
 
 function createValueInput(key, value, nodeId, arrayIndex, classification) {
-  // Helper to render nested JSON object (both view and edit modes)
-  function renderNestedObject(obj, parentPath) {
-    const container = $("<div>").addClass("nested-object").css({
-      "margin-left": "20px",
-      "border-left": "2px solid #ddd",
-      "padding-left": "10px",
-      "margin-top": "5px",
-    });
+  // Helper to render a simple nested JSON object as label+value pairs (view mode only)
+  function renderNestedObject(obj) {
+    const container = $("<div>")
+      .addClass("nested-object")
+      .css({
+        "margin-left": "20px",
+        "border-left": "2px solid #ddd",
+        "padding-left": "10px",
+        "margin-top": "5px",
+      });
 
     Object.keys(obj).forEach((nestedKey) => {
-      if (nestedKey === "@id" || nestedKey === "@type") return;
-
-      const fullPath = parentPath ? `${parentPath}.${nestedKey}` : nestedKey;
+      if (nestedKey === "@id" || nestedKey === "@type") return; // Skip JSON-LD metadata
 
       const nestedRow = $("<div>")
         .addClass("property-row nested-property")
-        .attr("data-property", fullPath)
         .css({
           "margin-bottom": "8px",
           display: "flex",
@@ -391,43 +390,17 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
         })
         .text(humanizeKey(nestedKey.replace("schema:", "")));
 
-      const nestedValueDiv = $("<div>").addClass("property-value").css({
-        flex: "1",
-      });
+      const nestedValueDiv = $("<div>")
+        .addClass("property-value")
+        .css({ flex: "1" });
 
       const nestedValue = obj[nestedKey];
-
-      if (isEditMode) {
-        // For now, treat nested values as simple scalars or JSON strings
-        let valueStr;
-        if (typeof nestedValue === "object" && nestedValue !== null) {
-          valueStr = JSON.stringify(nestedValue);
-        } else {
-          valueStr = nestedValue === undefined ? "" : String(nestedValue);
-        }
-
-        let input;
-        if (valueStr.length > 50) {
-          input = $("<textarea>").val(valueStr);
-        } else {
-          input = $("<input>").attr("type", "text").val(valueStr);
-        }
-
-        input.attr("data-original", valueStr);
-        input.on("input", function () {
-          $(this).closest(".property-row").addClass("changed");
-          updateSaveButton();
-        });
-
-        nestedValueDiv.append(input);
+      if (typeof nestedValue === "object" && nestedValue !== null) {
+        nestedValueDiv.text(JSON.stringify(nestedValue));
       } else {
-        if (typeof nestedValue === "object" && nestedValue !== null) {
-          nestedValueDiv.text(JSON.stringify(nestedValue));
-        } else {
-          nestedValueDiv.text(
-            nestedValue === undefined ? "" : String(nestedValue)
-          );
-        }
+        nestedValueDiv.text(
+          nestedValue === undefined ? "" : String(nestedValue)
+        );
       }
 
       nestedRow.append(nestedLabel, nestedValueDiv);
@@ -490,14 +463,13 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
   }
 
   if (isEditMode) {
-    // Complex object without @id - render nested label+input rows
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      const parentPath = key;
-      return renderNestedObject(value, parentPath);
-    }
-
-    // Simple value (string, number, etc.)
-    const valueStr = value === undefined ? "" : String(value);
+    // Simple value (string, number, etc.) or complex object without @id as JSON string
+    const valueStr =
+      typeof value === "object"
+        ? JSON.stringify(value)
+        : value === undefined
+        ? ""
+        : String(value);
 
     // Check if this property has enumeration values (controlled vocabulary)
     if (
@@ -563,9 +535,9 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
 
     return input;
   } else {
-    // View mode - show as read-only text or nested structure
+    // View mode - show as read-only text (with a simple nested view for plain objects)
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      return renderNestedObject(value, key);
+      return renderNestedObject(value);
     }
 
     const valueStr = value === undefined ? "" : String(value);
