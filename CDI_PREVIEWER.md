@@ -95,7 +95,7 @@ previewers/betatest/
 ### SHACL Shapes Location
 The previewer can load SHACL shapes from multiple sources (selectable via dropdown):
 
-1. **DDI-CDI 1.0 (Official)** - `https://raw.githubusercontent.com/ddi-cdi/ddi-cdi.github.io/main/m2t-ng/DDI-CDI_1-0/encoding/shacl/ddi-cdi.shacl.ttl`
+1. **DDI-CDI 1.0 (Official)** - `https://ddi-cdi.github.io/m2t-ng/DDI-CDI_1-0/encoding/shacl/ddi-cdi.shacl.ttl`
    - Full DDI-CDI class definitions with `sh:targetClass`
    - Best integration with the previewer
    - Works with all CDI types (Activity, DataSet, Variable, etc.)

@@ -1,4 +1,4 @@
-// === CDI Previewer: SHACL Validation Logic ===
+// === CDI Previewer: SHACL Validation Logic (using rdf-validate-shacl) ===
 
 // Runs validation end-to-end on the current jsonData and updates #validation-status
 async function validateData() {
@@ -7,186 +7,110 @@ async function validateData() {
   );
 
   try {
-    // Convert JSON-LD to N3 Store using jsonld library
-    const dataStore = new N3.Store();
-
-    // Create a local copy without @context
-    const dataForValidation = JSON.parse(JSON.stringify(jsonData));
-
-    // Remove @context to avoid remote fetching - we'll use local namespace mapping
-    if (dataForValidation["@context"]) {
-      delete dataForValidation["@context"];
+    if (!window.CdiShacl || !window.CdiShacl.SHACLValidator || !window.CdiShacl.rdf) {
+      throw new Error("SHACL validation engine is not loaded (CdiShacl bundle missing)");
     }
 
-    // Add a minimal local context for basic processing
-    dataForValidation["@context"] = {
-      "@vocab": "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/",
-    };
+    const { SHACLValidator, rdf } = window.CdiShacl;
 
-    // Custom document loader that prevents remote fetching
-    const documentLoader = jsonld.documentLoaders.xhr();
-    const customLoader = async (url) => {
-      console.log("Skipping remote context fetch:", url);
-      // Return empty context for any remote URLs
-      return {
-        contextUrl: null,
-        document: { "@context": {} },
-        documentUrl: url,
+    // Prepare shapes dataset from shaclShapesStore (N3.Store -> DatasetCore)
+    const shapesDataset = rdf.dataset();
+    shaclShapesStore.getQuads(null, null, null, null).forEach((q) => {
+      shapesDataset.add(rdf.quad(
+        rdf.fromTerm(q.subject),
+        rdf.fromTerm(q.predicate),
+        rdf.fromTerm(q.object),
+        q.graph && q.graph.termType !== "DefaultGraph" ? rdf.fromTerm(q.graph) : rdf.defaultGraph()
+      ));
+    });
+
+    // Prepare data dataset from the existing N3 store if available, otherwise from jsonData
+    const dataDataset = rdf.dataset();
+
+    if (typeof dataStore !== "undefined" && dataStore && dataStore.getQuads) {
+      // If a global N3.Store (dataStore) exists with the current data graph, reuse it
+      dataStore.getQuads(null, null, null, null).forEach((q) => {
+        dataDataset.add(rdf.quad(
+          rdf.fromTerm(q.subject),
+          rdf.fromTerm(q.predicate),
+          rdf.fromTerm(q.object),
+          q.graph && q.graph.termType !== "DefaultGraph" ? rdf.fromTerm(q.graph) : rdf.defaultGraph()
+        ));
+      });
+    } else {
+      // Fallback: serialize jsonData to RDF via jsonld and parse into the dataset
+      const dataCopy = JSON.parse(JSON.stringify(jsonData));
+
+      // Use existing @context from jsonData if present; avoid remote loading by custom loader
+      const customLoader = async (url) => {
+        console.log("Skipping remote context fetch during validation:", url);
+        return {
+          contextUrl: null,
+          document: { "@context": {} },
+          documentUrl: url,
+        };
       };
-    };
 
-    // Expand with custom loader
-    const expanded = await jsonld.expand(dataForValidation, {
-      documentLoader: customLoader,
-    });
+      const expanded = await jsonld.expand(dataCopy, { documentLoader: customLoader });
+      const nquads = await jsonld.toRDF(expanded, {
+        format: "application/n-quads",
+        documentLoader: customLoader,
+      });
 
-    // Convert expanded JSON-LD to N-Quads
-    const nquads = await jsonld.toRDF(expanded, {
-      format: "application/n-quads",
-      documentLoader: customLoader,
-    });
+      const parser = new N3.Parser({ format: "N-Quads" });
+      parser.parse(nquads, (error, quad) => {
+        if (error) {
+          throw error;
+        }
+        if (quad) {
+          dataDataset.add(rdf.quad(
+            rdf.fromTerm(quad.subject),
+            rdf.fromTerm(quad.predicate),
+            rdf.fromTerm(quad.object),
+            quad.graph && quad.graph.termType !== "DefaultGraph" ? rdf.fromTerm(quad.graph) : rdf.defaultGraph()
+          ));
+        }
+      });
+    }
 
-    // Parse the N-Quads into the store
-    const parser = new N3.Parser({ format: "N-Quads" });
+    // Run SHACL validation using rdf-validate-shacl
+    const validator = new SHACLValidator(shapesDataset, { factory: rdf });
+    const report = await validator.validate(dataDataset);
 
-    parser.parse(nquads, (error, quad, prefixes) => {
-      if (error) {
-        console.error("Parse error:", error);
-        $("#validation-status").html(
-          '<span class="validation-badge invalid">Parse Error: ' +
-            error.message +
-            "</span>"
-        );
-        return;
-      }
+    validationReport = report;
 
-      if (quad) {
-        dataStore.addQuad(quad);
-      } else {
-        // Parsing complete, run validation
-
-        runShaclValidation(dataStore);
-      }
-    });
-  } catch (error) {
-    console.error("Validation error:", error);
-    $("#validation-status").html(
-      '<span class="validation-badge invalid">Validation Error: ' +
-        error.message +
-        "</span>"
-    );
-  }
-}
-
-async function runShaclValidation(dataStore) {
-  try {
-    // Simple SHACL validation - check required properties and cardinality
     const violations = [];
-    const warnings = [];
 
-    // Get all node shapes
-    const nodeShapes = shaclShapesStore.getSubjects(
-      N3.DataFactory.namedNode(
-        "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-      ),
-      N3.DataFactory.namedNode("http://www.w3.org/ns/shacl#NodeShape"),
-      null
-    );
+    for (const result of report.results) {
+      // Map SHACL result to our simple violation structure
+      const focusNode = result.focusNode && result.focusNode.value ? result.focusNode.value : null;
 
-    // For each node in data, check against its shape
-    for (const node of jsonData["@graph"] || []) {
-      const nodeId = N3.DataFactory.namedNode(node["@id"]);
-      const nodeType = node["@type"];
-
-      if (!nodeType) continue;
-
-      // Find matching shape by target class
-      const targetClassPred = N3.DataFactory.namedNode(
-        "http://www.w3.org/ns/shacl#targetClass"
-      );
-      const nodeTypeTerm = N3.DataFactory.namedNode(nodeType);
-
-      for (const shape of nodeShapes) {
-        const targetClasses = shaclShapesStore.getObjects(
-          shape,
-          targetClassPred,
-          null
-        );
-
-        if (targetClasses.some((tc) => tc.equals(nodeTypeTerm))) {
-          // Check properties for this shape
-          const propertyPred = N3.DataFactory.namedNode(
-            "http://www.w3.org/ns/shacl#property"
-          );
-          const propertyShapes = shaclShapesStore.getObjects(
-            shape,
-            propertyPred,
-            null
-          );
-
-          for (const propShape of propertyShapes) {
-            const path = shaclShapesStore.getObjects(
-              propShape,
-              N3.DataFactory.namedNode("http://www.w3.org/ns/shacl#path"),
-              null
-            )[0];
-            const minCount = shaclShapesStore.getObjects(
-              propShape,
-              N3.DataFactory.namedNode("http://www.w3.org/ns/shacl#minCount"),
-              null
-            )[0];
-            const maxCount = shaclShapesStore.getObjects(
-              propShape,
-              N3.DataFactory.namedNode("http://www.w3.org/ns/shacl#maxCount"),
-              null
-            )[0];
-
-            if (path && minCount) {
-              const pathStr = path.value.split("/").pop().split("#").pop();
-              const minCountVal = parseInt(minCount.value);
-              const actualCount = node[pathStr]
-                ? Array.isArray(node[pathStr])
-                  ? node[pathStr].length
-                  : 1
-                : 0;
-
-              if (actualCount < minCountVal) {
-                violations.push({
-                  focusNode: node["@id"],
-                  path: pathStr,
-                  message: `Required property '${pathStr}' is missing (minCount: ${minCountVal}, actual: ${actualCount})`,
-                });
-              }
-            }
-
-            if (path && maxCount) {
-              const pathStr = path.value.split("/").pop().split("#").pop();
-              const maxCountVal = parseInt(maxCount.value);
-              const actualCount = node[pathStr]
-                ? Array.isArray(node[pathStr])
-                  ? node[pathStr].length
-                  : 1
-                : 0;
-
-              if (actualCount > maxCountVal) {
-                violations.push({
-                  focusNode: node["@id"],
-                  path: pathStr,
-                  message: `Property '${pathStr}' exceeds maxCount (maxCount: ${maxCountVal}, actual: ${actualCount})`,
-                });
-              }
-            }
+      let path = null;
+      if (result.path) {
+        if (result.path.value) {
+          // NamedNode path
+          path = result.path.value.split("/").pop().split("#").pop();
+        } else if (Array.isArray(result.path)) {
+          // Fallback for complex paths: take last named node if available
+          const lastSegment = result.path[result.path.length - 1];
+          if (lastSegment && lastSegment.value) {
+            path = lastSegment.value.split("/").pop().split("#").pop();
           }
         }
       }
+
+      const message = Array.isArray(result.message) && result.message.length > 0
+        ? result.message[0].value || String(result.message[0])
+        : "SHACL constraint violation";
+
+      if (focusNode && path) {
+        violations.push({
+          focusNode,
+          path,
+          message,
+        });
+      }
     }
-
-    const report = {
-      conforms: violations.length === 0,
-      results: violations,
-    };
-
-    validationReport = report;
 
     // Update UI
     if (report.conforms) {
@@ -208,9 +132,9 @@ async function runShaclValidation(dataStore) {
     // Update property rows with validation results
     updatePropertyValidation(violations);
   } catch (error) {
-    console.error("SHACL validation error:", error);
+    console.error("Validation error:", error);
     $("#validation-status").html(
-      '<span class="validation-badge invalid">Validation Engine Error: ' +
+      '<span class="validation-badge invalid">Validation Error: ' +
         error.message +
         "</span>"
     );
