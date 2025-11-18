@@ -8,26 +8,8 @@
 @prefix spdx: <http://spdx.org/rdf/terms#>.
 
 cdifd:CDIFDatasetRecommendedShape a sh:NodeShape ;
-# only apply to elements that are child of root dataset
-	sh:target [
-	  a sh:SPARQLTarget ;
-	  sh:prefixes (
-		[ sh:prefix "schema" ; sh:namespace "https://schema.org/" ]
-		[ sh:prefix "ada" ; sh:namespace "https://ada.astromat.org/metadata/" ]
-		[ sh:prefix "xsd" ; sh:namespace "http://www.w3.org/2001/XMLSchema#" ]
-		[ sh:prefix "dcterms" ; sh:namespace "http://purl.org/dc/terms/" ]
-		[ sh:prefix "time" ; sh:namespace "http://www.w3.org/2006/time#"]
-		[ sh:prefix "rdf" ; sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"]
-		[ sh:prefix "spdx" ; sh:namespace "http://spdx.org/rdf/terms#" ]
-	  ) ;
-	  sh:select """
-      PREFIX schema: <https://schema.org/>
-      SELECT DISTINCT ?this
-	    WHERE {
-	      ?this a schema:Dataset .
-	    }
-""" ;
-	] ;	
+# only apply to elements that are schema:Dataset
+	sh:targetClass schema:Dataset ;	
     sh:property	
 		cdifd:metadataIdentifierProperty,  
 		# +
@@ -156,36 +138,36 @@ cdifd:otherIdentifierProperty
 cdifd:responsiblePartyProperty
     a sh:PropertyShape ;
     sh:path [sh:alternativePath ( schema:creator schema:editor schema:publisher ) ]  ;
-    sh:or (  [  sh:class  schema:Person ]
-             [   sh:class  schema:Organization ]
-				[sh:class rdf:List ] )  ;
+    sh:or (  
+        [  sh:class  schema:Person ]
+        [  sh:class  schema:Organization ]
+        [  sh:node cdifd:RDFListOfAgentsShape ]  # Core SHACL replacement for list validation
+    )  ;
 	sh:minCount 1;
-   	sh:message "Optional: Recommended practice is to identify at least one responsible party as the source authority for the dataset. Options include  creator, editor, or publisher. Each is either a schema:Person or schema:Organization and MUST have at least a name. Note that if the schema:creator schema:editor schema:publisher values are in a List, this rule will fail (still looking for a solution for this problem...." ;
+   	sh:message "Recommended practice is to identify at least one responsible party as the source authority for the dataset. Options include creator, editor, or publisher. Each is either a schema:Person, schema:Organization, or an RDF list containing these types." ;
     sh:description "https://cross-domain-interoperability-framework.github.io/cdifbook/metadata/schemaorgimplementation.html" ;
     sh:severity sh:Info 
     .
 	
-cdifd:responsiblePartyNode
+# Core SHACL replacement for SPARQLConstraint - validates RDF list items
+cdifd:RDFListOfAgentsShape
   a sh:NodeShape ;
-  sh:targetClass schema:Dataset ;
-  #check that if there is a list, entries are Person or Organiation
-  sh:sparql [
-    a sh:SPARQLConstraint ;
-    sh:message "All creators, editors, or publishers in the list must be a schema:Person or schema:Organization." ;
-    sh:select """
-		PREFIX schema: <https://schema.org/> 
-      SELECT $this WHERE {
-        {
-          $this schema:creator|schema:editor|schema:publisher ?list .
-          ?list rdf:rest*/rdf:first ?item .
-          FILTER NOT EXISTS {
-			  ?item a ?type .
-			  FILTER(?type IN (schema:Person, schema:Organization))
-			}
-        }
-
-      }
-    """ ;
+  sh:targetClass rdf:List ;
+  sh:property [
+    sh:path rdf:first ;
+    sh:or (
+      [ sh:class schema:Person ]
+      [ sh:class schema:Organization ]
+    ) ;
+    sh:message "All items in the creator/editor/publisher list must be schema:Person or schema:Organization" ;
+    sh:severity sh:Info
+  ] ;
+  sh:property [
+    sh:path rdf:rest ;
+    sh:or (
+      [ sh:hasValue rdf:nil ]
+      [ sh:node cdifd:RDFListOfAgentsShape ]  # Recursive validation for rest of list
+    )
   ] .
 
   
