@@ -41,25 +41,6 @@ body {
     border-left: none;
 }
 
-.node-card.highlight {
-    animation: highlight-pulse 2s ease-out;
-}
-
-@keyframes highlight-pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
-        background-color: #fff3cd;
-    }
-    50% {
-        box-shadow: 0 0 20px 10px rgba(255, 193, 7, 0.3);
-        background-color: #fff3cd;
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
-        background-color: white;
-    }
-}
-
 .node-reference-link {
     border-left: 2px dashed #6c757d;
     padding-left: 10px;
