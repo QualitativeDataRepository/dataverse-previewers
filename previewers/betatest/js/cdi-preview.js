@@ -990,7 +990,7 @@
                 return refContainer;
             }
             
-            // Simple value (string, number, etc.)
+            // Simple value (string, number, etc.) or complex object without @id
             const valueStr = typeof value === 'object' ? JSON.stringify(value) : String(value);
             
             if (isEditMode) {
@@ -1053,7 +1053,50 @@
                 return input;
             } else {
                 // View mode - show as read-only text
-                return $('<div>').addClass('value-display').text(valueStr);
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    // For complex objects, create a nested expandable section
+                    const nestedContainer = $('<div>').addClass('nested-object').css({
+                        'margin-left': '20px',
+                        'border-left': '2px solid #ddd',
+                        'padding-left': '10px',
+                        'margin-top': '5px'
+                    });
+                    
+                    Object.keys(value).forEach(nestedKey => {
+                        if (nestedKey === '@id' || nestedKey === '@type') return; // Skip JSON-LD metadata for cleaner display
+                        
+                        const nestedRow = $('<div>').addClass('property-row nested-property').css({
+                            'margin-bottom': '8px',
+                            'display': 'flex',
+                            'align-items': 'center'
+                        });
+                        
+                        const nestedLabel = $('<div>').addClass('property-key').css({
+                            'font-weight': '500',
+                            'min-width': '150px',
+                            'color': '#555'
+                        }).text(humanizeKey(nestedKey.replace('schema:', '')));
+                        
+                        const nestedValueDiv = $('<div>').addClass('property-value').css({
+                            'flex': '1'
+                        });
+                        
+                        const nestedValue = value[nestedKey];
+                        if (typeof nestedValue === 'object' && nestedValue !== null) {
+                            nestedValueDiv.text(JSON.stringify(nestedValue));
+                        } else {
+                            nestedValueDiv.text(String(nestedValue));
+                        }
+                        
+                        nestedRow.append(nestedLabel, nestedValueDiv);
+                        nestedContainer.append(nestedRow);
+                    });
+                    
+                    return nestedContainer;
+                } else {
+                    // For simple values, show as regular text
+                    return $('<div>').addClass('value-display').text(valueStr);
+                }
             }
         }
 
