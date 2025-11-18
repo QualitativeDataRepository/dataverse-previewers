@@ -1777,7 +1777,8 @@
                 );
                 
                 propertyQuads.forEach(propQuad => {
-                    const propertyShape = propQuad.object.value;
+                    // The object is the property shape node (may be blank node or named node)
+                    const propertyShapeRef = propQuad.object;
                         
                         // Get sh:path for this property
                         const pathQuads = shaclShapesStore.getQuads(
