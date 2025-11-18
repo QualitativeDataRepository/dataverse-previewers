@@ -508,9 +508,10 @@
                     expandedJsonLd = null;
                 }
                 
-                // Load SHACL shapes - try official DDI-CDI first, with fallback to local
+                // Load SHACL shapes - use the selected shape from dropdown
                 try {
-                    await loadShaclShapes('ddi-cdi-official');
+                    const selectedShape = $('#shape-selector').val() || 'ddi-cdi-official';
+                    await loadShaclShapes(selectedShape);
                 } catch (shapeError) {
                     console.error('Failed to load SHACL shapes:', shapeError);
                     throw new Error(`Failed to load validation shapes: ${shapeError.message}`);
