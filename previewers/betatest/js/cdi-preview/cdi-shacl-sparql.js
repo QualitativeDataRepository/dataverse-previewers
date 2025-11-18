@@ -293,8 +293,10 @@ async function jsonLdToN3Store(jsonLdData) {
 
   try {
     // Convert JSON-LD to N-Quads format
+    // Need base URI to resolve relative # identifiers
     const nquads = await jsonld.toRDF(jsonLdData, {
       format: "application/n-quads",
+      base: "http://example.org/data"
     });
 
     // Parse N-Quads into N3 store

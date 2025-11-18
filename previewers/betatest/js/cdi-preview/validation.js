@@ -67,13 +67,22 @@ async function validateData() {
         ? result.message[0].value || String(result.message[0])
         : "SHACL constraint violation";
 
-      if (focusNode && path) {
-        violations.push({
-          focusNode,
-          path,
-          message,
-        });
-      }
+      violations.push({
+        focusNode: focusNode || "unknown",
+        path: path || "unknown",
+        message,
+        severity: result.severity ? result.severity.value : null
+      });
+    }
+    
+    // Log violations to console for debugging
+    if (violations.length > 0) {
+      console.log("Validation violations:");
+      violations.forEach((v, i) => {
+        console.log(`  ${i+1}. ${v.focusNode}`);
+        console.log(`     Property: ${v.path}`);
+        console.log(`     Message: ${v.message}`);
+      });
     }
 
     // Update UI
@@ -83,14 +92,44 @@ async function validateData() {
           '<span class="glyphicon glyphicon-ok-circle"></span> Valid' +
           "</span>"
       );
+      $("#validation-details").empty();
     } else {
       $("#validation-status").html(
         '<span class="validation-badge invalid">' +
           '<span class="glyphicon glyphicon-exclamation-sign"></span> ' +
           violations.length +
           " violation(s)" +
-          "</span>"
+          "</span>" +
+          '<button id="toggle-violations-btn" class="btn btn-sm btn-default" style="margin-left: 10px;">' +
+          '<span class="glyphicon glyphicon-chevron-down"></span> Show Details' +
+          "</button>"
       );
+      
+      // Show violations list (initially hidden)
+      let detailsHtml = '<div class="validation-violations" style="display: none;"><h4>Validation Violations:</h4><ul>';
+      violations.forEach((v, i) => {
+        const nodeId = v.focusNode.split('/').pop();
+        detailsHtml += `<li><strong>${nodeId}</strong> - ${v.path}: ${v.message}</li>`;
+      });
+      detailsHtml += '</ul></div>';
+      $("#validation-details").html(detailsHtml);
+      
+      // Add toggle handler
+      $("#toggle-violations-btn").click(function() {
+        const $details = $(".validation-violations");
+        const $btn = $(this);
+        const $icon = $btn.find(".glyphicon");
+        
+        if ($details.is(":visible")) {
+          $details.slideUp(200);
+          $icon.removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+          $btn.html('<span class="glyphicon glyphicon-chevron-down"></span> Show Details');
+        } else {
+          $details.slideDown(200);
+          $icon.removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+          $btn.html('<span class="glyphicon glyphicon-chevron-up"></span> Hide Details');
+        }
+      });
     }
 
     // Update property rows with validation results
@@ -102,6 +141,7 @@ async function validateData() {
         error.message +
         "</span>"
     );
+    $("#validation-details").empty();
   }
 }
 

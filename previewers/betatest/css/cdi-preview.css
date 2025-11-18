@@ -287,6 +287,38 @@ body.filter-shacl-only .property-row.extra-field {
     font-size: 0.9em;
 }
 
+.validation-violations {
+    margin-top: 15px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.validation-violations h4 {
+    margin-top: 0;
+    color: #721c24;
+    font-size: 1.1em;
+}
+
+.validation-violations ul {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+}
+
+.validation-violations li {
+    margin-bottom: 10px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.validation-violations li strong {
+    color: #721c24;
+    font-family: monospace;
+}
+
 .array-value {
     margin-bottom: 5px;
 }
