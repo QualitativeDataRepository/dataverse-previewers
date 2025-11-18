@@ -35,6 +35,7 @@ function parseRdfList(listNodeOrUri) {
   ) {
     iterations++;
 
+    // Get rdf:first (the value at this position)
     const firstQuads = shaclShapesStore.getQuads(
       currentNode,
       firstUri,
@@ -45,9 +46,13 @@ function parseRdfList(listNodeOrUri) {
     if (firstQuads.length > 0) {
       const valueUri = firstQuads[0].object.value;
       const label = extractLabelFromUri(valueUri);
-      values.push({ uri: valueUri, label: label });
+      values.push({
+        uri: valueUri,
+        label: label,
+      });
     }
 
+    // Get rdf:rest (pointer to next node in list)
     const restQuads = shaclShapesStore.getQuads(
       currentNode,
       restUri,
@@ -62,9 +67,11 @@ function parseRdfList(listNodeOrUri) {
   return values;
 }
 
-// Extract a readable label from a URI (used for enums)
+// Extract a readable label from a URI
 function extractLabelFromUri(uri) {
+  // Extract the local part after last / or #
   const parts = uri.split("/").pop().split("#").pop();
+  // Convert camelCase to Title Case with spaces
   return parts
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (str) => str.toUpperCase())
@@ -75,6 +82,7 @@ function extractLabelFromUri(uri) {
 function getEnumerationValues(nodeShapeUri) {
   if (!shaclShapesStore) return null;
 
+  // Query for sh:in on this NodeShape
   const inQuads = shaclShapesStore.getQuads(
     nodeShapeUri,
     "http://www.w3.org/ns/shacl#in",
@@ -84,10 +92,11 @@ function getEnumerationValues(nodeShapeUri) {
 
   if (inQuads.length === 0) return null;
 
+  // Parse the RDF list
   return parseRdfList(inQuads[0].object);
 }
 
-// Classify a property based on SHACL shapes and SPARQL targets
+// Classify a property based on SHACL shapes
 function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
   log(
     LOG_LEVEL.DEBUG,
@@ -110,10 +119,12 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
 
   if (!shaclShapesStore || nodeTypes.length === 0) return result;
 
+  // Try to get the expanded URI for this property
   const expandedUri = nodeId
     ? getExpandedPropertyUri(nodeId, propertyKey)
     : null;
 
+  // Also try to expand the property key if it's in compact form (e.g., "schema:name")
   let expandedPropertyKey = propertyKey;
   if (propertyKey.includes(":") && jsonData && jsonData["@context"]) {
     const [prefix, localPart] = propertyKey.split(":");
@@ -124,14 +135,18 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
   }
 
   try {
+    // Collect all shape URIs that might apply to this node
     const applicableShapes = new Set();
 
+    // 1. Check SPARQL target cache first (if enabled and executed)
     if (sparqlTargetCache.enabled && sparqlTargetCache.executed && nodeId) {
+      // Expand the node ID to full URI for comparison
       const expandedNodeId = getExpandedNodeId(nodeId);
 
       for (const [shapeUri, matchedNodes] of Object.entries(
         sparqlTargetCache.results
       )) {
+        // Check both compact and expanded forms
         if (matchedNodes.has(nodeId) || matchedNodes.has(expandedNodeId)) {
           applicableShapes.add(shapeUri);
           log(
@@ -148,6 +163,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
       }
     }
 
+    // 2. Also check sh:targetClass (traditional method)
     nodeTypes.forEach((type) => {
       const typeUri = type.startsWith("http")
         ? type
@@ -165,12 +181,14 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
       });
     });
 
+    // Now process all applicable shapes
     log(
       LOG_LEVEL.DEBUG,
       `Processing ${applicableShapes.size} applicable shape(s) for node ${nodeId}, property ${propertyKey}`
     );
 
     applicableShapes.forEach((shapeSubject) => {
+      // Get all sh:property predicates
       const propertyQuads = shaclShapesStore.getQuads(
         shapeSubject,
         "http://www.w3.org/ns/shacl#property",
@@ -178,9 +196,21 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
         null
       );
 
+      if (
+        currentLogLevel >= LOG_LEVEL.DEBUG &&
+        nodeId === "xas:485749" &&
+        propertyKey === "name"
+      ) {
+        console.log(
+          `  Shape ${shapeSubject} has ${propertyQuads.length} property definition(s)`
+        );
+      }
+
       propertyQuads.forEach((propQuad) => {
         const propertyShapeRef = propQuad.object;
 
+        // Property shape might be a direct node or a reference to another shape
+        // Try to get sh:path directly from this node
         let pathQuads = shaclShapesStore.getQuads(
           propertyShapeRef,
           "http://www.w3.org/ns/shacl#path",
@@ -188,27 +218,37 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
           null
         );
 
+        // If no path found and it's a URI reference (not blank node),
+        // it might be referencing a named property shape definition
         if (
           pathQuads.length === 0 &&
           propertyShapeRef.termType === "NamedNode"
         ) {
-          log(
-            LOG_LEVEL.DEBUG,
-            `Resolving property shape reference: ${propertyShapeRef.value}`
+          console.log(
+            `  Resolving property shape reference: ${propertyShapeRef.value}`
           );
+          // This is a reference like cdifd:nameProperty
+          // The referenced shape should have the actual sh:path
           pathQuads = shaclShapesStore.getQuads(
             propertyShapeRef.value,
             "http://www.w3.org/ns/shacl#path",
             null,
             null
           );
+          if (pathQuads.length > 0) {
+            console.log(`    → Found path: ${pathQuads[0].object.value}`);
+          } else {
+            console.log(`    → No path found for reference`);
+          }
         }
 
         pathQuads.forEach((pathQuad) => {
           let pathsToCheck = [];
           const pathObject = pathQuad.object;
 
+          // Check if this is a blank node (complex path like sh:alternativePath)
           if (pathObject.termType === "BlankNode") {
+            // Check for sh:alternativePath
             const altPathQuads = shaclShapesStore.getQuads(
               pathObject,
               "http://www.w3.org/ns/shacl#alternativePath",
@@ -217,8 +257,10 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
             );
 
             if (altPathQuads.length > 0) {
+              // sh:alternativePath points to an RDF list
               const listNode = altPathQuads[0].object;
               const alternatives = parseRdfList(listNode);
+              // Extract just the URIs from the parsed list
               pathsToCheck = alternatives.map((item) => item.uri || item);
               log(
                 LOG_LEVEL.DEBUG,
@@ -228,14 +270,19 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
               );
             }
           } else {
+            // Simple path (direct URI)
             pathsToCheck = [pathObject.value];
           }
 
+          // Check each path option
           pathsToCheck.forEach((path) => {
             const pathName = path.split("/").pop().split("#").pop();
 
+            // SHACL paths are like: cdi:WideDataSet-name or cdi:DataSet_isStructuredBy_DataStructure
+            // Extract the property part after the class name and hyphen/underscore
             let shaclPropertyName = pathName;
 
+            // Remove class prefix if present (e.g., "WideDataSet-name" -> "name")
             if (pathName.includes("-")) {
               const parts = pathName.split("-");
               if (parts.length > 1) {
@@ -243,25 +290,29 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
               }
             }
 
+            // Also check for underscore patterns (e.g., "DataSet_isStructuredBy_DataStructure")
             if (pathName.includes("_")) {
               const parts = pathName.split("_");
+              // The middle part is usually the property name
               if (parts.length >= 2) {
                 shaclPropertyName = parts[1];
               }
             }
 
+            // Check if this matches our property using multiple strategies
             const matches =
-              pathName === propertyKey ||
-              path === propertyKey ||
-              path === expandedPropertyKey ||
-              shaclPropertyName === propertyKey ||
-              (expandedUri && path === expandedUri) ||
-              pathName.endsWith(propertyKey) ||
-              pathName.toLowerCase().includes(propertyKey.toLowerCase());
+              pathName === propertyKey || // Exact match with full path name
+              path === propertyKey || // Exact match with full URI
+              path === expandedPropertyKey || // Match with expanded property key (e.g., schema:name → https://schema.org/name)
+              shaclPropertyName === propertyKey || // Match extracted property name
+              (expandedUri && path === expandedUri) || // Match with expanded URI if available
+              pathName.endsWith(propertyKey) || // Ends with property key
+              pathName.toLowerCase().includes(propertyKey.toLowerCase()); // Contains property key (case insensitive)
 
             if (matches) {
               result.isInShape = true;
 
+              // Check sh:minCount for required
               const minCountQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#minCount",
@@ -273,6 +324,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 result.isRequired = result.minCount > 0;
               }
 
+              // Check sh:maxCount for cardinality
               const maxCountQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#maxCount",
@@ -283,6 +335,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 result.maxCount = parseInt(maxCountQuads[0].object.value);
               }
 
+              // Check sh:node for complex objects
               const nodeQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#node",
@@ -293,6 +346,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 result.nodeShape = nodeQuads[0].object.value;
               }
 
+              // Check sh:class for object type
               const classQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#class",
@@ -303,6 +357,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 result.nodeClass = classQuads[0].object.value;
               }
 
+              // Get sh:datatype
               const datatypeQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#datatype",
@@ -311,6 +366,8 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
               );
               if (datatypeQuads.length > 0) {
                 result.datatype = datatypeQuads[0].object.value;
+
+                // Determine input type based on datatype
                 const dt = result.datatype.toLowerCase();
                 if (
                   dt.includes("integer") ||
@@ -329,6 +386,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 }
               }
 
+              // Get sh:description
               const descQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#description",
@@ -339,6 +397,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 result.description = descQuads[0].object.value;
               }
 
+              // Get sh:in (allowed values) - direct enumeration on property
               const inQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#in",
@@ -346,9 +405,11 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 null
               );
               if (inQuads.length > 0) {
+                // Parse RDF list to get enumeration values
                 result.allowedValues = parseRdfList(inQuads[0].object);
               }
 
+              // Check if sh:node references an enumeration shape
               if (result.nodeShape && !result.allowedValues) {
                 const nodeShapeUri =
                   result.nodeShape.startsWith("http") ||
@@ -361,6 +422,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 }
               }
 
+              // Get sh:pattern
               const patternQuads = shaclShapesStore.getQuads(
                 propertyShapeRef,
                 "http://www.w3.org/ns/shacl#pattern",
@@ -371,10 +433,10 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
                 result.pattern = patternQuads[0].object.value;
               }
             }
-          });
-        });
-      });
-    });
+          }); // end pathsToCheck.forEach
+        }); // end pathQuads.forEach
+      }); // end propertyQuads.forEach
+    }); // end applicableShapes.forEach
   } catch (err) {
     console.error("Error classifying property:", err);
   }

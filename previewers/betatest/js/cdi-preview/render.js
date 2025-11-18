@@ -1,10 +1,10 @@
 // === CDI Previewer: Tree Rendering & Node/Property Display ===
 
+// Track which nodes have been rendered to avoid duplicates
 let renderedNodes = new Set();
 
 function renderData() {
-  log(
-    LOG_LEVEL.DEBUG,
+  console.log(
     "🎨 RENDER START - SPARQL executed:",
     sparqlTargetCache.executed,
     "Cache size:",
@@ -13,14 +13,17 @@ function renderData() {
 
   const content = $("#content");
   content.empty();
-  renderedNodes.clear();
+  renderedNodes.clear(); // Reset for each render
 
   if (!jsonData || !jsonData["@graph"]) {
     content.html('<div class="alert alert-warning">No data to display</div>');
     return;
   }
 
+  // Build tree structure: find which nodes are referenced by others
+  const allNodeIds = new Set(jsonData["@graph"].map((n) => n["@id"]));
   const referencedIds = new Set();
+
   jsonData["@graph"].forEach((node) => {
     Object.keys(node).forEach((key) => {
       if (key !== "@id" && key !== "@type" && key !== "@context") {
@@ -31,16 +34,19 @@ function renderData() {
     });
   });
 
+  // Root nodes are those not referenced by any other node
   const rootNodes = jsonData["@graph"].filter(
     (n) => !referencedIds.has(n["@id"])
   );
 
+  // Render root nodes (they will recursively render their children)
   rootNodes.forEach((node, index) => {
     const nodeCard = renderNodeTree(node, index, 0);
     content.append(nodeCard);
   });
 }
 
+// Extract all @id references from a value (handles arrays, nested objects, and string references)
 function extractNodeReferences(value) {
   const refs = [];
   if (Array.isArray(value)) {
@@ -59,9 +65,12 @@ function extractNodeReferences(value) {
   return refs;
 }
 
+// Check if a string value looks like a node reference
 function isNodeReference(str) {
   if (typeof str !== "string") return false;
+  // Check if it starts with # or _: (common node ID patterns)
   if (str.startsWith("#") || str.startsWith("_:")) {
+    // Verify this ID actually exists in the graph
     return jsonData["@graph"].some((n) => n["@id"] === str);
   }
   return false;
@@ -71,17 +80,95 @@ function renderNodeTree(node, index, depth) {
   const id = node["@id"] || `_:blank${index}`;
   const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
 
+  // Mark this node as rendered
   renderedNodes.add(id);
 
-  const card = renderNode(node, index);
-  card.addClass("tree-node");
+  // Only indent depth > 0 with a constant 8px (not cumulative since nodes are nested)
+  const card = $("<div>")
+    .addClass("node-card tree-node")
+    .attr("data-node-id", id);
   if (depth > 0) {
     card.css("margin-left", "8px");
   }
+
+  // Header with collapse functionality
+  const header = $("<div>").addClass("node-header");
+  const leftSide = $("<div>")
+    .css("display", "flex")
+    .css("align-items", "center");
+  leftSide.append(
+    $("<span>")
+      .addClass("glyphicon glyphicon-chevron-down collapse-icon")
+      .css("margin-right", "10px")
+  );
+  leftSide.append($("<span>").addClass("node-id").text(id));
+  types.forEach((type) => {
+    if (type) {
+      leftSide.append($("<span>").addClass("node-type").text(type));
+    }
+  });
+  header.append(leftSide);
+
+  // Add click handler to collapse/expand
+  header.click(function () {
+    card.toggleClass("collapsed");
+  });
+
+  card.append(header);
+
+  // Body with properties
+  const body = $("<div>").addClass("node-body");
+  if (!isEditMode) {
+    body.addClass("view-mode");
+  }
+
+  // Render all properties except @id and @type
+  Object.keys(node).forEach((key) => {
+    if (key !== "@id" && key !== "@type" && key !== "@context") {
+      const propertyRow = renderPropertyTree(key, node[key], id, types, depth);
+      body.append(propertyRow);
+    }
+  });
+
+  card.append(body);
+
+  // Add property suggestions in edit mode
+  if (isEditMode && shaclShapesStore) {
+    const suggestions = getPropertySuggestions(node, types);
+
+    if (suggestions.length > 0) {
+      const suggestionsSection = createPropertySuggestionsSection(
+        suggestions,
+        id,
+        body
+      );
+      card.append(suggestionsSection);
+    } else {
+      // Even with no SHACL suggestions, allow adding custom properties
+      const emptySection = $("<div>").addClass("add-property-section");
+      emptySection.append(
+        $("<h4>")
+          .text("Add Properties")
+          .css({ "margin-top": "0", "margin-bottom": "10px" })
+      );
+      const addCustomBtn = $("<button>")
+        .addClass("btn btn-default")
+        .html(
+          '<span class="glyphicon glyphicon-edit"></span> Add Custom Property'
+        )
+        .click(function () {
+          const propName = prompt("Enter custom property name:");
+          if (propName) {
+            addPropertyToNode(id, propName, "", body);
+          }
+        });
+      emptySection.append(addCustomBtn);
+      card.append(emptySection);
+    }
+  }
+
   return card;
 }
-
-// === Node & Property Rendering Helpers (moved from cdi-preview.js) ===
 
 function renderNode(node, index) {
   const id = node["@id"] || `_:blank${index}`;
@@ -196,7 +283,7 @@ function renderPropertyTree(key, value, nodeId, nodeTypes, depth) {
           const jumpBtn = $("<button>")
             .addClass("btn btn-sm btn-default")
             .html(
-              '<span class="glyphicon glyphicon-arrow-right"></span> e ' + refId
+              `<span class="glyphicon glyphicon-arrow-right"></span> → ${refId}`
             )
             .attr("title", "Click to jump to this node")
             .click(function (e) {
@@ -359,57 +446,6 @@ function renderProperty(key, value, nodeId, nodeTypes) {
 }
 
 function createValueInput(key, value, nodeId, arrayIndex, classification) {
-  // Helper to render a simple nested JSON object as label+value pairs (view mode only)
-  function renderNestedObject(obj) {
-    const container = $("<div>")
-      .addClass("nested-object")
-      .css({
-        "margin-left": "20px",
-        "border-left": "2px solid #ddd",
-        "padding-left": "10px",
-        "margin-top": "5px",
-      });
-
-    Object.keys(obj).forEach((nestedKey) => {
-      if (nestedKey === "@id" || nestedKey === "@type") return; // Skip JSON-LD metadata
-
-      const nestedRow = $("<div>")
-        .addClass("property-row nested-property")
-        .css({
-          "margin-bottom": "8px",
-          display: "flex",
-          "align-items": "center",
-        });
-
-      const nestedLabel = $("<div>")
-        .addClass("property-label")
-        .css({
-          "font-weight": "500",
-          "min-width": "150px",
-          color: "#555",
-        })
-        .text(humanizeKey(nestedKey.replace("schema:", "")));
-
-      const nestedValueDiv = $("<div>")
-        .addClass("property-value")
-        .css({ flex: "1" });
-
-      const nestedValue = obj[nestedKey];
-      if (typeof nestedValue === "object" && nestedValue !== null) {
-        nestedValueDiv.text(JSON.stringify(nestedValue));
-      } else {
-        nestedValueDiv.text(
-          nestedValue === undefined ? "" : String(nestedValue)
-        );
-      }
-
-      nestedRow.append(nestedLabel, nestedValueDiv);
-      container.append(nestedRow);
-    });
-
-    return container;
-  }
-
   // Check if value is a reference to another node (has @id)
   if (typeof value === "object" && value !== null && value["@id"]) {
     const refId = value["@id"];
@@ -462,15 +498,11 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
     return refContainer;
   }
 
-  if (isEditMode) {
-    // Simple value (string, number, etc.) or complex object without @id as JSON string
-    const valueStr =
-      typeof value === "object"
-        ? JSON.stringify(value)
-        : value === undefined
-        ? ""
-        : String(value);
+  // Simple value (string, number, etc.) or complex object without @id
+  const valueStr =
+    typeof value === "object" ? JSON.stringify(value) : String(value);
 
+  if (isEditMode) {
     // Check if this property has enumeration values (controlled vocabulary)
     if (
       classification &&
@@ -535,13 +567,56 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
 
     return input;
   } else {
-    // View mode - show as read-only text (with a simple nested view for plain objects)
+    // View mode - show as read-only text
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      return renderNestedObject(value);
-    }
+      // For complex objects, create a nested expandable section
+      const nestedContainer = $("<div>").addClass("nested-object").css({
+        "margin-left": "20px",
+        "border-left": "2px solid #ddd",
+        "padding-left": "10px",
+        "margin-top": "5px",
+      });
 
-    const valueStr = value === undefined ? "" : String(value);
-    return $("<div>").addClass("value-display").text(valueStr);
+      Object.keys(value).forEach((nestedKey) => {
+        if (nestedKey === "@id" || nestedKey === "@type") return; // Skip JSON-LD metadata for cleaner display
+
+        const nestedRow = $("<div>")
+          .addClass("property-row nested-property")
+          .css({
+            "margin-bottom": "8px",
+            display: "flex",
+            "align-items": "center",
+          });
+
+        const nestedLabel = $("<div>")
+          .addClass("property-key")
+          .css({
+            "font-weight": "500",
+            "min-width": "150px",
+            color: "#555",
+          })
+          .text(humanizeKey(nestedKey.replace("schema:", "")));
+
+        const nestedValueDiv = $("<div>").addClass("property-value").css({
+          flex: "1",
+        });
+
+        const nestedValue = value[nestedKey];
+        if (typeof nestedValue === "object" && nestedValue !== null) {
+          nestedValueDiv.text(JSON.stringify(nestedValue));
+        } else {
+          nestedValueDiv.text(String(nestedValue));
+        }
+
+        nestedRow.append(nestedLabel, nestedValueDiv);
+        nestedContainer.append(nestedRow);
+      });
+
+      return nestedContainer;
+    } else {
+      // For simple values, show as regular text
+      return $("<div>").addClass("value-display").text(valueStr);
+    }
   }
 }
 

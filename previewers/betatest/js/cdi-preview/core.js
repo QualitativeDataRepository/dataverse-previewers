@@ -1,5 +1,3 @@
-// === Logging & Global State ===
-
 // Logging levels
 const LOG_LEVEL = {
   ERROR: 0,
@@ -32,7 +30,6 @@ function log(level, ...args) {
   }
 }
 
-// Shared global state used across CDI previewer modules
 let jsonData = null;
 let shaclShapes = null;
 let shaclShapesStore = null;
@@ -51,8 +48,8 @@ let comunicaEngine = null;
 
 // SPARQL target cache for sh:SPARQLTarget support
 const sparqlTargetCache = {
-  queries: {}, // shapeUri  SPARQL query string
-  results: {}, // shapeUri  Set of matching node URIs
+  queries: {}, // shapeUri → SPARQL query string
+  results: {}, // shapeUri → Set of matching node URIs
   executed: false,
   enabled: true, // Feature flag for easy disable if needed
 };
@@ -67,20 +64,21 @@ const SHAPE_URLS = {
   "local-fallback": "shapes/ddi-cdi-official.ttl",
 };
 
-// Minimal namespace object (optional future use)
-window.CDI = window.CDI || {};
-
-// === CDI Previewer Core Initialization & Dataverse Wiring ===
-
+// Initialize
 $(document).ready(async function () {
   try {
+    // Get file URL from query parameters
     const urlParams = new URLSearchParams(window.location.search);
     let fileUrl;
     let datasetMetadataUrl = null;
 
+    // Check if we have a callback parameter (external tool invocation)
     const callbackParam = urlParams.get("callback");
     if (callbackParam) {
+      // Decode the callback URL
       const callbackUrl = atob(callbackParam);
+
+      // Fetch the tool parameters from the callback URL
       const paramsResponse = await fetch(callbackUrl);
       if (!paramsResponse.ok) {
         throw new Error(
@@ -88,10 +86,13 @@ $(document).ready(async function () {
         );
       }
       const paramsData = await paramsResponse.json();
+
+      // Extract parameters from the response
       const queryParams = paramsData.data.queryParameters || {};
       fileId = queryParams.fileid;
       siteUrl = queryParams.siteUrl;
 
+      // Get the dataset metadata signed URL if available
       const signedUrls = paramsData.data.signedUrls || [];
       const metadataUrlObj = signedUrls.find(
         (u) => u.name === "getDatasetVersionMetadata"
@@ -100,26 +101,32 @@ $(document).ready(async function () {
         datasetMetadataUrl = metadataUrlObj.signedUrl;
       }
     } else {
+      // Direct parameters (for testing)
       fileId = urlParams.get("fileid");
       siteUrl = urlParams.get("siteUrl");
     }
 
+    // Check required parameters
     if (!fileId || !siteUrl) {
+      // Show load local file button instead of error
       $("#load-local-btn").show();
       $("#content").html(`
-                <div class="alert alert-info">
-                    <strong>No Dataverse parameters detected.</strong> Use the "Load Local File" button in the top left to select a CDI JSON-LD file from your computer.
-                </div>
-            `);
+                        <div class="alert alert-info">
+                            <strong>No Dataverse parameters detected.</strong> Use the "Load Local File" button in the top left to select a CDI JSON-LD file from your computer.
+                        </div>
+                    `);
       setupEventHandlers();
       return;
     }
 
+    // Try to get the original filename from dataset metadata
     try {
       if (datasetMetadataUrl) {
+        // Use signed URL from callback
         const metadataResponse = await fetch(datasetMetadataUrl);
         if (metadataResponse.ok) {
           const metadata = await metadataResponse.json();
+          // Find the file in the files array by matching fileId
           const files = metadata.data.files || [];
           const fileInfo = files.find(
             (f) => f.dataFile && f.dataFile.id == fileId
@@ -129,6 +136,7 @@ $(document).ready(async function () {
           }
         }
       } else {
+        // Fallback: try direct file API
         const metadataResponse = await fetch(`${siteUrl}/api/files/${fileId}`);
         if (metadataResponse.ok) {
           const metadata = await metadataResponse.json();
@@ -145,13 +153,18 @@ $(document).ready(async function () {
       console.warn("Could not fetch filename, using default:", e);
     }
 
+    // Load from Dataverse API
     fileUrl = siteUrl + "/api/access/datafile/" + fileId;
 
+    // Load JSON-LD data
     const response = await fetch(fileUrl);
+
+    // Check if response is OK
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
+    // Check content type
     const contentType = response.headers.get("content-type");
     if (contentType && !contentType.includes("json")) {
       throw new Error(
@@ -159,6 +172,7 @@ $(document).ready(async function () {
       );
     }
 
+    // Try to parse as JSON
     let jsonText;
     try {
       jsonText = await response.text();
@@ -169,6 +183,7 @@ $(document).ready(async function () {
       );
     }
 
+    // Normalize to @graph format if needed
     try {
       jsonData = await normalizeToGraphFormat(jsonData);
     } catch (normalizeError) {
@@ -177,14 +192,16 @@ $(document).ready(async function () {
       );
     }
 
+    // Verify we now have @graph (should always be true after normalization)
     if (!jsonData["@graph"]) {
       throw new Error(
         "Internal error: Normalization did not produce @graph structure."
       );
     }
 
-    originalData = JSON.parse(JSON.stringify(jsonData));
+    originalData = JSON.parse(JSON.stringify(jsonData)); // Deep clone
 
+    // Expand JSON-LD to get full property URIs
     try {
       expandedJsonLd = await jsonld.expand(jsonData);
       console.log("Expanded JSON-LD for property URI mapping");
@@ -193,6 +210,7 @@ $(document).ready(async function () {
       expandedJsonLd = null;
     }
 
+    // Load SHACL shapes - use the selected shape from dropdown
     try {
       const selectedShape = $("#shape-selector").val() || "ddi-cdi-official";
       await loadShaclShapes(selectedShape);
@@ -203,18 +221,22 @@ $(document).ready(async function () {
       );
     }
 
+    // Execute SPARQL targets to match nodes to shapes
     await executeSparqlTargets();
 
+    // Render the data
     renderData();
+
+    // Setup event handlers
     setupEventHandlers();
   } catch (error) {
     console.error("Error loading data:", error);
     $("#load-local-btn").show();
     $("#content").html(`
-            <div class="alert alert-danger">
-                <strong>Error:</strong> Failed to load CDI data. ${error.message}
-            </div>
-        `);
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> Failed to load CDI data. ${error.message}
+                    </div>
+                `);
     setupEventHandlers();
   }
 });

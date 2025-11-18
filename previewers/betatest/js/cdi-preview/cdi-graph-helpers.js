@@ -6,8 +6,7 @@
 //  - core.js                      (Dataverse wiring and initialization)
 //  - render.js                    (tree rendering)
 
-// Expand a compact node ID (e.g., "xas:fe_c3d.001") to full URI (e.g., "http://www.cdi4exas.org/fe_c3d.001").
-// Falls back to returning the input unchanged when expansion is not possible.
+// Expand a compact node ID (e.g., "xas:fe_c3d.001") to full URI (e.g., "http://www.cdi4exas.org/fe_c3d.001")
 function getExpandedNodeId(compactNodeId) {
   if (!compactNodeId) return null;
 
@@ -55,7 +54,7 @@ function getExpandedNodeId(compactNodeId) {
   return compactNodeId; // Return as-is if we can't expand
 }
 
-// Get the expanded URI for a property from the expanded JSON-LD.
+// Get the expanded URI for a property from the expanded JSON-LD
 function getExpandedPropertyUri(nodeId, propertyKey) {
   if (!expandedJsonLd || !Array.isArray(expandedJsonLd)) {
     return null;
@@ -82,7 +81,43 @@ function getExpandedPropertyUri(nodeId, propertyKey) {
 
   return null;
 }
+
 // Get all available node types from SHACL shapes.
+function getAvailableNodeTypes() {
+  if (!shaclShapesStore) {
+    return [];
+  }
+
+  const nodeTypes = new Set();
+
+  try {
+    // Find all NodeShapes with sh:targetClass
+    const targetClassQuads = shaclShapesStore.getQuads(
+      null,
+      "http://www.w3.org/ns/shacl#targetClass",
+      null,
+      null
+    );
+
+    targetClassQuads.forEach((quad) => {
+      const classUri = quad.object.value;
+      // Extract the class name from the URI
+      const className = classUri.split("/").pop().split("#").pop();
+      nodeTypes.add({
+        uri: classUri,
+        name: className,
+        label: humanizeKey(className),
+      });
+    });
+  } catch (error) {
+    console.error("Error getting node types:", error);
+  }
+
+  // Convert Set to Array and sort by label
+  return Array.from(nodeTypes).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// Get all available node types from SHACL shapes
 function getAvailableNodeTypes() {
   if (!shaclShapesStore) {
     return [];
@@ -251,64 +286,7 @@ function createAndAddRootNode(nodeType) {
     }
   }, 100);
 
-  log(LOG_LEVEL.INFO, "Added new root node:", newNode);
-}
-
-function addComplexPropertyToNode(nodeId, suggestion, bodyElement) {
-  // Create a new node in the @graph
-  const newNodeId = `_:${suggestion.path}_${Date.now()}`;
-
-  // Extract class name from full URI or use the short name
-  let className = suggestion.nodeClass || "Object";
-
-  // If it's a full URI, extract just the class name
-  if (className.includes("/") || className.includes("#")) {
-    className = className.split("/").pop().split("#").pop();
-  }
-
-  const newNode = {
-    "@id": newNodeId,
-    "@type": className,
-  };
-
-  // Add to graph
-  if (!jsonData["@graph"]) {
-    jsonData["@graph"] = [];
-  }
-  jsonData["@graph"].push(newNode);
-
-  // Add reference to parent node
-  const parentNode = jsonData["@graph"].find((n) => n["@id"] === nodeId);
-  if (parentNode) {
-    if (suggestion.maxCount === 1) {
-      parentNode[suggestion.path] = { "@id": newNodeId };
-    } else {
-      if (!parentNode[suggestion.path]) {
-        parentNode[suggestion.path] = [];
-      }
-      if (Array.isArray(parentNode[suggestion.path])) {
-        parentNode[suggestion.path].push({ "@id": newNodeId });
-      } else {
-        parentNode[suggestion.path] = [
-          parentNode[suggestion.path],
-          { "@id": newNodeId },
-        ];
-      }
-    }
-  }
-
-  // Re-render everything
-  renderData();
-  updateSaveButton();
-
-  // Scroll to new node
-  setTimeout(() => {
-    const newCard = $(`.node-card[data-node-id="${newNodeId}"]`);
-    if (newCard.length) {
-      newCard[0].scrollIntoView({ behavior: "smooth", block: "center" });
-      newCard.addClass("changed");
-    }
-  }, 100);
+  console.log("Added new root node:", newNode);
 }
 
 function addPropertyToNode(nodeId, propertyKey, initialValue, bodyElement) {

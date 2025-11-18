@@ -1,3 +1,97 @@
+function updateSaveButton() {
+  const hasChanges = $(".property-row.changed").length > 0;
+  $("#save-btn").prop("disabled", !hasChanges);
+}
+
+function collectChangesFromDOM() {
+  // Only update jsonData if we're in edit mode and have actual changes
+  if (!isEditMode) {
+    console.log("collectChangesFromDOM: Not in edit mode, skipping");
+    return; // Don't modify data in view mode
+  }
+
+  // Check if there are any actual changes
+  const hasChanges = $(".property-row.changed").length > 0;
+  console.log("collectChangesFromDOM: Found", hasChanges, "changed rows");
+  if (!hasChanges) {
+    return; // No changes, keep original jsonData unchanged
+  }
+
+  // Update only the changed properties in jsonData, preserve everything else
+  $(".node-card").each(function () {
+    const $card = $(this);
+    const nodeId = $card.find(".node-id").first().text();
+
+    // Find the node in jsonData
+    const node = jsonData["@graph"].find((n) => n["@id"] === nodeId);
+    if (!node) {
+      console.warn("collectChangesFromDOM: Node not found:", nodeId);
+      return; // Skip if not found
+    }
+
+    // Only update properties that have changed IN THIS NODE (not nested nodes)
+    // Use children().find() to get only direct properties, not nested node properties
+    $card
+      .children(".node-body")
+      .find(".property-row.changed")
+      .each(function () {
+        const key = $(this).attr("data-property");
+        const inputs = $(this).find("input, textarea, select");
+
+        console.log(
+          "collectChangesFromDOM: Updating",
+          nodeId,
+          key,
+          "with",
+          inputs.length,
+          "inputs"
+        );
+
+        if (inputs.length === 1) {
+          // Single value
+          const input = inputs.eq(0);
+          let val = input.val();
+
+          console.log(
+            "collectChangesFromDOM: Old value:",
+            node[key],
+            "-> New value:",
+            val
+          );
+
+          try {
+            val = JSON.parse(val);
+          } catch (e) {
+            // Keep as string if not valid JSON
+          }
+          node[key] = val;
+        } else if (inputs.length > 1) {
+          // Array of values
+          const values = [];
+          inputs.each(function () {
+            let val = $(this).val();
+            try {
+              val = JSON.parse(val);
+            } catch (e) {
+              // Keep as string
+            }
+            values.push(val);
+          });
+          console.log(
+            "collectChangesFromDOM: Old value:",
+            node[key],
+            "-> New value:",
+            values
+          );
+          node[key] = values;
+        }
+      });
+  });
+
+  console.log("collectChangesFromDOM: Complete. Updated jsonData:", jsonData);
+  // jsonData['@graph'] is already updated in place - no need to replace it
+}
+
 function saveChanges() {
   // First, collect any changes from the DOM
   collectChangesFromDOM();
@@ -104,141 +198,4 @@ function exportData() {
   a.click();
 
   URL.revokeObjectURL(url);
-}
-
-function updateSaveButton() {
-  const hasChanges = $(".property-row.changed").length > 0;
-  $("#save-btn").prop("disabled", !hasChanges);
-}
-
-function collectChangesFromDOM() {
-  // Only update jsonData if we're in edit mode and have actual changes
-  if (!isEditMode) {
-    console.log("collectChangesFromDOM: Not in edit mode, skipping");
-    return; // Don't modify data in view mode
-  }
-
-  // Check if there are any actual changes
-  const hasChanges = $(".property-row.changed").length > 0;
-  log(
-    LOG_LEVEL.DEBUG,
-    "collectChangesFromDOM: Found",
-    hasChanges,
-    "changed rows"
-  );
-  if (!hasChanges) {
-    return; // No changes, keep original jsonData unchanged
-  }
-
-  // Update only the changed properties in jsonData, preserve everything else
-  $(".node-card").each(function () {
-    const $card = $(this);
-    const nodeId = $card.find(".node-id").first().text();
-
-    // Find the node in jsonData
-    const node = jsonData["@graph"].find((n) => n["@id"] === nodeId);
-    if (!node) {
-      console.warn("collectChangesFromDOM: Node not found:", nodeId);
-      return; // Skip if not found
-    }
-
-    // Only update properties that have changed IN THIS NODE (not nested nodes)
-    // Use children().find() to get only properties in this card (nested JSON is handled via path)
-    $card
-      .children(".node-body")
-      .find(".property-row.changed")
-      .each(function () {
-        const keyPath = $(this).attr("data-property");
-        const inputs = $(this).find("input, textarea, select");
-
-        log(
-          LOG_LEVEL.DEBUG,
-          "collectChangesFromDOM: Updating path",
-          nodeId,
-          keyPath,
-          "with",
-          inputs.length,
-          "inputs"
-        );
-
-        // Helper to set a value on a potentially nested path within the node
-        function setNestedValue(target, path, newValue) {
-          if (!path) return;
-          const segments = path.split(".");
-          let current = target;
-
-          for (let i = 0; i < segments.length; i++) {
-            const seg = segments[i];
-            const isLast = i === segments.length - 1;
-
-            if (isLast) {
-              current[seg] = newValue;
-            } else {
-              if (
-                typeof current[seg] !== "object" ||
-                current[seg] === null ||
-                Array.isArray(current[seg])
-              ) {
-                current[seg] = {};
-              }
-              current = current[seg];
-            }
-          }
-        }
-
-        if (inputs.length === 1) {
-          // Single value
-          const input = inputs.eq(0);
-          let val = input.val();
-
-          log(
-            LOG_LEVEL.DEBUG,
-            "collectChangesFromDOM: Old value:",
-            node[key],
-            "-> New value:",
-            val
-          );
-
-          try {
-            val = JSON.parse(val);
-          } catch (e) {
-            // Keep as string if not valid JSON
-          }
-          setNestedValue(node, keyPath, val);
-        } else if (inputs.length > 1) {
-          // Array of values
-          const values = [];
-          inputs.each(function () {
-            let val = $(this).val();
-            try {
-              val = JSON.parse(val);
-            } catch (e) {
-              // Keep as string
-            }
-            values.push(val);
-          });
-          log(
-            LOG_LEVEL.DEBUG,
-            "collectChangesFromDOM: Old value:",
-            keyPath
-              .split(".")
-              .reduce(
-                (acc, seg) =>
-                  acc && typeof acc === "object" ? acc[seg] : undefined,
-                node
-              ),
-            "-> New value:",
-            values
-          );
-          setNestedValue(node, keyPath, values);
-        }
-      });
-  });
-
-  log(
-    LOG_LEVEL.DEBUG,
-    "collectChangesFromDOM: Complete. Updated jsonData:",
-    jsonData
-  );
-  // jsonData['@graph'] is already updated in place - no need to replace it
 }

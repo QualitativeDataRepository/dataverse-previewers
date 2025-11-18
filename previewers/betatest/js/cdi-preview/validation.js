@@ -64,6 +64,7 @@ async function validateData() {
         dataStore.addQuad(quad);
       } else {
         // Parsing complete, run validation
+
         runShaclValidation(dataStore);
       }
     });
@@ -77,11 +78,11 @@ async function validateData() {
   }
 }
 
-// Perform SHACL-like checks on jsonData using the global shaclShapesStore
 async function runShaclValidation(dataStore) {
   try {
     // Simple SHACL validation - check required properties and cardinality
     const violations = [];
+    const warnings = [];
 
     // Get all node shapes
     const nodeShapes = shaclShapesStore.getSubjects(
@@ -94,12 +95,10 @@ async function runShaclValidation(dataStore) {
 
     // For each node in data, check against its shape
     for (const node of jsonData["@graph"] || []) {
-      const nodeId = node["@id"];
+      const nodeId = N3.DataFactory.namedNode(node["@id"]);
       const nodeType = node["@type"];
 
       if (!nodeType) continue;
-
-      const nodeIdTerm = N3.DataFactory.namedNode(nodeId);
 
       // Find matching shape by target class
       const targetClassPred = N3.DataFactory.namedNode(
@@ -153,7 +152,7 @@ async function runShaclValidation(dataStore) {
 
               if (actualCount < minCountVal) {
                 violations.push({
-                  focusNode: nodeId,
+                  focusNode: node["@id"],
                   path: pathStr,
                   message: `Required property '${pathStr}' is missing (minCount: ${minCountVal}, actual: ${actualCount})`,
                 });
@@ -171,7 +170,7 @@ async function runShaclValidation(dataStore) {
 
               if (actualCount > maxCountVal) {
                 violations.push({
-                  focusNode: nodeId,
+                  focusNode: node["@id"],
                   path: pathStr,
                   message: `Property '${pathStr}' exceeds maxCount (maxCount: ${maxCountVal}, actual: ${actualCount})`,
                 });
@@ -218,7 +217,6 @@ async function runShaclValidation(dataStore) {
   }
 }
 
-// Update the DOM based on validation violations
 function updatePropertyValidation(violations) {
   // Clear previous validation states
   $(".property-row")
