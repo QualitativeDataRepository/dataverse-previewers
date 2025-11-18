@@ -1338,7 +1338,34 @@
                         }
                             
                             pathQuads.forEach(pathQuad => {
-                                const path = pathQuad.object.value;
+                                let pathsToCheck = [];
+                                const pathObject = pathQuad.object;
+                                
+                                // Check if this is a blank node (complex path like sh:alternativePath)
+                                if (pathObject.termType === 'BlankNode') {
+                                    // Check for sh:alternativePath
+                                    const altPathQuads = shaclShapesStore.getQuads(
+                                        pathObject,
+                                        'http://www.w3.org/ns/shacl#alternativePath',
+                                        null,
+                                        null
+                                    );
+                                    
+                                    if (altPathQuads.length > 0) {
+                                        // sh:alternativePath points to an RDF list
+                                        const listNode = altPathQuads[0].object;
+                                        const alternatives = parseRdfList(listNode);
+                                        // Extract just the URIs from the parsed list
+                                        pathsToCheck = alternatives.map(item => item.uri || item);
+                                        log(LOG_LEVEL.DEBUG, `Found alternativePath with ${alternatives.length} options: ${pathsToCheck.join(', ')}`);
+                                    }
+                                } else {
+                                    // Simple path (direct URI)
+                                    pathsToCheck = [pathObject.value];
+                                }
+                                
+                                // Check each path option
+                                pathsToCheck.forEach(path => {
                                 const pathName = path.split('/').pop().split('#').pop();
                                 
                                 // SHACL paths are like: cdi:WideDataSet-name or cdi:DataSet_isStructuredBy_DataStructure
@@ -1487,9 +1514,10 @@
                                         result.pattern = patternQuads[0].object.value;
                                     }
                                 }
-                            });
-                    });
-                });
+                            }); // end pathsToCheck.forEach
+                            }); // end pathQuads.forEach
+                    }); // end propertyQuads.forEach
+                }); // end applicableShapes.forEach
             } catch (err) {
                 console.error('Error classifying property:', err);
             }
