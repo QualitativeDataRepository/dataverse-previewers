@@ -1,10 +1,10 @@
-// SHACL-based UI helpers for the CDI previewer.
+// === CDI Previewer: SHACL-based UI Helpers ===
 //
-// This module exposes functions that interpret SHACL shapes for UI purposes:
+// Interprets SHACL shapes for UI purposes:
 //  - classifyProperty: determine REQUIRED / OPTIONAL / EXTRA, datatype, enums, etc.
 //  - parseRdfList, extractLabelFromUri, getEnumerationValues: helpers for sh:in and enums.
 //
-// It depends on globals defined elsewhere:
+// Depends on globals:
 //  - shaclShapesStore (from core / cdi-shacl-loader.js)
 //  - jsonData, expandedJsonLd (from core)
 //  - getExpandedNodeId, getExpandedPropertyUri (from cdi-graph-helpers.js)
@@ -141,7 +141,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
     // Check sh:targetClass (Core SHACL method)
     nodeTypes.forEach((type) => {
       let typeUri;
-      
+
       if (type.startsWith("http")) {
         // Already a full URI
         typeUri = type;
@@ -151,23 +151,29 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
         const context = jsonData && jsonData["@context"];
         if (context) {
           // Handle array context
-          const contextObj = Array.isArray(context) 
-            ? context.find(c => typeof c === 'object' && c[prefix])
+          const contextObj = Array.isArray(context)
+            ? context.find((c) => typeof c === "object" && c[prefix])
             : context;
           if (contextObj && contextObj[prefix]) {
             typeUri = contextObj[prefix] + localPart;
             log(LOG_LEVEL.DEBUG, `✓ Expanded type ${type} to ${typeUri}`);
           } else {
             // Fallback: assume DDI-CDI namespace
-            typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
-            log(LOG_LEVEL.WARN, `✗ No context for ${prefix}, using DDI-CDI: ${typeUri}`);
+            typeUri =
+              "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+            log(
+              LOG_LEVEL.WARN,
+              `✗ No context for ${prefix}, using DDI-CDI: ${typeUri}`
+            );
           }
         } else {
-          typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+          typeUri =
+            "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
         }
       } else {
         // No prefix, assume DDI-CDI namespace
-        typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+        typeUri =
+          "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
       }
 
       const targetClassQuads = shaclShapesStore.getQuads(
@@ -182,15 +188,30 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
         if (!window._loggedMissingTypes) {
           window._loggedMissingTypes = new Set();
         }
-        
+
         if (!window._loggedMissingTypes.has(typeUri)) {
           window._loggedMissingTypes.add(typeUri);
-          const allTargets = shaclShapesStore.getQuads(null, "http://www.w3.org/ns/shacl#targetClass", null, null);
-          const targetValues = [...new Set(allTargets.map(q => q.object.value))];
-          log(LOG_LEVEL.INFO, `No shape for type: ${typeUri}\n  Available targets: ${targetValues.slice(0,5).join(', ')}${targetValues.length > 5 ? '...' : ''}`);
+          const allTargets = shaclShapesStore.getQuads(
+            null,
+            "http://www.w3.org/ns/shacl#targetClass",
+            null,
+            null
+          );
+          const targetValues = [
+            ...new Set(allTargets.map((q) => q.object.value)),
+          ];
+          log(
+            LOG_LEVEL.INFO,
+            `No shape for type: ${typeUri}\n  Available targets: ${targetValues
+              .slice(0, 5)
+              .join(", ")}${targetValues.length > 5 ? "..." : ""}`
+          );
         }
       } else {
-        log(LOG_LEVEL.DEBUG, `✓ Found ${targetClassQuads.length} shape(s) targeting ${typeUri}`);
+        log(
+          LOG_LEVEL.DEBUG,
+          `✓ Found ${targetClassQuads.length} shape(s) targeting ${typeUri}`
+        );
       }
 
       targetClassQuads.forEach((quad) => {

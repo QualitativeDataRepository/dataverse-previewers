@@ -1,3 +1,7 @@
+// === CDI Previewer: Event Handlers ===
+//
+// Handles all user interactions: file loading, shape selection, edit mode, validation, etc.
+
 function setupEventHandlers() {
   // Load local file button
   $("#load-local-btn")

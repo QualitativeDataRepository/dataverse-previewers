@@ -1,3 +1,7 @@
+// === CDI Previewer: Property Suggestions ===
+//
+// Generates property suggestions based on SHACL shapes and node types.
+
 function getPropertySuggestions(node, types) {
   if (!shaclShapesStore || types.length === 0) {
     return [];
@@ -14,7 +18,7 @@ function getPropertySuggestions(node, types) {
   // Check sh:targetClass (Core SHACL method)
   types.forEach((type) => {
     let typeUri;
-    
+
     if (type.startsWith("http")) {
       // Already a full URI
       typeUri = type;
@@ -24,17 +28,19 @@ function getPropertySuggestions(node, types) {
       const context = jsonData && jsonData["@context"];
       if (context) {
         // Handle array context
-        const contextObj = Array.isArray(context) 
-          ? context.find(c => typeof c === 'object' && c[prefix])
+        const contextObj = Array.isArray(context)
+          ? context.find((c) => typeof c === "object" && c[prefix])
           : context;
         if (contextObj && contextObj[prefix]) {
           typeUri = contextObj[prefix] + localPart;
         } else {
           // Fallback: assume DDI-CDI namespace
-          typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+          typeUri =
+            "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
         }
       } else {
-        typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+        typeUri =
+          "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
       }
     } else {
       // No prefix, assume DDI-CDI namespace

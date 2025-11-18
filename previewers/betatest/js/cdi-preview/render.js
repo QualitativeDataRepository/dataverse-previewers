@@ -357,12 +357,10 @@ function renderProperty(key, value, nodeId, nodeTypes) {
   function renderInlineObject(val) {
     if (!val || typeof val !== "object" || Array.isArray(val)) return null;
 
-    const inlineCard = $("<div>")
-      .addClass("node-card inline-node-card")
-      .css({
-        "margin-top": "5px",
-        "margin-bottom": "5px",
-      });
+    const inlineCard = $("<div>").addClass("node-card inline-node-card").css({
+      "margin-top": "5px",
+      "margin-bottom": "5px",
+    });
 
     const header = $("<div>").addClass("node-header");
     const leftSide = $("<div>")
@@ -405,7 +403,12 @@ function renderProperty(key, value, nodeId, nodeTypes) {
 
     Object.keys(val).forEach((k) => {
       if (k === "@id" || k === "@type" || k === "@context") return;
-      const nestedRow = renderProperty(k, val[k], nestedId || nodeId, nestedTypes);
+      const nestedRow = renderProperty(
+        k,
+        val[k],
+        nestedId || nodeId,
+        nestedTypes
+      );
       body.append(nestedRow);
     });
 

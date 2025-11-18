@@ -1,3 +1,7 @@
+// === CDI Previewer: Data Extraction and Save Logic ===
+//
+// Handles collecting user edits from the DOM and exporting JSON-LD data.
+
 function updateSaveButton() {
   const hasChanges = $(".property-row.changed").length > 0;
   $("#save-btn").prop("disabled", !hasChanges);

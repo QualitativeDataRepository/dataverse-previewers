@@ -1,3 +1,9 @@
+// === CDI Previewer: JSON-LD Context Normalization ===
+//
+// Handles legacy DDI-CDI context URLs and local context resolution.
+// Used for internal viewer behavior (expansion, suggestions, SHACL classification).
+// Does NOT modify the original data when exporting.
+
 // Legacy DDI-CDI JSON-LD context URL that we want to handle via a local copy
 const LEGACY_CDI_CONTEXT_URL =
   "https://ddi-alliance.bitbucket.io/DDI-CDI/DDI-CDI_v1.0-rc1/encoding/json-ld/ddi-cdi.jsonld";
@@ -116,7 +122,8 @@ async function normalizeToGraphFormat(data) {
     return {
       // Prefer viewer-specific context if available, otherwise fall back
       // to the original context or an empty object.
-      "@context": viewerContext !== undefined ? viewerContext : data["@context"] || {},
+      "@context":
+        viewerContext !== undefined ? viewerContext : data["@context"] || {},
       "@graph": graphNodes,
     };
   }
@@ -160,7 +167,8 @@ async function normalizeToGraphFormat(data) {
       const viewerContext = buildViewerContext(data);
 
       return {
-        "@context": viewerContext !== undefined ? viewerContext : data["@context"] || {},
+        "@context":
+          viewerContext !== undefined ? viewerContext : data["@context"] || {},
         "@graph": [data],
       };
     }

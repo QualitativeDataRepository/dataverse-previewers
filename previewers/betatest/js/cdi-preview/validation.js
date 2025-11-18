@@ -7,8 +7,14 @@ async function validateData() {
   );
 
   try {
-    if (!window.CdiShacl || !window.CdiShacl.SHACLValidator || !window.CdiShacl.rdf) {
-      throw new Error("SHACL validation engine is not loaded (CdiShacl bundle missing)");
+    if (
+      !window.CdiShacl ||
+      !window.CdiShacl.SHACLValidator ||
+      !window.CdiShacl.rdf
+    ) {
+      throw new Error(
+        "SHACL validation engine is not loaded (CdiShacl bundle missing)"
+      );
     }
 
     const { SHACLValidator, rdf } = window.CdiShacl;
@@ -16,25 +22,33 @@ async function validateData() {
     // Prepare shapes dataset from shaclShapesStore (N3.Store -> DatasetCore)
     const shapesDataset = rdf.dataset();
     shaclShapesStore.getQuads(null, null, null, null).forEach((q) => {
-      shapesDataset.add(rdf.quad(
-        rdf.fromTerm(q.subject),
-        rdf.fromTerm(q.predicate),
-        rdf.fromTerm(q.object),
-        q.graph && q.graph.termType !== "DefaultGraph" ? rdf.fromTerm(q.graph) : rdf.defaultGraph()
-      ));
+      shapesDataset.add(
+        rdf.quad(
+          rdf.fromTerm(q.subject),
+          rdf.fromTerm(q.predicate),
+          rdf.fromTerm(q.object),
+          q.graph && q.graph.termType !== "DefaultGraph"
+            ? rdf.fromTerm(q.graph)
+            : rdf.defaultGraph()
+        )
+      );
     });
 
     // Prepare data dataset: convert jsonData to N3 store, then to RDF/JS dataset
     const tempStore = await jsonLdToN3Store(jsonData);
     const dataDataset = rdf.dataset();
-    
+
     tempStore.getQuads(null, null, null, null).forEach((q) => {
-      dataDataset.add(rdf.quad(
-        rdf.fromTerm(q.subject),
-        rdf.fromTerm(q.predicate),
-        rdf.fromTerm(q.object),
-        q.graph && q.graph.termType !== "DefaultGraph" ? rdf.fromTerm(q.graph) : rdf.defaultGraph()
-      ));
+      dataDataset.add(
+        rdf.quad(
+          rdf.fromTerm(q.subject),
+          rdf.fromTerm(q.predicate),
+          rdf.fromTerm(q.object),
+          q.graph && q.graph.termType !== "DefaultGraph"
+            ? rdf.fromTerm(q.graph)
+            : rdf.defaultGraph()
+        )
+      );
     });
 
     // Run SHACL validation using rdf-validate-shacl
@@ -47,7 +61,10 @@ async function validateData() {
 
     for (const result of report.results) {
       // Map SHACL result to our simple violation structure
-      const focusNode = result.focusNode && result.focusNode.value ? result.focusNode.value : null;
+      const focusNode =
+        result.focusNode && result.focusNode.value
+          ? result.focusNode.value
+          : null;
 
       let path = null;
       if (result.path) {
@@ -63,23 +80,24 @@ async function validateData() {
         }
       }
 
-      const message = Array.isArray(result.message) && result.message.length > 0
-        ? result.message[0].value || String(result.message[0])
-        : "SHACL constraint violation";
+      const message =
+        Array.isArray(result.message) && result.message.length > 0
+          ? result.message[0].value || String(result.message[0])
+          : "SHACL constraint violation";
 
       violations.push({
         focusNode: focusNode || "unknown",
         path: path || "unknown",
         message,
-        severity: result.severity ? result.severity.value : null
+        severity: result.severity ? result.severity.value : null,
       });
     }
-    
+
     // Log violations to console for debugging
     if (violations.length > 0) {
       console.log("Validation violations:");
       violations.forEach((v, i) => {
-        console.log(`  ${i+1}. ${v.focusNode}`);
+        console.log(`  ${i + 1}. ${v.focusNode}`);
         console.log(`     Property: ${v.path}`);
         console.log(`     Message: ${v.message}`);
       });
@@ -104,30 +122,39 @@ async function validateData() {
           '<span class="glyphicon glyphicon-chevron-down"></span> Show Details' +
           "</button>"
       );
-      
+
       // Show violations list (initially hidden)
-      let detailsHtml = '<div class="validation-violations" style="display: none;"><h4>Validation Violations:</h4><ul>';
+      let detailsHtml =
+        '<div class="validation-violations" style="display: none;"><h4>Validation Violations:</h4><ul>';
       violations.forEach((v, i) => {
-        const nodeId = v.focusNode.split('/').pop();
+        const nodeId = v.focusNode.split("/").pop();
         detailsHtml += `<li><strong>${nodeId}</strong> - ${v.path}: ${v.message}</li>`;
       });
-      detailsHtml += '</ul></div>';
+      detailsHtml += "</ul></div>";
       $("#validation-details").html(detailsHtml);
-      
+
       // Add toggle handler
-      $("#toggle-violations-btn").click(function() {
+      $("#toggle-violations-btn").click(function () {
         const $details = $(".validation-violations");
         const $btn = $(this);
         const $icon = $btn.find(".glyphicon");
-        
+
         if ($details.is(":visible")) {
           $details.slideUp(200);
-          $icon.removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
-          $btn.html('<span class="glyphicon glyphicon-chevron-down"></span> Show Details');
+          $icon
+            .removeClass("glyphicon-chevron-up")
+            .addClass("glyphicon-chevron-down");
+          $btn.html(
+            '<span class="glyphicon glyphicon-chevron-down"></span> Show Details'
+          );
         } else {
           $details.slideDown(200);
-          $icon.removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
-          $btn.html('<span class="glyphicon glyphicon-chevron-up"></span> Hide Details');
+          $icon
+            .removeClass("glyphicon-chevron-down")
+            .addClass("glyphicon-chevron-up");
+          $btn.html(
+            '<span class="glyphicon glyphicon-chevron-up"></span> Hide Details'
+          );
         }
       });
     }
@@ -136,15 +163,16 @@ async function validateData() {
     updatePropertyValidation(violations);
   } catch (error) {
     console.error("Validation error:", error);
-    
+
     let errorMsg = error.message;
-    
+
     // Special handling for SPARQL constraint errors
     if (error.message.includes("SPARQLConstraintComponent")) {
-      errorMsg = "The selected SHACL shapes contain SPARQL constraints, which are not supported in the browser. " +
-                 "Please use the 'DDI-CDI 1.0 (Official)' shapes instead, which use Core SHACL constraints only.";
+      errorMsg =
+        "The selected SHACL shapes contain SPARQL constraints, which are not supported in the browser. " +
+        "Please use the 'DDI-CDI 1.0 (Official)' shapes instead, which use Core SHACL constraints only.";
     }
-    
+
     $("#validation-status").html(
       '<span class="validation-badge invalid">Validation Error: ' +
         errorMsg +

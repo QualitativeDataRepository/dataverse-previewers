@@ -1,3 +1,7 @@
+// === CDI Previewer: Core Configuration and Initialization ===
+//
+// Global variables, logging, shape URLs, and main initialization logic.
+
 // Logging levels
 const LOG_LEVEL = {
   ERROR: 0,
