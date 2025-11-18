@@ -39,14 +39,11 @@ function setupEventHandlers() {
         // Load SHACL shapes if not already loaded
         if (!shaclShapesStore) {
           try {
-            await loadShaclShapes("ddi-cdi-official");
+            await loadShapes("ddi-cdi-official");
           } catch (shapeError) {
             console.error("Failed to load SHACL shapes:", shapeError);
           }
         }
-
-        // Execute SPARQL targets to match nodes to shapes
-        await executeSparqlTargets();
 
         // Render the data
         renderData();
@@ -231,13 +228,10 @@ function setupEventHandlers() {
         $("#validation-status").html(
           '<span class="label label-info">Loading shapes...</span>'
         );
-        await loadShaclShapes(selectedSource);
+        await loadShapes(selectedSource);
 
-        // Execute SPARQL targets if data is loaded
+        // Re-render to apply new shape classifications if data is loaded
         if (jsonData) {
-          await executeSparqlTargets();
-
-          // Re-render to apply new shape classifications
           renderData();
         }
 
@@ -277,15 +271,12 @@ function setupEventHandlers() {
         $("#validation-status").html(
           '<span class="label label-info">Loading custom shapes...</span>'
         );
-        await loadShaclShapes("custom", customUrl);
+        await loadShapes("custom", customUrl);
 
-        // Execute SPARQL targets if data is loaded
+        // Re-render to apply new shape classifications if data is loaded
         if (jsonData) {
-          await executeSparqlTargets();
+          renderData();
         }
-
-        // Re-render to apply new shape classifications
-        renderData();
 
         // Re-validate if in edit mode
         if (isEditMode) {

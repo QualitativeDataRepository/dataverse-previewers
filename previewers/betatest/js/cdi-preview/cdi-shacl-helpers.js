@@ -5,7 +5,7 @@
 //  - parseRdfList, extractLabelFromUri, getEnumerationValues: helpers for sh:in and enums.
 //
 // It depends on globals defined elsewhere:
-//  - shaclShapesStore, sparqlTargetCache (from core / cdi-shacl-sparql.js)
+//  - shaclShapesStore (from core / cdi-shacl-loader.js)
 //  - jsonData, expandedJsonLd (from core)
 //  - getExpandedNodeId, getExpandedPropertyUri (from cdi-graph-helpers.js)
 //  - LOG_LEVEL, log (from core)
@@ -138,32 +138,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
     // Collect all shape URIs that might apply to this node
     const applicableShapes = new Set();
 
-    // 1. Check SPARQL target cache first (if enabled and executed)
-    if (sparqlTargetCache.enabled && sparqlTargetCache.executed && nodeId) {
-      // Expand the node ID to full URI for comparison
-      const expandedNodeId = getExpandedNodeId(nodeId);
-
-      for (const [shapeUri, matchedNodes] of Object.entries(
-        sparqlTargetCache.results
-      )) {
-        // Check both compact and expanded forms
-        if (matchedNodes.has(nodeId) || matchedNodes.has(expandedNodeId)) {
-          applicableShapes.add(shapeUri);
-          log(
-            LOG_LEVEL.DEBUG,
-            `✓ Node ${nodeId} matched via SPARQL target in shape ${shapeUri}`
-          );
-        }
-      }
-      if (applicableShapes.size === 0) {
-        log(
-          LOG_LEVEL.DEBUG,
-          `✗ Node ${nodeId} did NOT match any SPARQL targets`
-        );
-      }
-    }
-
-    // 2. Also check sh:targetClass (traditional method)
+    // Check sh:targetClass (Core SHACL method)
     nodeTypes.forEach((type) => {
       let typeUri;
       

@@ -4,12 +4,7 @@
 let renderedNodes = new Set();
 
 function renderData() {
-  console.log(
-    "🎨 RENDER START - SPARQL executed:",
-    sparqlTargetCache.executed,
-    "Cache size:",
-    Object.keys(sparqlTargetCache.results).length
-  );
+  console.log("🎨 RENDER START");
 
   const content = $("#content");
   content.empty();

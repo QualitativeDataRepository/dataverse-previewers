@@ -11,19 +11,7 @@ function getPropertySuggestions(node, types) {
   // Collect all applicable shape URIs
   const applicableShapes = new Set();
 
-  // 1. Check SPARQL target cache first (if enabled and executed)
-  if (sparqlTargetCache.enabled && sparqlTargetCache.executed && node["@id"]) {
-    const expandedNodeId = getExpandedNodeId(node["@id"]);
-    for (const [shapeUri, matchedNodes] of Object.entries(
-      sparqlTargetCache.results
-    )) {
-      if (matchedNodes.has(node["@id"]) || matchedNodes.has(expandedNodeId)) {
-        applicableShapes.add(shapeUri);
-      }
-    }
-  }
-
-  // 2. Also check sh:targetClass (traditional method)
+  // Check sh:targetClass (Core SHACL method)
   types.forEach((type) => {
     let typeUri;
     
