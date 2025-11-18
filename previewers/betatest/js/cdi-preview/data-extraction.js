@@ -143,23 +143,48 @@ function collectChangesFromDOM() {
     }
 
     // Only update properties that have changed IN THIS NODE (not nested nodes)
-    // Use children().find() to get only direct properties, not nested node properties
+    // Use children().find() to get only properties in this card (nested JSON is handled via path)
     $card
       .children(".node-body")
       .find(".property-row.changed")
       .each(function () {
-        const key = $(this).attr("data-property");
+        const keyPath = $(this).attr("data-property");
         const inputs = $(this).find("input, textarea, select");
 
         log(
           LOG_LEVEL.DEBUG,
-          "collectChangesFromDOM: Updating",
+          "collectChangesFromDOM: Updating path",
           nodeId,
-          key,
+          keyPath,
           "with",
           inputs.length,
           "inputs"
         );
+
+        // Helper to set a value on a potentially nested path within the node
+        function setNestedValue(target, path, newValue) {
+          if (!path) return;
+          const segments = path.split(".");
+          let current = target;
+
+          for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const isLast = i === segments.length - 1;
+
+            if (isLast) {
+              current[seg] = newValue;
+            } else {
+              if (
+                typeof current[seg] !== "object" ||
+                current[seg] === null ||
+                Array.isArray(current[seg])
+              ) {
+                current[seg] = {};
+              }
+              current = current[seg];
+            }
+          }
+        }
 
         if (inputs.length === 1) {
           // Single value
@@ -179,7 +204,7 @@ function collectChangesFromDOM() {
           } catch (e) {
             // Keep as string if not valid JSON
           }
-          node[key] = val;
+          setNestedValue(node, keyPath, val);
         } else if (inputs.length > 1) {
           // Array of values
           const values = [];
@@ -195,11 +220,17 @@ function collectChangesFromDOM() {
           log(
             LOG_LEVEL.DEBUG,
             "collectChangesFromDOM: Old value:",
-            node[key],
+            keyPath
+              .split(".")
+              .reduce(
+                (acc, seg) =>
+                  acc && typeof acc === "object" ? acc[seg] : undefined,
+                node
+              ),
             "-> New value:",
             values
           );
-          node[key] = values;
+          setNestedValue(node, keyPath, values);
         }
       });
   });

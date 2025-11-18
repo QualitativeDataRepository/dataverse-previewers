@@ -359,6 +359,84 @@ function renderProperty(key, value, nodeId, nodeTypes) {
 }
 
 function createValueInput(key, value, nodeId, arrayIndex, classification) {
+  // Helper to render nested JSON object (both view and edit modes)
+  function renderNestedObject(obj, parentPath) {
+    const container = $("<div>").addClass("nested-object").css({
+      "margin-left": "20px",
+      "border-left": "2px solid #ddd",
+      "padding-left": "10px",
+      "margin-top": "5px",
+    });
+
+    Object.keys(obj).forEach((nestedKey) => {
+      if (nestedKey === "@id" || nestedKey === "@type") return;
+
+      const fullPath = parentPath ? `${parentPath}.${nestedKey}` : nestedKey;
+
+      const nestedRow = $("<div>")
+        .addClass("property-row nested-property")
+        .attr("data-property", fullPath)
+        .css({
+          "margin-bottom": "8px",
+          display: "flex",
+          "align-items": "center",
+        });
+
+      const nestedLabel = $("<div>")
+        .addClass("property-label")
+        .css({
+          "font-weight": "500",
+          "min-width": "150px",
+          color: "#555",
+        })
+        .text(humanizeKey(nestedKey.replace("schema:", "")));
+
+      const nestedValueDiv = $("<div>").addClass("property-value").css({
+        flex: "1",
+      });
+
+      const nestedValue = obj[nestedKey];
+
+      if (isEditMode) {
+        // For now, treat nested values as simple scalars or JSON strings
+        let valueStr;
+        if (typeof nestedValue === "object" && nestedValue !== null) {
+          valueStr = JSON.stringify(nestedValue);
+        } else {
+          valueStr = nestedValue === undefined ? "" : String(nestedValue);
+        }
+
+        let input;
+        if (valueStr.length > 50) {
+          input = $("<textarea>").val(valueStr);
+        } else {
+          input = $("<input>").attr("type", "text").val(valueStr);
+        }
+
+        input.attr("data-original", valueStr);
+        input.on("input", function () {
+          $(this).closest(".property-row").addClass("changed");
+          updateSaveButton();
+        });
+
+        nestedValueDiv.append(input);
+      } else {
+        if (typeof nestedValue === "object" && nestedValue !== null) {
+          nestedValueDiv.text(JSON.stringify(nestedValue));
+        } else {
+          nestedValueDiv.text(
+            nestedValue === undefined ? "" : String(nestedValue)
+          );
+        }
+      }
+
+      nestedRow.append(nestedLabel, nestedValueDiv);
+      container.append(nestedRow);
+    });
+
+    return container;
+  }
+
   // Check if value is a reference to another node (has @id)
   if (typeof value === "object" && value !== null && value["@id"]) {
     const refId = value["@id"];
@@ -411,11 +489,16 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
     return refContainer;
   }
 
-  // Simple value (string, number, etc.) or complex object without @id
-  const valueStr =
-    typeof value === "object" ? JSON.stringify(value) : String(value);
-
   if (isEditMode) {
+    // Complex object without @id - render nested label+input rows
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      const parentPath = key;
+      return renderNestedObject(value, parentPath);
+    }
+
+    // Simple value (string, number, etc.)
+    const valueStr = value === undefined ? "" : String(value);
+
     // Check if this property has enumeration values (controlled vocabulary)
     if (
       classification &&
@@ -480,56 +563,13 @@ function createValueInput(key, value, nodeId, arrayIndex, classification) {
 
     return input;
   } else {
-    // View mode - show as read-only text
+    // View mode - show as read-only text or nested structure
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      // For complex objects, create a nested expandable section
-      const nestedContainer = $("<div>").addClass("nested-object").css({
-        "margin-left": "20px",
-        "border-left": "2px solid #ddd",
-        "padding-left": "10px",
-        "margin-top": "5px",
-      });
-
-      Object.keys(value).forEach((nestedKey) => {
-        if (nestedKey === "@id" || nestedKey === "@type") return; // Skip JSON-LD metadata for cleaner display
-
-        const nestedRow = $("<div>")
-          .addClass("property-row nested-property")
-          .css({
-            "margin-bottom": "8px",
-            display: "flex",
-            "align-items": "center",
-          });
-
-        const nestedLabel = $("<div>")
-          .addClass("property-key")
-          .css({
-            "font-weight": "500",
-            "min-width": "150px",
-            color: "#555",
-          })
-          .text(humanizeKey(nestedKey.replace("schema:", "")));
-
-        const nestedValueDiv = $("<div>").addClass("property-value").css({
-          flex: "1",
-        });
-
-        const nestedValue = value[nestedKey];
-        if (typeof nestedValue === "object" && nestedValue !== null) {
-          nestedValueDiv.text(JSON.stringify(nestedValue));
-        } else {
-          nestedValueDiv.text(String(nestedValue));
-        }
-
-        nestedRow.append(nestedLabel, nestedValueDiv);
-        nestedContainer.append(nestedRow);
-      });
-
-      return nestedContainer;
-    } else {
-      // For simple values, show as regular text
-      return $("<div>").addClass("value-display").text(valueStr);
+      return renderNestedObject(value, key);
     }
+
+    const valueStr = value === undefined ? "" : String(value);
+    return $("<div>").addClass("value-display").text(valueStr);
   }
 }
 
