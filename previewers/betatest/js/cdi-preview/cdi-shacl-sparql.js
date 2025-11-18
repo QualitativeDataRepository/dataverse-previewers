@@ -292,11 +292,55 @@ async function jsonLdToN3Store(jsonLdData) {
   const store = new N3.Store();
 
   try {
+    // Custom document loader to redirect broken/old DDI-CDI context URLs
+    const customLoader = async (url) => {
+      // Map of known DDI-CDI context URLs to working GitHub URL
+      const DDI_CDI_URLS = [
+        "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/",
+        "https://ddi-alliance.bitbucket.io/DDI-CDI/DDI-CDI_v1.0-rc1/encoding/json-ld/ddi-cdi.jsonld",
+        "https://docs.ddialliance.org/DDI-CDI/1.0/model/encoding/json-ld/ddi-cdi.jsonld",
+        "https://ddi-cdi.github.io/m2t-ng/DDI-CDI_1-0/encoding/json-ld/ddi-cdi.jsonld"
+      ];
+      
+      const WORKING_URL = "https://ddi-cdi.github.io/m2t-ng/DDI-CDI_1-0/encoding/json-ld/ddi-cdi.jsonld";
+      
+      // If this is a DDI-CDI context URL, use the working GitHub URL
+      if (DDI_CDI_URLS.includes(url)) {
+        const response = await fetch(WORKING_URL);
+        if (!response.ok) {
+          throw new Error(`Failed to load DDI-CDI context: ${response.status}`);
+        }
+        const doc = await response.json();
+        return {
+          contextUrl: null,
+          document: doc,
+          documentUrl: url
+        };
+      }
+      
+      // For other URLs, fetch normally
+      const response = await fetch(url, {
+        headers: { 'Accept': 'application/ld+json, application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const doc = await response.json();
+      return {
+        contextUrl: null,
+        document: doc,
+        documentUrl: url
+      };
+    };
+
     // Convert JSON-LD to N-Quads format
     // Need base URI to resolve relative # identifiers
     const nquads = await jsonld.toRDF(jsonLdData, {
       format: "application/n-quads",
-      base: "http://example.org/data"
+      base: "http://example.org/data",
+      documentLoader: customLoader
     });
 
     // Parse N-Quads into N3 store
