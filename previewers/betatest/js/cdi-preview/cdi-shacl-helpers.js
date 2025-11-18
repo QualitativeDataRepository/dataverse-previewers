@@ -165,9 +165,35 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
 
     // 2. Also check sh:targetClass (traditional method)
     nodeTypes.forEach((type) => {
-      const typeUri = type.startsWith("http")
-        ? type
-        : "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+      let typeUri;
+      
+      if (type.startsWith("http")) {
+        // Already a full URI
+        typeUri = type;
+      } else if (type.includes(":")) {
+        // Compact form like "schema:Dataset" - expand using context
+        const [prefix, localPart] = type.split(":");
+        const context = jsonData && jsonData["@context"];
+        if (context) {
+          // Handle array context
+          const contextObj = Array.isArray(context) 
+            ? context.find(c => typeof c === 'object' && c[prefix])
+            : context;
+          if (contextObj && contextObj[prefix]) {
+            typeUri = contextObj[prefix] + localPart;
+            log(LOG_LEVEL.DEBUG, `✓ Expanded type ${type} to ${typeUri}`);
+          } else {
+            // Fallback: assume DDI-CDI namespace
+            typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+            log(LOG_LEVEL.WARN, `✗ No context for ${prefix}, using DDI-CDI: ${typeUri}`);
+          }
+        } else {
+          typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+        }
+      } else {
+        // No prefix, assume DDI-CDI namespace
+        typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+      }
 
       const targetClassQuads = shaclShapesStore.getQuads(
         null,
@@ -175,6 +201,22 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
         typeUri,
         null
       );
+
+      if (targetClassQuads.length === 0) {
+        // Debug: show what targetClass values ARE in the shapes (deduplicated per session)
+        if (!window._loggedMissingTypes) {
+          window._loggedMissingTypes = new Set();
+        }
+        
+        if (!window._loggedMissingTypes.has(typeUri)) {
+          window._loggedMissingTypes.add(typeUri);
+          const allTargets = shaclShapesStore.getQuads(null, "http://www.w3.org/ns/shacl#targetClass", null, null);
+          const targetValues = [...new Set(allTargets.map(q => q.object.value))];
+          log(LOG_LEVEL.INFO, `No shape for type: ${typeUri}\n  Available targets: ${targetValues.slice(0,5).join(', ')}${targetValues.length > 5 ? '...' : ''}`);
+        }
+      } else {
+        log(LOG_LEVEL.DEBUG, `✓ Found ${targetClassQuads.length} shape(s) targeting ${typeUri}`);
+      }
 
       targetClassQuads.forEach((quad) => {
         applicableShapes.add(quad.subject.value);

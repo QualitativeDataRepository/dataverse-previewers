@@ -25,13 +25,39 @@ function getPropertySuggestions(node, types) {
 
   // 2. Also check sh:targetClass (traditional method)
   types.forEach((type) => {
+    let typeUri;
+    
+    if (type.startsWith("http")) {
+      // Already a full URI
+      typeUri = type;
+    } else if (type.includes(":")) {
+      // Compact form like "schema:Dataset" - expand using context
+      const [prefix, localPart] = type.split(":");
+      const context = jsonData && jsonData["@context"];
+      if (context) {
+        // Handle array context
+        const contextObj = Array.isArray(context) 
+          ? context.find(c => typeof c === 'object' && c[prefix])
+          : context;
+        if (contextObj && contextObj[prefix]) {
+          typeUri = contextObj[prefix] + localPart;
+        } else {
+          // Fallback: assume DDI-CDI namespace
+          typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+        }
+      } else {
+        typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+      }
+    } else {
+      // No prefix, assume DDI-CDI namespace
+      typeUri = "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+    }
+
     // Look for NodeShapes with sh:targetClass matching this type
     const targetClassQuads = shaclShapesStore.getQuads(
       null,
       "http://www.w3.org/ns/shacl#targetClass",
-      type.startsWith("http")
-        ? type
-        : "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type,
+      typeUri,
       null
     );
 
