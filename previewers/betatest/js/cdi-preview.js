@@ -259,6 +259,11 @@
                         
                         sparqlTargetCache.results[shapeUri] = matchedNodes;
                         log(LOG_LEVEL.DEBUG, `Shape ${shapeUri}: ${matchedNodes.size} node(s) matched`);
+                        if (matchedNodes.size > 0) {
+                            log(LOG_LEVEL.INFO, `✓ SPARQL matched nodes: ${Array.from(matchedNodes).join(', ')}`);
+                        } else {
+                            log(LOG_LEVEL.INFO, `✗ SPARQL found 0 matches`);
+                        }
                         
                         return { shapeUri, count: matchedNodes.size };
                         
