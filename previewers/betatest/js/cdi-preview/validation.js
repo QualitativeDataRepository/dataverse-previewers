@@ -24,54 +24,18 @@ async function validateData() {
       ));
     });
 
-    // Prepare data dataset from the existing N3 store if available, otherwise from jsonData
+    // Prepare data dataset: convert jsonData to N3 store, then to RDF/JS dataset
+    const tempStore = await jsonLdToN3Store(jsonData);
     const dataDataset = rdf.dataset();
-
-    if (typeof dataStore !== "undefined" && dataStore && dataStore.getQuads) {
-      // If a global N3.Store (dataStore) exists with the current data graph, reuse it
-      dataStore.getQuads(null, null, null, null).forEach((q) => {
-        dataDataset.add(rdf.quad(
-          rdf.fromTerm(q.subject),
-          rdf.fromTerm(q.predicate),
-          rdf.fromTerm(q.object),
-          q.graph && q.graph.termType !== "DefaultGraph" ? rdf.fromTerm(q.graph) : rdf.defaultGraph()
-        ));
-      });
-    } else {
-      // Fallback: serialize jsonData to RDF via jsonld and parse into the dataset
-      const dataCopy = JSON.parse(JSON.stringify(jsonData));
-
-      // Use existing @context from jsonData if present; avoid remote loading by custom loader
-      const customLoader = async (url) => {
-        console.log("Skipping remote context fetch during validation:", url);
-        return {
-          contextUrl: null,
-          document: { "@context": {} },
-          documentUrl: url,
-        };
-      };
-
-      const expanded = await jsonld.expand(dataCopy, { documentLoader: customLoader });
-      const nquads = await jsonld.toRDF(expanded, {
-        format: "application/n-quads",
-        documentLoader: customLoader,
-      });
-
-      const parser = new N3.Parser({ format: "N-Quads" });
-      parser.parse(nquads, (error, quad) => {
-        if (error) {
-          throw error;
-        }
-        if (quad) {
-          dataDataset.add(rdf.quad(
-            rdf.fromTerm(quad.subject),
-            rdf.fromTerm(quad.predicate),
-            rdf.fromTerm(quad.object),
-            quad.graph && quad.graph.termType !== "DefaultGraph" ? rdf.fromTerm(quad.graph) : rdf.defaultGraph()
-          ));
-        }
-      });
-    }
+    
+    tempStore.getQuads(null, null, null, null).forEach((q) => {
+      dataDataset.add(rdf.quad(
+        rdf.fromTerm(q.subject),
+        rdf.fromTerm(q.predicate),
+        rdf.fromTerm(q.object),
+        q.graph && q.graph.termType !== "DefaultGraph" ? rdf.fromTerm(q.graph) : rdf.defaultGraph()
+      ));
+    });
 
     // Run SHACL validation using rdf-validate-shacl
     const validator = new SHACLValidator(shapesDataset, { factory: rdf });
