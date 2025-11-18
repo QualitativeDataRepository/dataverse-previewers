@@ -1,4 +1,3 @@
-
 function getPropertySuggestions(node, types) {
   if (!shaclShapesStore || types.length === 0) {
     return [];

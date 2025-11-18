@@ -1,4 +1,3 @@
-
 function saveChanges() {
   // First, collect any changes from the DOM
   collectChangesFromDOM();
@@ -71,7 +70,7 @@ async function saveToDataverse() {
       throw new Error("Unexpected response: " + JSON.stringify(result));
     }
   } catch (error) {
-  console.error("Save error:", error);
+    console.error("Save error:", error);
     alert(
       "✗ Failed to save to Dataverse:\n" +
         error.message +
@@ -107,7 +106,6 @@ function exportData() {
   URL.revokeObjectURL(url);
 }
 
-
 function updateSaveButton() {
   const hasChanges = $(".property-row.changed").length > 0;
   $("#save-btn").prop("disabled", !hasChanges);
@@ -122,7 +120,12 @@ function collectChangesFromDOM() {
 
   // Check if there are any actual changes
   const hasChanges = $(".property-row.changed").length > 0;
-  log(LOG_LEVEL.DEBUG, "collectChangesFromDOM: Found", hasChanges, "changed rows");
+  log(
+    LOG_LEVEL.DEBUG,
+    "collectChangesFromDOM: Found",
+    hasChanges,
+    "changed rows"
+  );
   if (!hasChanges) {
     return; // No changes, keep original jsonData unchanged
   }
@@ -201,6 +204,10 @@ function collectChangesFromDOM() {
       });
   });
 
-  log(LOG_LEVEL.DEBUG, "collectChangesFromDOM: Complete. Updated jsonData:", jsonData);
+  log(
+    LOG_LEVEL.DEBUG,
+    "collectChangesFromDOM: Complete. Updated jsonData:",
+    jsonData
+  );
   // jsonData['@graph'] is already updated in place - no need to replace it
 }
