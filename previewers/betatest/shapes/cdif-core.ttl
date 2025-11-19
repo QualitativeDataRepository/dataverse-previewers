@@ -122,3 +122,159 @@ cdifd:metadataSubjectProperty
     sh:nodeKind sh:IRI ;
     sh:minCount 1 ;
     sh:message "Link to the target of the metadata metadata node using the about property" .
+
+# ====================================================================
+# Recommended Schema.org Properties (Optional)
+# ====================================================================
+
+cdifd:CDIFDatasetRecommendedShape a sh:NodeShape ;
+    sh:targetClass schema:Dataset ;
+    
+    sh:property
+        cdifd:urlProperty,
+        cdifd:descriptionProperty,
+        cdifd:contributorProperty,
+        cdifd:creatorProperty,
+        cdifd:keywordsProperty,
+        cdifd:distributionProperty,
+        cdifd:measurementTechniqueProperty,
+        cdifd:variableMeasuredProperty,
+        cdifd:subjectOfProperty,
+        cdifd:startDateProperty,
+        cdifd:locationProperty,
+        cdifd:mainEntityProperty,
+        cdifd:additionalPropertyProperty,
+        cdifd:relatedLinkProperty,
+        cdifd:additionalTypeProperty,
+        cdifd:emailProperty ;
+    
+    sh:message "Recommended properties for rich dataset documentation using schema.org vocabulary." .
+
+cdifd:urlProperty
+    a sh:PropertyShape ;
+    sh:path schema:url ;
+    sh:or (
+        [ sh:nodeKind sh:IRI ]
+        [ sh:datatype xsd:string ]
+    ) ;
+    sh:message "URL of the resource or dataset landing page" .
+
+cdifd:descriptionProperty
+    a sh:PropertyShape ;
+    sh:path schema:description ;
+    sh:datatype xsd:string ;
+    sh:message "A description of the dataset content and purpose" .
+
+cdifd:contributorProperty
+    a sh:PropertyShape ;
+    sh:path schema:contributor ;
+    sh:or (
+        [ sh:class schema:Person ]
+        [ sh:class schema:Organization ]
+        [ sh:class schema:Role ]
+    ) ;
+    sh:message "A person or organization that contributed to the dataset" .
+
+cdifd:creatorProperty
+    a sh:PropertyShape ;
+    sh:path schema:creator ;
+    sh:or (
+        [ sh:class schema:Person ]
+        [ sh:class schema:Organization ]
+    ) ;
+    sh:message "The creator or author of the dataset" .
+
+cdifd:keywordsProperty
+    a sh:PropertyShape ;
+    sh:path schema:keywords ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:class schema:DefinedTerm ]
+    ) ;
+    sh:message "Keywords or tags describing the dataset" .
+
+cdifd:distributionProperty
+    a sh:PropertyShape ;
+    sh:path schema:distribution ;
+    sh:or (
+        [ sh:class schema:DataDownload ]
+        [ sh:nodeKind sh:IRI ]
+    ) ;
+    sh:message "A downloadable form of the dataset" .
+
+cdifd:measurementTechniqueProperty
+    a sh:PropertyShape ;
+    sh:path schema:measurementTechnique ;
+    sh:or (
+        [ sh:class schema:DefinedTerm ]
+        [ sh:datatype xsd:string ]
+        [ sh:nodeKind sh:IRI ]
+    ) ;
+    sh:message "The technique or methodology used to gather the data" .
+
+cdifd:variableMeasuredProperty
+    a sh:PropertyShape ;
+    sh:path schema:variableMeasured ;
+    sh:or (
+        [ sh:class schema:PropertyValue ]
+        [ sh:datatype xsd:string ]
+    ) ;
+    sh:message "Variables that are measured in the dataset" .
+
+cdifd:subjectOfProperty
+    a sh:PropertyShape ;
+    sh:path schema:subjectOf ;
+    sh:class schema:Dataset ;
+    sh:message "A CreativeWork or Dataset about this item (metadata about metadata)" .
+
+cdifd:startDateProperty
+    a sh:PropertyShape ;
+    sh:path schema:startDate ;
+    sh:or (
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+        [ sh:datatype xsd:string ]
+    ) ;
+    sh:message "The start date and time of an event or action" .
+
+cdifd:locationProperty
+    a sh:PropertyShape ;
+    sh:path schema:location ;
+    sh:class schema:Place ;
+    sh:message "The location where the event or action took place" .
+
+cdifd:mainEntityProperty
+    a sh:PropertyShape ;
+    sh:path schema:mainEntity ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:message "The primary entity described by the content" .
+
+cdifd:additionalPropertyProperty
+    a sh:PropertyShape ;
+    sh:path schema:additionalProperty ;
+    sh:class schema:PropertyValue ;
+    sh:message "Additional properties as name-value pairs" .
+
+cdifd:relatedLinkProperty
+    a sh:PropertyShape ;
+    sh:path schema:relatedLink ;
+    sh:or (
+        [ sh:nodeKind sh:IRI ]
+        [ sh:class schema:LinkRole ]
+    ) ;
+    sh:message "Related links or resources" .
+
+cdifd:additionalTypeProperty
+    a sh:PropertyShape ;
+    sh:path schema:additionalType ;
+    sh:or (
+        [ sh:nodeKind sh:IRI ]
+        [ sh:datatype xsd:string ]
+    ) ;
+    sh:message "An additional type for the item, typically used for adding more specific types" .
+
+cdifd:emailProperty
+    a sh:PropertyShape ;
+    sh:path schema:email ;
+    sh:datatype xsd:string ;
+    sh:message "Email address" .
