@@ -8,12 +8,6 @@ function updateSaveButton() {
 }
 
 function collectChangesFromDOM() {
-  // Only update jsonData if we're in edit mode and have actual changes
-  if (!isEditMode) {
-    console.log("collectChangesFromDOM: Not in edit mode, skipping");
-    return; // Don't modify data in view mode
-  }
-
   // Check if there are any actual changes
   const hasChanges = $(".property-row.changed").length > 0;
   console.log("collectChangesFromDOM: Found", hasChanges, "changed rows");
@@ -94,6 +88,12 @@ function collectChangesFromDOM() {
 
   console.log("collectChangesFromDOM: Complete. Updated jsonData:", jsonData);
   // jsonData['@graph'] is already updated in place - no need to replace it
+  
+  // Clear the 'changed' class from all rows after collecting changes
+  $(".property-row.changed").removeClass("changed");
+  
+  // Update the save button state
+  updateSaveButton();
 }
 
 function saveChanges() {

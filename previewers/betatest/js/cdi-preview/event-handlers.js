@@ -68,6 +68,9 @@ function setupEventHandlers() {
 
   // Toggle edit mode
   $("#toggle-edit-btn").click(function () {
+    // Collect any changes before switching modes
+    collectChangesFromDOM();
+    
     isEditMode = !isEditMode;
 
     if (isEditMode) {
