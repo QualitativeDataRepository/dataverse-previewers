@@ -341,7 +341,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
             const matches =
               pathName === propertyKey || // Exact match with full path name
               path === propertyKey || // Exact match with full URI
-              path === expandedPropertyKey || // Match with expanded property key (e.g., schema:name → https://schema.org/name)
+              path === expandedPropertyKey || // Match with expanded property key (e.g., schema:name → http://schema.org/name)
               shaclPropertyName === propertyKey || // Match extracted property name
               (expandedUri && path === expandedUri) || // Match with expanded URI if available
               pathName.endsWith(propertyKey) || // Ends with property key

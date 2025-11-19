@@ -2,7 +2,7 @@
     "@context": [
         "https://docs.ddialliance.org/DDI-CDI/1.0/model/encoding/json-ld/ddi-cdi.jsonld",
         {
-            "schema": "https://schema.org/",
+            "schema": "http://schema.org/",
             "dcterms": "http://purl.org/dc/terms/",
             "geosparql": "http://www.opengis.net/ont/geosparql#",
             "spdx": "http://spdx.org/rdf/terms#",

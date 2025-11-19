@@ -63,7 +63,7 @@ Ensure those shapes have sh:path that can be matched by classifyProperty logic.
 Path naming conventions (e.g., CDIF uses paths like schema:name or custom cdi: paths).
 Our classifyProperty matching heuristic not recognizing the CDIF-style sh:path URIs.
  Decide where to fix:
-Preferred: Adjust TTL so paths for core CDIF discovery properties match the actual JSON-LD (https://schema.org/name, https://schema.org/identifier, etc.).
+Preferred: Adjust TTL so paths for core CDIF discovery properties match the actual JSON-LD (http://schema.org/name, http://schema.org/identifier, etc.).
 If needed: Relax/improve classifyProperty matching rules to better map CDIF-style paths to JSON-LD keys (e.g. handle schema:name vs name, and CDIF’s custom naming schemes).
 Implement the CDIF fix
 

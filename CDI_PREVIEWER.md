@@ -211,7 +211,7 @@ ex:NodeShape
     sh:target [
         a sh:SPARQLTarget ;
         sh:select """
-            PREFIX schema: <https://schema.org/>
+            PREFIX schema: <http://schema.org/>
             SELECT ?this WHERE {
                 ?this a schema:Dataset .
             }
@@ -251,7 +251,7 @@ ex:NodeShape
 **Key Features:**
 - ✅ **Standards Compliant**: SPARQL 1.1 queries executed as-is (no modification)
 - ✅ **Performance**: Parallel query execution, results cached
-- ✅ **Robust**: Handles both compact (`schema:Dataset`) and expanded URIs (`https://schema.org/Dataset`)
+- ✅ **Robust**: Handles both compact (`schema:Dataset`) and expanded URIs (`http://schema.org/Dataset`)
 - ✅ **Graceful Fallback**: Falls back to `sh:targetClass` if SPARQL fails
 - ✅ **Debug Mode**: Add `?debug=true` to URL to see query execution logs
 
@@ -259,7 +259,7 @@ ex:NodeShape
 The CDIF Discovery Core shapes use SPARQL targets to match `schema:Dataset` nodes. Load any XAS example file (`se_na2so4-XDI-CDI-CDIF.jsonld` or `FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld`) with CDIF shapes selected to see SPARQL matching in action.
 
 **Technical Notes:**
-- Namespace handling: Data and shapes should use consistent namespaces (e.g., both use `https://schema.org/`)
+- Namespace handling: Data and shapes should use consistent namespaces (e.g., both use `http://schema.org/`)
 - Feature flag available: Set `sparqlTargetCache.enabled = false` to disable SPARQL matching
 - Logging: Use `?debug=true` URL parameter to see detailed query execution logs
 
@@ -330,7 +330,7 @@ curl -X POST -H 'Content-Type: application/json' \
 3. **Password Protection**: Edit mode not locked behind authentication
 4. **RDF List Parsing**: `sh:in` lists not fully parsed from RDF
 5. **Large Files**: Performance may degrade with 100+ nodes
-6. **Namespace Consistency**: SHACL shapes and data should use same namespaces (e.g., both `https://schema.org/`)
+6. **Namespace Consistency**: SHACL shapes and data should use same namespaces (e.g., both `http://schema.org/`)
 
 ## Debug Mode
 
@@ -393,7 +393,7 @@ INFO: SPARQL execution complete: 2 total matches in 64.52ms
   - If no matches, verify SPARQL query syntax and namespace consistency
 - Verify property `sh:path` matches property name in data (check for namespace differences)
 - Ensure SHACL file is properly loaded (check network tab)
-- **Namespace issues**: Data and shapes must use same namespaces (e.g., both `https://schema.org/` not mixed http/https)
+- **Namespace issues**: Data and shapes must use same namespaces (e.g., both `http://schema.org/` not mixed http/https)
 
 ### Validation fails with no details
 - Check SHACL shapes syntax in Turtle validator

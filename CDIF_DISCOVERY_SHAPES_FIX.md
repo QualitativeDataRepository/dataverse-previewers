@@ -39,7 +39,7 @@ If you have SHACL shapes that use SPARQL features, here are the Core SHACL patte
 sh:target [
   a sh:SPARQLTarget ;
   sh:select """
-    PREFIX schema: <https://schema.org/>
+    PREFIX schema: <http://schema.org/>
     SELECT DISTINCT ?this WHERE {
       ?this a schema:Dataset .
     }

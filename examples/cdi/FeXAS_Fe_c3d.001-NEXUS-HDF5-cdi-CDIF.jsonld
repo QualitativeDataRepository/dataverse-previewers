@@ -1,7 +1,7 @@
 {
     "@context": {
         "@vocab": "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/",
-        "schema": "https://schema.org/",
+        "schema": "http://schema.org/",
         "dcterms": "http://purl.org/dc/terms/",
         "geosparql": "http://www.opengis.net/ont/geosparql#",
         "spdx": "http://spdx.org/rdf/terms#",

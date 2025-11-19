@@ -33,11 +33,11 @@ These correspond directly to CDIF Discovery Core shapes in `CDIF-Discovery-Core-
 - `cdifd:getResourceProperty` – `schema:url` / `schema:distribution`.
 - `cdifd:distributionProperty` – `schema:distribution`.
 
-Because the example uses `"schema": "https://schema.org/"` in its `@context`, the expanded IRIs are exactly:
+Because the example uses `"schema": "http://schema.org/"` in its `@context`, the expanded IRIs are exactly:
 
-- `https://schema.org/name`
-- `https://schema.org/identifier`
-- `https://schema.org/description`
+- `http://schema.org/name`
+- `http://schema.org/identifier`
+- `http://schema.org/description`
 - etc.
 
 The CDIF shapes now also use **HTTPS schema.org** consistently, so SPARQL and SHACL can match these predicates exactly.
@@ -47,7 +47,7 @@ The CDIF shapes now also use **HTTPS schema.org** consistently, so SPARQL and SH
 The CDI Previewer does the following:
 
 1. **Normalize to `@graph`** if needed (here the file already has `@graph`).
-2. **Expand JSON-LD** to get full IRIs for properties (`https://schema.org/name`, etc.).
+2. **Expand JSON-LD** to get full IRIs for properties (`http://schema.org/name`, etc.).
 3. **Run SPARQL targets** from CDIF Discovery shapes:
    - The `cdifd:CDIFDatasetRecommendedShape` has a `sh:SPARQLTarget` that selects all `schema:Dataset` instances.
 4. **Classify properties** for each dataset node:
@@ -72,7 +72,7 @@ Steve's richer CDI/XAS examples (`FeXAS_...jsonld`, `se_na2so4-...jsonld`) use t
 
 The CDIF Discovery Core shapes now:
 
-- Use HTTPS `https://schema.org/` everywhere.
+- Use HTTPS `http://schema.org/` everywhere.
 - Select all `schema:Dataset` nodes via SPARQL (no root-only filter).
 - Include `cdifd:descriptionProperty` for `schema:description`.
 - Include `cdifd:variableMeasuredProperty` in the main dataset NodeShape, so `schema:variableMeasured` is SHACL-defined.
@@ -86,9 +86,9 @@ That means the **same properties** that are blue in this minimal example are the
 When updating CDIF Discovery shapes and examples, this file demonstrates a few key points:
 
 1. **Use HTTPS schema.org consistently**
-   - In JSON-LD contexts: `"schema": "https://schema.org/"`.
-   - In SHACL/Turtle: `@prefix schema: <https://schema.org/> .`
-   - In SPARQL and `sh:prefixes`: always `https://schema.org/`.
+   - In JSON-LD contexts: `"schema": "http://schema.org/"`.
+   - In SHACL/Turtle: `@prefix schema: <http://schema.org/> .`
+   - In SPARQL and `sh:prefixes`: always `http://schema.org/`.
 
 2. **Don't filter out referenced datasets in SPARQL targets**
    - The original `NOT EXISTS { ?s ?p ?this . }` filter excluded datasets that are referenced elsewhere in the graph (which realistic CDI examples do).
@@ -105,6 +105,6 @@ If your shapes and examples follow the same patterns as in `cdif_example.jsonld`
 
 ### Note on small example fixes
 
-While reviewing Steve's FeXAS example (`FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld`), we also fixed a minor typo where one nested variable had `schame:alternateName` instead of `schema:alternateName`. This is now corrected so that all `schema:alternateName` occurrences use the proper `schema` prefix, matching the "schema": "https://schema.org/" context above.
+While reviewing Steve's FeXAS example (`FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld`), we also fixed a minor typo where one nested variable had `schame:alternateName` instead of `schema:alternateName`. This is now corrected so that all `schema:alternateName` occurrences use the proper `schema` prefix, matching the "schema": "http://schema.org/" context above.
 
 We have adjusted the CDIF Discovery shapes and previewer so that Steve's dataset *types* are recognized correctly via SPARQL targets and HTTPS schema.org IRIs. However, some of Steve's dataset properties still show up as EXTRA rather than SHACL-defined. The intention of this example and the shapes is clear, but there is still follow-up work needed to get perfect alignment between the CDIF shapes, the previewer classification logic, and Steve's richer CDI/XAS patterns.

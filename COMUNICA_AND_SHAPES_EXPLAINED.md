@@ -160,7 +160,7 @@ If you need shapes for `schema:Product`, `schema:PropertyValue`, etc., create a 
 
 ```turtle
 @prefix sh: <http://www.w3.org/ns/shacl#> .
-@prefix schema: <https://schema.org/> .
+@prefix schema: <http://schema.org/> .
 
 schema:ProductShape a sh:NodeShape ;
     sh:targetClass schema:Product ;
