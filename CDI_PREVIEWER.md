@@ -8,12 +8,11 @@ The CDI Previewer is a comprehensive viewer and editor for DDI-CDI (Data Documen
 
 ### Data Display
 - **Complete Data Visibility**: Displays ALL nodes and properties in the JSON-LD `@graph`, regardless of SHACL shape definitions
-- **Visual Classification**: Properties are color-coded and badged based on their SHACL status:
-  - 🔵 Blue border + "OPTIONAL" badge: SHACL-defined optional properties
-  - 🔴 Red border + "REQUIRED" badge: SHACL-defined required properties (thick border)
-  - 🟡 Yellow border + "EXTRA" badge: Properties not defined in SHACL shapes
-  - 🔵 Teal border: Modified/changed properties
-  - ❌ Red border: Invalid properties (failing SHACL validation)
+- **Visual Classification**: Properties are color-coded with badges based on their SHACL status:
+  - 🔵 Blue badge "SHACL-defined": Properties defined in loaded SHACL shapes
+  - 🟡 Yellow badge "EXTRA": Properties not defined in SHACL shapes
+  - Red text: Required properties that are missing
+  - Teal border: Modified/changed properties
 
 ### Editing Capabilities
 - **Smart Input Types**: Automatically selects appropriate input types based on SHACL datatype constraints:
@@ -33,9 +32,10 @@ The CDI Previewer is a comprehensive viewer and editor for DDI-CDI (Data Documen
 
 ### Validation
 - **Real-time SHACL Validation**: 
-  - Uses [shacl-engine](https://github.com/jeswr/shacl-engine) for standards-compliant validation
+  - Uses [rdf-validate-shacl](https://github.com/zazuko/rdf-validate-shacl) for Core SHACL validation
   - Visual indicators show validation status
   - Detailed validation reports available
+  - **Note**: Only Core SHACL features supported (no `sh:SPARQLConstraint`)
 - **Property Suggestions**: Shows missing SHACL-defined properties with descriptions
 - **Constraint Enforcement**: Respects minCount, maxCount, datatype, and pattern constraints
 
@@ -59,29 +59,34 @@ The CDI Previewer is a comprehensive viewer and editor for DDI-CDI (Data Documen
 ### Libraries Used
 - **jQuery 3.7.1**: DOM manipulation and AJAX
 - **Bootstrap 3.3.7**: UI components and responsive grid (Dataverse standard)
-- **N3.js v1.16.x**: RDF/Turtle parsing for loading SHACL shapes and data conversion
+- **N3.js v1.16.x**: RDF/Turtle parsing for loading SHACL shapes
 - **jsonld.js**: JSON-LD normalization, expansion, and RDF conversion
-- **Comunica v3.2.3**: SPARQL query engine for `sh:SPARQLTarget` support (built locally, ~1.9MB minified)
-- **shacl-engine**: Standards-compliant SHACL validation
+- **rdf-validate-shacl**: Core SHACL validation (no SPARQL support)
 
 ### Code Quality
-- **Standards Compliance**: SPARQL queries execute unmodified per SPARQL 1.1 standards
+- **Lightweight**: ~400KB total bundle (N3.js ~150KB, jsonld.js ~130KB, rdf-validate-shacl ~120KB)
+- **Core SHACL Only**: No SPARQL engine needed, keeping the previewer fast
 - **Logging System**: Configurable log levels (ERROR, WARN, INFO, DEBUG) with `?debug=true` URL parameter
 - **Production Ready**: Test code removed, debug logging behind feature flag
-- **Maintainable**: Separated HTML/CSS/JS structure, ~2,700 lines total
+- **Maintainable**: Separated HTML/CSS/JS structure
 
 ### File Structure
 ```
 previewers/betatest/
-├── CdiPreview.html          # Main HTML structure (7.8KB)
+├── CdiPreview.html          # Main HTML structure
 ├── css/
-│   └── cdi-preview.css      # Styles (8.1KB)
+│   └── cdi-preview.css      # Styles
 ├── js/
-│   └── cdi-preview.js       # Application logic (129KB)
-├── lib/
-│   └── comunica-query-sparql.v3.2.3.min.js  # SPARQL engine (1.9MB)
+│   └── cdi-preview/
+│       ├── core.js          # Core initialization and config
+│       ├── render.js        # UI rendering logic
+│       ├── edit.js          # Editing functionality
+│       ├── validation.js    # SHACL validation
+│       ├── cdi-shacl-loader.js    # Shape loading
+│       └── cdi-shacl-helpers.js   # Property classification
 └── shapes/
-    └── ddi-cdi-official.ttl  # DDI-CDI official SHACL shapes (fallback)
+    ├── ddi-cdi-official.ttl      # DDI-CDI official SHACL shapes (fallback)
+    └── cdif-core.ttl             # CDIF Discovery Core shapes (local)
 ```
 
 **Benefits of Split Structure:**
@@ -95,26 +100,28 @@ previewers/betatest/
 ### SHACL Shapes Location
 The previewer can load SHACL shapes from multiple sources (selectable via dropdown):
 
-1. **DDI-CDI 1.0 (Official)** - `https://ddi-cdi.github.io/m2t-ng/DDI-CDI_1-0/encoding/shacl/ddi-cdi.shacl.ttl`
-   - Full DDI-CDI class definitions with `sh:targetClass`
-   - Best integration with the previewer
-   - Works with all CDI types (Activity, DataSet, Variable, etc.)
+1. **DDI-CDI Official (Default)** - `https://ddi-cdi.github.io/m2t-ng/DDI-CDI_1-0/encoding/shacl/ddi-cdi.shacl.ttl`
+   - Full DDI-CDI 1.0 class definitions with `sh:targetClass`
+   - 300+ types covered
+   - Best for full DDI-CDI metadata files
 
-2. **CDIF Discovery Core** - `https://raw.githubusercontent.com/Cross-Domain-Interoperability-Framework/validation/main/CDIF-Discovery-Core-Shapes.ttl`
-   - Cross-domain metadata profile shapes
-   - Uses `sh:SPARQLTarget` for root nodes (✅ fully supported)
-   - Focuses on schema.org Dataset metadata requirements
-   - Property suggestions and SHACL classification work with SPARQL-matched nodes
+2. **CDIF Discovery Core** - Local built-in shapes (`shapes/cdif-core.ttl`)
+   - Browser-compatible Core SHACL shapes for schema.org Dataset validation
+   - 20 properties (4 mandatory + 16 recommended)
+   - Converted from SPARQL-based shapes to Core SHACL
+   - Best for CDIF Discovery metadata files
 
-3. **Local Built-in** - `shapes/ddi-cdi-official.ttl`
+3. **Local Fallback** - `shapes/ddi-cdi-official.ttl`
    - DDI-CDI official shapes cached locally
-   - Fallback when online shapes unavailable
-   - Automatically kept in sync with official release
+   - Used when online shapes unavailable
 
 4. **Custom URL** - User-provided SHACL shape URL
    - Enter any accessible Turtle (.ttl) file URL
+   - **Must use Core SHACL only** (no `sh:SPARQLTarget` or `sh:SPARQLConstraint`)
 
-**Recommendation**: Use "DDI-CDI 1.0 (Official)" for files with DDI-CDI types. Use "CDIF Discovery Core" for schema.org-based metadata. Both shape sources are fully supported with property suggestions and validation.
+**Recommendation**: Use "DDI-CDI Official" for files with DDI-CDI types. Use "CDIF Discovery Core" for schema.org Dataset validation.
+
+**Important**: Only Core SHACL features are supported. SPARQL-based features like `sh:SPARQLTarget` and `sh:SPARQLConstraint` are not supported. See [CDIF_DISCOVERY_SHAPES_FIX.md](CDIF_DISCOVERY_SHAPES_FIX.md) for conversion patterns.
 
 ### Dataverse Integration
 The previewer expects these URL parameters:
@@ -191,9 +198,9 @@ CdiPreview.html?testfile=SimpleSample.jsonld
 
 ### Supported Target Types
 
-The previewer supports both standard and advanced SHACL targeting mechanisms:
+The previewer supports standard Core SHACL targeting mechanisms:
 
-#### 1. **sh:targetClass** (Standard)
+#### sh:targetClass (Standard)
 Matches nodes by RDF type:
 ```turtle
 ex:NodeShape
@@ -203,85 +210,35 @@ ex:NodeShape
     .
 ```
 
-#### 2. **sh:SPARQLTarget** (Advanced) ✅
-Matches nodes using SPARQL SELECT queries:
+#### sh:targetSubjectsOf
+Matches nodes that have a specific property:
 ```turtle
 ex:NodeShape
     a sh:NodeShape ;
-    sh:target [
-        a sh:SPARQLTarget ;
-        sh:select """
-            PREFIX schema: <http://schema.org/>
-            SELECT ?this WHERE {
-                ?this a schema:Dataset .
-            }
-        """ ;
-    ] ;
+    sh:targetSubjectsOf schema:about ;
     sh:property ex:PropertyShape ;
     .
 ```
 
-### SPARQL Target Implementation
-
-**Execution Flow:**
-
-1. **Shape Loading** (`parseSparqlTargets()`)
-   - Extracts all `sh:SPARQLTarget` definitions from loaded SHACL shapes
-   - Parses `sh:select` query strings from both blank nodes and named nodes
-   - Stores mapping: `sparqlTargetCache.queries[shapeUri] = query`
-
-2. **Data Loading** (`jsonLdToN3Store()`)
-   - Converts JSON-LD to N-Quads format using jsonld.js
-   - Parses N-Quads into N3.Store for RDF querying
-   - Store becomes queryable by Comunica SPARQL engine
-
-3. **Query Execution** (`executeSparqlTargets()`)
-   - Initializes Comunica QueryEngine on first use
-   - Executes all SPARQL SELECT queries in parallel against N3 store
-   - Extracts `?this` variable bindings (matched node URIs)
-   - Stores results: `sparqlTargetCache.results[shapeUri] = Set<nodeURIs>`
-   - Performance: ~60-80ms per dataset, executes once on data load
-
-4. **Property Classification** (`classifyProperty()`)
-   - First checks SPARQL target cache for node matches
-   - Falls back to `sh:targetClass` matching if no SPARQL match
-   - Applies SHACL property constraints from matched shape
-   - Returns classification (SHACL-defined vs extra field)
-
-**Key Features:**
-- ✅ **Standards Compliant**: SPARQL 1.1 queries executed as-is (no modification)
-- ✅ **Performance**: Parallel query execution, results cached
-- ✅ **Robust**: Handles both compact (`schema:Dataset`) and expanded URIs (`http://schema.org/Dataset`)
-- ✅ **Graceful Fallback**: Falls back to `sh:targetClass` if SPARQL fails
-- ✅ **Debug Mode**: Add `?debug=true` to URL to see query execution logs
-
-**Live Example:**
-The CDIF Discovery Core shapes use SPARQL targets to match `schema:Dataset` nodes. Load any XAS example file (`se_na2so4-XDI-CDI-CDIF.jsonld` or `FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld`) with CDIF shapes selected to see SPARQL matching in action.
-
-**Technical Notes:**
-- Namespace handling: Data and shapes should use consistent namespaces (e.g., both use `http://schema.org/`)
-- Feature flag available: Set `sparqlTargetCache.enabled = false` to disable SPARQL matching
-- Logging: Use `?debug=true` URL parameter to see detailed query execution logs
+**Note**: SPARQL-based targets (`sh:SPARQLTarget`) are **not supported**. If you have shapes using SPARQL features, see [CDIF_DISCOVERY_SHAPES_FIX.md](CDIF_DISCOVERY_SHAPES_FIX.md) for Core SHACL conversion patterns.
 
 ## Customization
 
 ### Styling
 Modify `css/cdi-preview.css`:
-- `.shacl-defined`: Blue properties (in SHACL)
-- `.extra-field`: Yellow properties (not in SHACL)
-- `.required`: Thick borders for required
-- `.changed`: Teal for modified
-- `.invalid`: Red for validation errors
+- `.badge-shacl`: Blue badges for SHACL-defined properties
+- `.badge-extra`: Yellow badges for extra properties
+- `.changed`: Teal border for modified properties
+- `.required-missing`: Red text for missing required properties
 
 ### Behavior
-Key JavaScript functions in `js/cdi-preview.js`:
-- `renderData()`: Main render loop
-- `renderNode()`: Individual node rendering  
-- `renderProperty()`: Property row rendering
-- `classifyProperty()`: SHACL classification logic (checks SPARQL cache then targetClass)
-- `executeSparqlTargets()`: Runs SPARQL queries to match nodes to shapes
-- `validateData()`: SHACL validation
-- `addComplexPropertyToNode()`: Create nested objects
+Key JavaScript functions:
+- `renderData()`: Main render loop (in `render.js`)
+- `renderNode()`: Individual node rendering (in `render.js`)
+- `renderProperty()`: Property row rendering (in `render.js`)
+- `classifyProperty()`: SHACL classification logic (in `cdi-shacl-helpers.js`)
+- `validateData()`: SHACL validation (in `validation.js`)
+- `addComplexPropertyToNode()`: Create nested objects (in `edit.js`)
 
 ## Testing
 
@@ -313,7 +270,7 @@ Key JavaScript functions in `js/cdi-preview.js`:
    - FeXAS_Fe_c3d.001-NEXUS-HDF5-cdi-CDIF.jsonld (NEXUS HDF5, uses schema:Dataset)
    - ESS11-subset_DDICDI.jsonld (large/complete)
 
-**Note**: The XAS examples (`se_na2so4` and `FeXAS`) use `schema:Dataset` as their root type and work with both DDI-CDI Official and CDIF Discovery Core shapes. When using CDIF shapes, the previewer executes SPARQL queries to match nodes, providing full property suggestions and validation.
+**Note**: The XAS examples (`se_na2so4` and `FeXAS`) use `schema:Dataset` as their root type and work with both DDI-CDI Official and CDIF Discovery Core shapes.
 
 ### Integration Testing
 Test with actual Dataverse instance using curl registration:
@@ -325,12 +282,13 @@ curl -X POST -H 'Content-Type: application/json' \
 
 ## Known Limitations
 
-1. **Controlled Vocabularies**: `sh:in` constraints not yet implemented as dropdowns
-2. **Undo/Reset**: No undo functionality (reload page to discard changes)
-3. **Password Protection**: Edit mode not locked behind authentication
-4. **RDF List Parsing**: `sh:in` lists not fully parsed from RDF
-5. **Large Files**: Performance may degrade with 100+ nodes
-6. **Namespace Consistency**: SHACL shapes and data should use same namespaces (e.g., both `http://schema.org/`)
+1. **SPARQL Features**: `sh:SPARQLTarget` and `sh:SPARQLConstraint` not supported (Core SHACL only)
+2. **Controlled Vocabularies**: `sh:in` constraints not yet implemented as dropdowns
+3. **Undo/Reset**: No undo functionality (reload page to discard changes)
+4. **Password Protection**: Edit mode not locked behind authentication
+5. **RDF List Parsing**: `sh:in` lists not fully parsed from RDF
+6. **Large Files**: Performance may degrade with 100+ nodes
+7. **Namespace Consistency**: SHACL shapes and data should use same namespaces (e.g., both `http://schema.org/`)
 
 ## Debug Mode
 
@@ -348,27 +306,26 @@ https://example.com/CdiPreview.html?fileid=123&siteUrl=...&debug=true
 - `DEBUG`: Detailed execution logs, query details, node matching (only with `?debug=true`)
 
 **What DEBUG mode shows:**
-- SPARQL query execution details
-- Node matching results ("✓ Node matched via SPARQL target")
-- Property classification logic
-- RDF store statistics
 - Shape loading details
+- Property classification logic
+- Validation results
+- Data structure information
 
 **Example debug output:**
 ```
-DEBUG: Executing SPARQL for shape https://example.org/shapes#DatasetShape
-DEBUG: Created N3 store with 1,234 quads
-DEBUG: ✓ Node xas:dataset1 matched via SPARQL target
-INFO: SPARQL execution complete: 2 total matches in 64.52ms
+DEBUG: Loaded SHACL shapes from cdif-core.ttl
+DEBUG: Found 3 node shapes with 20 property shapes
+DEBUG: Classifying property 'schema:name' for node xas:dataset1
+INFO: Validation complete: 4 violations found
 ```
 
 ---
 
 ## Future Enhancements
 
-- [x] Support for `sh:SPARQLTarget` in SHACL shapes ✅
-- [x] Proper logging system with debug mode ✅
-- [x] Standards-compliant SPARQL execution ✅
+- [x] Modular code structure with separate files ✅
+- [x] Core SHACL validation support ✅
+- [x] Property classification with badges ✅
 - [ ] Implement controlled vocabulary dropdowns for `sh:in`
 - [ ] Add undo/reset functionality
 - [ ] Lock edit mode behind API token verification
@@ -376,7 +333,6 @@ INFO: SPARQL execution complete: 2 total matches in 64.52ms
 - [ ] Pagination for large datasets (100+ nodes)
 - [ ] Diff view showing changes before save
 - [ ] Bulk import/export of property values
-- [ ] Namespace auto-detection and harmonization
 
 ## Troubleshooting
 
@@ -386,14 +342,11 @@ INFO: SPARQL execution complete: 2 total matches in 64.52ms
 - Ensure JSON-LD file is valid
 
 ### Properties not showing as SHACL-defined (showing yellow instead of blue)
-- **For sh:targetClass shapes**: Check that shape `sh:targetClass` matches the node's `@type`
-- **For sh:SPARQLTarget shapes**: Enable debug mode (`?debug=true`) and check console for:
-  - "SPARQL execution complete: N total matches" - should show >0 matches
-  - "✓ Node {id} matched via SPARQL target" - confirms node was matched
-  - If no matches, verify SPARQL query syntax and namespace consistency
+- Check that shape `sh:targetClass` or `sh:targetSubjectsOf` matches the node's `@type` or properties
 - Verify property `sh:path` matches property name in data (check for namespace differences)
 - Ensure SHACL file is properly loaded (check network tab)
 - **Namespace issues**: Data and shapes must use same namespaces (e.g., both `http://schema.org/` not mixed http/https)
+- Enable debug mode (`?debug=true`) to see classification details in console
 
 ### Validation fails with no details
 - Check SHACL shapes syntax in Turtle validator
