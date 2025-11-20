@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CDI Viewer Bundle Test</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/cdi-preview.css">
+</head>
+<body>
+    <div class="container" style="margin-top: 20px;">
+        <h1>CDI Viewer Bundle Test</h1>
+        <p>Testing the bundled cdi-viewer.bundle.min.js</p>
+        
+        <div class="alert alert-info">
+            <strong>Test Status:</strong> <span id="status">Loading...</span>
+        </div>
+        
+        <button class="btn btn-primary" onclick="testValidation()">Test Validation Function</button>
+        <button class="btn btn-success" onclick="loadTestFile()">Load Test CDI File</button>
+        
+        <div id="results" style="margin-top: 20px;"></div>
+        <div id="content"></div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    
+    <!-- CDI Viewer Bundle -->
+    <script src="lib/cdi-viewer.bundle.min.js"></script>
+    
+    <script>
+        // Check if bundle loaded
+        window.addEventListener('load', function() {
+            const status = document.getElementById('status');
+            if (typeof window.validateData === 'function') {
+                status.innerHTML = '✅ Bundle loaded successfully! validateData function is available.';
+                status.parentElement.className = 'alert alert-success';
+            } else {
+                status.innerHTML = '❌ Bundle failed to load or validateData not found.';
+                status.parentElement.className = 'alert alert-danger';
+            }
+        });
+        
+        function testValidation() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Validation Test</h3><p>Testing with simple JSON-LD...</p>';
+            
+            const testData = {
+                "@context": {
+                    "schema": "http://schema.org/"
+                },
+                "@graph": [{
+                    "@id": "test:1",
+                    "@type": "schema:Dataset",
+                    "schema:name": "Test Dataset"
+                }]
+            };
+            
+            // Try validation
+            try {
+                results.innerHTML += '<pre>' + JSON.stringify(testData, null, 2) + '</pre>';
+                results.innerHTML += '<p>Validation function exists: ' + (typeof window.validateData === 'function') + '</p>';
+            } catch (e) {
+                results.innerHTML += '<div class="alert alert-danger">Error: ' + e.message + '</div>';
+            }
+        }
+        
+        async function loadTestFile() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Loading Test File</h3><p>Fetching CDI example...</p>';
+            
+            try {
+                const response = await fetch('../../examples/cdi/se_na2so4-XDI-CDI-CDIF.jsonld');
+                const data = await response.json();
+                results.innerHTML += '<div class="alert alert-success">File loaded successfully!</div>';
+                results.innerHTML += '<p>Keys: ' + Object.keys(data).join(', ') + '</p>';
+                results.innerHTML += '<p>Graph items: ' + (data['@graph'] ? data['@graph'].length : 'N/A') + '</p>';
+            } catch (e) {
+                results.innerHTML += '<div class="alert alert-danger">Error loading file: ' + e.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>
