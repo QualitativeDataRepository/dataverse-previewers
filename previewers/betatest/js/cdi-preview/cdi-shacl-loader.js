@@ -66,7 +66,7 @@ async function loadShapes(shapeSource, customUrl = null) {
 
         // Show user notification
         alert(
-          `Note: Could not load shapes from ${shapeUrl}.\nUsing local built-in shapes instead.\n\nError: ${error.message}`
+          `Could not load shapes from:\n${shapeUrl}\n\nFalling back to local built-in DDI-CDI shapes.\n\nError: ${error.message}`
         );
 
         return true;

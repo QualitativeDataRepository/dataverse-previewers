@@ -123,7 +123,7 @@ function addRootNode() {
   if (availableTypes.length === 0) {
     // No SHACL shapes loaded, allow custom type
     const customType = prompt(
-      "Enter node type (e.g., DataSet, Study, Variable):"
+      "No SHACL shapes loaded. Enter a custom node type (e.g., Dataset, Study, Variable):"
     );
     if (!customType) return;
 
@@ -160,7 +160,7 @@ function addRootNode() {
                                 </div>
                                 <div class="form-group">
                                     <label for="customNodeType"><strong>Or enter custom type:</strong></label>
-                                    <input type="text" id="customNodeType" class="form-control" placeholder="e.g., DataSet, Study, Variable">
+                                    <input type="text" id="customNodeType" class="form-control" placeholder="e.g., Dataset, Study, Variable">
                                 </div>
                             </div>
                             <div class="modal-footer">

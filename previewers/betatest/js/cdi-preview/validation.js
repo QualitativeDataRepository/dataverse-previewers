@@ -170,7 +170,7 @@ async function validateData() {
     if (error.message.includes("SPARQLConstraintComponent")) {
       errorMsg =
         "The selected SHACL shapes contain SPARQL constraints, which are not supported in the browser. " +
-        "Please use the 'DDI-CDI 1.0 (Official)' shapes instead, which use Core SHACL constraints only.";
+        "Please use Core SHACL-compatible shapes (e.g., 'DDI-CDI 1.0 (Official)' or 'CDIF Discovery Core').";
     }
 
     $("#validation-status").html(

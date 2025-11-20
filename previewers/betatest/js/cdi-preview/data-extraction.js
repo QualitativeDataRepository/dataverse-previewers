@@ -170,9 +170,9 @@ async function saveToDataverse() {
   } catch (error) {
     console.error("Save error:", error);
     alert(
-      "✗ Failed to save to Dataverse:\n" +
+      "Failed to save to Dataverse:\n\n" +
         error.message +
-        "\n\nPlease check:\n- Your API token is valid\n- You have write access to this dataset\n- The dataset is accessible"
+        "\n\nPlease check:\n• Your API token is valid\n• You have write access to this dataset\n• The Dataverse server is accessible"
     );
   } finally {
     // Reset button

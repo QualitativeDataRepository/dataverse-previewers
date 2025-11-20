@@ -109,7 +109,7 @@ function setupEventHandlers() {
     // Check if validation passed
     setTimeout(() => {
       if (validationReport && !validationReport.conforms) {
-        if (!confirm("Data has validation errors. Save anyway?")) {
+        if (!confirm("Your data has validation errors. Do you want to save anyway?")) {
           return;
         }
       }
@@ -302,7 +302,7 @@ function setupEventHandlers() {
           '<span class="validation-badge invalid">Custom shape load failed</span>'
         );
         alert(
-          `Failed to load custom SHACL shape from:\n${customUrl}\n\nError: ${error.message}`
+          `Failed to load custom SHACL shapes from:\n${customUrl}\n\nError: ${error.message}\n\nPlease check:\n• The URL is accessible\n• The file is valid Turtle (.ttl) format\n• CORS is enabled on the server`
         );
       }
     }
