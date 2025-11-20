@@ -44,12 +44,9 @@ function getExpandedNodeId(compactNodeId) {
 
   // Fallback: try to resolve using context
   if (jsonData && jsonData["@context"]) {
-    const context = jsonData["@context"];
-    const [prefix, localPart] = compactNodeId.split(":");
-
-    if (prefix && localPart && context[prefix]) {
-      const namespace = context[prefix];
-      return namespace + localPart;
+    const expanded = expandCompactIri(jsonData["@context"], compactNodeId);
+    if (expanded) {
+      return expanded;
     }
   }
 
@@ -85,41 +82,6 @@ function getExpandedPropertyUri(nodeId, propertyKey) {
 }
 
 // Get all available node types from SHACL shapes.
-function getAvailableNodeTypes() {
-  if (!shaclShapesStore) {
-    return [];
-  }
-
-  const nodeTypes = new Set();
-
-  try {
-    // Find all NodeShapes with sh:targetClass
-    const targetClassQuads = shaclShapesStore.getQuads(
-      null,
-      "http://www.w3.org/ns/shacl#targetClass",
-      null,
-      null
-    );
-
-    targetClassQuads.forEach((quad) => {
-      const classUri = quad.object.value;
-      // Extract the class name from the URI
-      const className = classUri.split("/").pop().split("#").pop();
-      nodeTypes.add({
-        uri: classUri,
-        name: className,
-        label: humanizeKey(className),
-      });
-    });
-  } catch (error) {
-    console.error("Error getting node types:", error);
-  }
-
-  // Convert Set to Array and sort by label
-  return Array.from(nodeTypes).sort((a, b) => a.label.localeCompare(b.label));
-}
-
-// Get all available node types from SHACL shapes
 function getAvailableNodeTypes() {
   if (!shaclShapesStore) {
     return [];

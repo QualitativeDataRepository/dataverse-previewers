@@ -127,22 +127,9 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
   // Also try to expand the property key if it's in compact form (e.g., "schema:name")
   let expandedPropertyKey = propertyKey;
   if (propertyKey.includes(":") && jsonData && jsonData["@context"]) {
-    const [prefix, localPart] = propertyKey.split(":");
-    const context = jsonData["@context"];
-    
-    // Handle array context (find the object that has the prefix)
-    let namespaceUri = null;
-    if (Array.isArray(context)) {
-      const contextObj = context.find((c) => typeof c === "object" && c[prefix]);
-      if (contextObj) {
-        namespaceUri = contextObj[prefix];
-      }
-    } else if (typeof context === "object" && context[prefix]) {
-      namespaceUri = context[prefix];
-    }
-    
-    if (namespaceUri) {
-      expandedPropertyKey = namespaceUri + localPart;
+    const expanded = expandCompactIri(jsonData["@context"], propertyKey);
+    if (expanded) {
+      expandedPropertyKey = expanded;
       log(LOG_LEVEL.DEBUG, `Expanded property ${propertyKey} → ${expandedPropertyKey}`);
     }
   }
@@ -160,28 +147,25 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
         typeUri = type;
       } else if (type.includes(":")) {
         // Compact form like "schema:Dataset" - expand using context
-        const [prefix, localPart] = type.split(":");
         const context = jsonData && jsonData["@context"];
         if (context) {
-          // Handle array context
-          const contextObj = Array.isArray(context)
-            ? context.find((c) => typeof c === "object" && c[prefix])
-            : context;
-          if (contextObj && contextObj[prefix]) {
-            typeUri = contextObj[prefix] + localPart;
+          const expanded = expandCompactIri(context, type);
+          if (expanded) {
+            typeUri = expanded;
             log(LOG_LEVEL.DEBUG, `✓ Expanded type ${type} to ${typeUri}`);
           } else {
-            // Fallback: assume DDI-CDI namespace
-            typeUri =
-              "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+            // Could not resolve - this may be normal for external ontologies
+            // that aren't in our context (e.g., prov:Entity)
+            // Don't treat it as an error, just skip this type
             log(
-              LOG_LEVEL.WARN,
-              `✗ No context for ${prefix}, using DDI-CDI: ${typeUri}`
+              LOG_LEVEL.DEBUG,
+              `Could not expand ${type} - prefix not in context (may be from external ontology)`
             );
+            return; // Skip this type
           }
         } else {
-          typeUri =
-            "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+          // No context available - skip
+          return;
         }
       } else {
         // No prefix, assume DDI-CDI namespace
@@ -281,7 +265,7 @@ function classifyProperty(nodeTypes, propertyKey, nodeId = null) {
           // This is a reference like cdifd:nameProperty
           // The referenced shape should have the actual sh:path
           pathQuads = shaclShapesStore.getQuads(
-            propertyShapeRef.value,
+            propertyShapeRef,
             "http://www.w3.org/ns/shacl#path",
             null,
             null

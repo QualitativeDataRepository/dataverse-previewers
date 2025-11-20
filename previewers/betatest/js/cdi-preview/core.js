@@ -192,6 +192,11 @@ $(document).ready(async function () {
 
     originalData = JSON.parse(JSON.stringify(jsonData)); // Deep clone
 
+    // Load local context cache for fallback (non-blocking)
+    loadLocalContext().catch((e) =>
+      console.warn("Could not pre-load local context:", e)
+    );
+
     // Expand JSON-LD to get full property URIs
     try {
       expandedJsonLd = await jsonld.expand(jsonData);

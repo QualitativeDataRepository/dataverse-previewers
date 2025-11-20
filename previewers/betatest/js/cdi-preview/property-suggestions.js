@@ -24,23 +24,18 @@ function getPropertySuggestions(node, types) {
       typeUri = type;
     } else if (type.includes(":")) {
       // Compact form like "schema:Dataset" - expand using context
-      const [prefix, localPart] = type.split(":");
       const context = jsonData && jsonData["@context"];
       if (context) {
-        // Handle array context
-        const contextObj = Array.isArray(context)
-          ? context.find((c) => typeof c === "object" && c[prefix])
-          : context;
-        if (contextObj && contextObj[prefix]) {
-          typeUri = contextObj[prefix] + localPart;
+        const expanded = expandCompactIri(context, type);
+        if (expanded) {
+          typeUri = expanded;
         } else {
-          // Fallback: assume DDI-CDI namespace
-          typeUri =
-            "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+          // Could not expand - skip this type
+          return;
         }
       } else {
-        typeUri =
-          "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/" + type;
+        // No context - skip
+        return;
       }
     } else {
       // No prefix, assume DDI-CDI namespace
@@ -75,12 +70,28 @@ function getPropertySuggestions(node, types) {
       const propertyShapeRef = propQuad.object;
 
       // Get sh:path for this property
-      const pathQuads = shaclShapesStore.getQuads(
+      let pathQuads = shaclShapesStore.getQuads(
         propertyShapeRef,
         "http://www.w3.org/ns/shacl#path",
         null,
         null
       );
+
+      // If no path found and it's a named node reference (not blank node),
+      // it might be referencing a named property shape definition
+      if (
+        pathQuads.length === 0 &&
+        propertyShapeRef.termType === "NamedNode"
+      ) {
+        // This is a reference like cdifd:nameProperty
+        // The referenced shape should have the actual sh:path
+        pathQuads = shaclShapesStore.getQuads(
+          propertyShapeRef,
+          "http://www.w3.org/ns/shacl#path",
+          null,
+          null
+        );
+      }
 
       pathQuads.forEach((pathQuad) => {
         const path = pathQuad.object.value;

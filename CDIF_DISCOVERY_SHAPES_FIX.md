@@ -209,3 +209,76 @@ The CDI previewer provides four shape selection options:
 4. **Custom URL** - Load shapes from any URL
    - Must use Core SHACL only
    - SPARQL features will not work
+
+## Recent Bug Fixes (November 2025)
+
+### Bug Fix 1: Named Property Shape Resolution
+
+**Problem:** When using CDIF Discovery Core shapes, all properties were marked as "EXTRA" instead of being recognized.
+
+**Root Cause:** The CDIF shapes use named property shape references (e.g., `sh:property cdifd:nameProperty`). When resolving these references, the code was passing `propertyShapeRef.value` (a string URI) to `N3.Store.getQuads()` instead of the term object itself. N3.js requires term objects, not strings, so the lookup failed.
+
+**Fix:** Changed line 281 in `cdi-shacl-helpers.js`:
+```javascript
+// Before (broken):
+pathQuads = shaclShapesStore.getQuads(propertyShapeRef.value, ...)
+
+// After (fixed):
+pathQuads = shaclShapesStore.getQuads(propertyShapeRef, ...)
+```
+
+**Result:** CDIF properties are now correctly recognized with blue "SHACL-defined" badges.
+
+### Bug Fix 2: Context Resolution Refactoring
+
+**Problem:** Context handling code was duplicated across multiple files, fragile, and produced confusing warnings like "No context for prov, using DDI-CDI".
+
+**Root Cause:** 
+- Context resolution logic was copy-pasted in 4 different files
+- Each implementation handled arrays/objects differently
+- Failed to gracefully handle external ontology prefixes (like `prov:`)
+- No fallback when external contexts failed to load
+
+**Fix:** Created centralized context resolution utilities in `cdi-json-ld-helpers.js`:
+
+1. **`resolvePrefix(context, prefix)`** - Safely resolves a prefix to namespace URI
+   - Handles string, object, and array contexts uniformly
+   - Falls back to cached local DDI-CDI context
+   - Returns null for unknown prefixes (no false warnings)
+
+2. **`expandCompactIri(context, compactIri)`** - Expands compact IRIs like "schema:Dataset"
+   - Uses resolvePrefix internally
+   - Checks if already a full URI first
+   - Returns null if can't expand (caller decides how to handle)
+
+3. **`loadLocalContext()`** - Loads and caches local DDI-CDI context
+   - Provides fallback when external contexts fail
+   - Called at initialization (non-blocking)
+
+4. **Updated document loader in `cdi-shacl-loader.js`**:
+   - Try working URL first
+   - Fall back to local `shapes/ddi-cdi.jsonld`
+   - Add 10-second timeout for external contexts
+   - Return empty context instead of failing completely
+
+**Updated files:**
+- `cdi-json-ld-helpers.js` - Added centralized resolver functions
+- `cdi-shacl-helpers.js` - Replaced 2 instances of context resolution
+- `cdi-graph-helpers.js` - Replaced 1 instance
+- `property-suggestions.js` - Replaced 1 instance
+- `cdi-shacl-loader.js` - Enhanced document loader with fallbacks
+- `core.js` - Added call to pre-load local context
+
+**Benefits:**
+- ✅ Single source of truth for context resolution
+- ✅ Graceful handling of external ontologies (prov, dcterms, etc.)
+- ✅ Robust fallback to local contexts
+- ✅ No more confusing "No context for X" warnings
+- ✅ Simpler, more maintainable code
+- ✅ Better handling of network failures
+
+**Result:** Context resolution is now stable and won't break when:
+- External contexts are unavailable
+- Array contexts are used
+- External ontologies (prov, dcterms) are referenced
+- Network is slow or fails

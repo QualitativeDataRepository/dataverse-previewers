@@ -8,6 +8,94 @@
 const LEGACY_CDI_CONTEXT_URL =
   "https://ddi-alliance.bitbucket.io/DDI-CDI/DDI-CDI_v1.0-rc1/encoding/json-ld/ddi-cdi.jsonld";
 
+// Cached local context from ddi-cdi.jsonld for fallback
+let cachedLocalContext = null;
+
+/**
+ * Safely resolve a prefix to its namespace URI from a JSON-LD context.
+ * Handles arrays, objects, and external URLs robustly.
+ * 
+ * @param {*} context - The @context value (can be string, object, or array)
+ * @param {string} prefix - The prefix to resolve (e.g., "schema", "cdi")
+ * @returns {string|null} - The namespace URI or null if not found
+ */
+function resolvePrefix(context, prefix) {
+  if (!context || !prefix) return null;
+
+  // Handle string context (URL) - we can't resolve from it directly
+  if (typeof context === "string") {
+    // Try cached local context as fallback
+    if (cachedLocalContext && cachedLocalContext[prefix]) {
+      return cachedLocalContext[prefix];
+    }
+    return null;
+  }
+
+  // Handle object context (simple case)
+  if (typeof context === "object" && !Array.isArray(context)) {
+    const namespace = context[prefix];
+    if (namespace && typeof namespace === "string") {
+      return namespace;
+    }
+    return null;
+  }
+
+  // Handle array context (most complex case)
+  if (Array.isArray(context)) {
+    // Iterate through array elements (later entries override earlier ones)
+    for (let i = context.length - 1; i >= 0; i--) {
+      const entry = context[i];
+      
+      // Skip string URLs
+      if (typeof entry === "string") {
+        continue;
+      }
+      
+      // Check object entries
+      if (entry && typeof entry === "object" && entry[prefix]) {
+        const namespace = entry[prefix];
+        if (typeof namespace === "string") {
+          return namespace;
+        }
+      }
+    }
+    
+    // Fallback to cached local context
+    if (cachedLocalContext && cachedLocalContext[prefix]) {
+      return cachedLocalContext[prefix];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Expand a compact IRI (prefix:localPart) to a full URI using the context.
+ * 
+ * @param {*} context - The @context value
+ * @param {string} compactIri - The compact IRI (e.g., "schema:Dataset")
+ * @returns {string|null} - The expanded URI or null if can't expand
+ */
+function expandCompactIri(context, compactIri) {
+  if (!compactIri || !compactIri.includes(":")) {
+    return null;
+  }
+  
+  // Already a full URI
+  if (compactIri.startsWith("http://") || compactIri.startsWith("https://")) {
+    return compactIri;
+  }
+  
+  const [prefix, localPart] = compactIri.split(":", 2);
+  const namespace = resolvePrefix(context, prefix);
+  
+  if (namespace) {
+    return namespace + localPart;
+  }
+  
+  return null;
+}
+
 // Map of legacy / external context URLs to local JSON-LD context documents
 // NOTE: This is used **only** for internal viewer/editor behavior (expansion,
 // suggestions, SHACL classification). We DO NOT rewrite the original data when
@@ -85,6 +173,33 @@ function buildViewerContext(data) {
 
   // Case 2: single string or object – just resolve once.
   return resolveContextEntry(originalContext);
+}
+
+/**
+ * Load and cache the local DDI-CDI context from ddi-cdi.jsonld.
+ * This provides a fallback when external contexts fail to load.
+ */
+async function loadLocalContext() {
+  if (cachedLocalContext) {
+    return cachedLocalContext;
+  }
+  
+  try {
+    const response = await fetch("shapes/ddi-cdi.jsonld");
+    if (response.ok) {
+      const doc = await response.json();
+      if (doc["@context"]) {
+        // Store the context for future use
+        cachedLocalContext = doc["@context"];
+        log(LOG_LEVEL.INFO, "Loaded local DDI-CDI context for fallback");
+        return cachedLocalContext;
+      }
+    }
+  } catch (error) {
+    console.warn("Could not load local DDI-CDI context:", error);
+  }
+  
+  return null;
 }
 
 // Normalize JSON-LD to @graph format

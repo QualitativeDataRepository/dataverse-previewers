@@ -109,9 +109,9 @@ async function jsonLdToN3Store(jsonLdData) {
   const store = new N3.Store();
 
   try {
-    // Custom document loader to redirect broken/old DDI-CDI context URLs
+    // Custom document loader with robust fallback handling
     const customLoader = async (url) => {
-      // Map of known DDI-CDI context URLs to working GitHub URL
+      // Map of known DDI-CDI context URLs
       const DDI_CDI_URLS = [
         "http://ddialliance.org/Specification/DDI-CDI/1.0/RDF/",
         "https://ddi-alliance.bitbucket.io/DDI-CDI/DDI-CDI_v1.0-rc1/encoding/json-ld/ddi-cdi.jsonld",
@@ -121,36 +121,75 @@ async function jsonLdToN3Store(jsonLdData) {
 
       const WORKING_URL =
         "https://ddi-cdi.github.io/m2t-ng/DDI-CDI_1-0/encoding/json-ld/ddi-cdi.jsonld";
+      
+      const LOCAL_FALLBACK = "shapes/ddi-cdi.jsonld";
 
-      // If this is a DDI-CDI context URL, use the working GitHub URL
+      // If this is a DDI-CDI context URL, try working URL first, then local fallback
       if (DDI_CDI_URLS.includes(url)) {
-        const response = await fetch(WORKING_URL);
-        if (!response.ok) {
-          throw new Error(`Failed to load DDI-CDI context: ${response.status}`);
+        try {
+          const response = await fetch(WORKING_URL);
+          if (response.ok) {
+            const doc = await response.json();
+            log(LOG_LEVEL.DEBUG, `Loaded DDI-CDI context from: ${WORKING_URL}`);
+            return {
+              contextUrl: null,
+              document: doc,
+              documentUrl: url,
+            };
+          }
+        } catch (error) {
+          console.warn(`Failed to load from ${WORKING_URL}, trying local fallback:`, error);
         }
+        
+        // Fallback to local copy
+        try {
+          const response = await fetch(LOCAL_FALLBACK);
+          if (response.ok) {
+            const doc = await response.json();
+            log(LOG_LEVEL.INFO, `Using local DDI-CDI context: ${LOCAL_FALLBACK}`);
+            return {
+              contextUrl: null,
+              document: doc,
+              documentUrl: url,
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to load local fallback ${LOCAL_FALLBACK}:`, error);
+          throw new Error(`Could not load DDI-CDI context from network or local fallback`);
+        }
+      }
+
+      // For other URLs, fetch normally with timeout
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch(url, {
+          headers: { Accept: "application/ld+json, application/json" },
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const doc = await response.json();
         return {
           contextUrl: null,
           document: doc,
           documentUrl: url,
         };
+      } catch (error) {
+        console.warn(`Failed to load context from ${url}:`, error);
+        // Return empty context rather than failing completely
+        return {
+          contextUrl: null,
+          document: { "@context": {} },
+          documentUrl: url,
+        };
       }
-
-      // For other URLs, fetch normally
-      const response = await fetch(url, {
-        headers: { Accept: "application/ld+json, application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const doc = await response.json();
-      return {
-        contextUrl: null,
-        document: doc,
-        documentUrl: url,
-      };
     };
 
     // Convert JSON-LD to N-Quads format
