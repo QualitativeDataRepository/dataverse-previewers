@@ -1,148 +1,29 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CDI Data Viewer & Editor</title>
-    
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
     <!-- External CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/cdi-preview.css">
-</head>
-<body>
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div style="margin-bottom: 15px;">
-            <button id="toggle-edit-btn" class="btn btn-primary">
-                <span class="glyphicon glyphicon-edit"></span> Enable Editing
-            </button>
-            <button id="save-btn" class="btn btn-success hidden">
-                <span class="glyphicon glyphicon-floppy-disk"></span> Save Changes
-            </button>
-            <button id="add-root-node-btn" class="btn btn-primary hidden">
-                <span class="glyphicon glyphicon-plus-sign"></span> Add Root Node
-            </button>
-            <button id="validate-btn" class="btn btn-info">
-                <span class="glyphicon glyphicon-ok-circle"></span> Validate
-            </button>
-            <button id="export-btn" class="btn btn-default">
-                <span class="glyphicon glyphicon-download-alt"></span> Export JSON-LD
-            </button>
-            <button id="collapse-all-btn" class="btn btn-default">
-                <span class="glyphicon glyphicon-collapse-up"></span> Collapse All
-            </button>
-            <button id="expand-all-btn" class="btn btn-default">
-                <span class="glyphicon glyphicon-expand"></span> Expand All
-            </button>
-            <button id="filter-shacl-btn" class="btn btn-default" title="Toggle to show only SHACL-defined properties">
-                <span class="glyphicon glyphicon-filter"></span> Show SHACL Only
-            </button>
-            <span id="validation-status"></span>
-            <div id="validation-details" style="margin-top: 10px;"></div>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <input type="file" id="local-file-input" accept="application/ld+json,application/json,.json,.jsonld" style="display: none;">
-            <button id="load-local-btn" class="btn btn-primary" style="display: none;" title="Load a CDI JSON-LD file from your computer">
-                <span class="glyphicon glyphicon-folder-open"></span> Load Local File
-            </button>
-            <label for="shape-selector" style="margin: 0; white-space: nowrap;">SHACL Shape:</label>
-            <select id="shape-selector" class="form-control" style="width: 300px;">
-                <option value="ddi-cdi-official" selected>DDI-CDI 1.0 (Official)</option>
-                <option value="cdif-core">CDIF Discovery Core</option>
-                <option value="local-fallback">DDI-CDI Local Built-in</option>
-                <option value="custom">Custom URL...</option>
-            </select>
-            <input type="text" id="custom-shape-url" class="form-control" placeholder="Enter SHACL shape URL" style="width: 300px; display: none;">
-            <input type="text" id="search-input" class="form-control" placeholder="Search nodes and properties..." style="width: 300px; margin-left: auto;">
-        </div>
-    </div>
-
-    <!-- Header -->
-    <div class="preview-header">
-        <h3>CDI Data Viewer & Editor</h3>
-        <p>Displaying DDI-CDI (Cross Domain Integration) metadata. Edit mode allows you to modify properties. Use the Validate button to check conformance against SHACL shapes.</p>
-        <div id="normalization-notice" style="display: none; margin-top: 10px; padding: 8px; background: #d1ecf1; border-left: 3px solid #17a2b8; border-radius: 3px;">
-            <span class="glyphicon glyphicon-info-sign" style="margin-right: 5px;"></span>
-            <strong>Note:</strong> This JSON-LD was automatically normalized to <code>@graph</code> format for editing. The structure has been preserved.
-        </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="legend-box">
-        <strong>Field Types:</strong>
-        <div class="legend-item">
-            <span class="legend-color" style="background: #007bff;"></span>
-            <span>SHACL Defined</span>
-        </div>
-        <div class="legend-item">
-            <span class="legend-color" style="background: #ffc107;"></span>
-            <span>Extra Field (not in shape)</span>
-        </div>
-        <div class="legend-item">
-            <span class="legend-color" style="background: #dc3545;"></span>
-            <span>Invalid</span>
-        </div>
-        <div class="legend-item">
-            <span class="legend-color" style="background: #17a2b8;"></span>
-            <span>Modified</span>
-        </div>
-        <div class="legend-item">
-            <span style="font-weight: bold; color: #dc3545;">* </span>
-            <span>Required Field</span>
-        </div>
-    </div>
-
-    <!-- Content Area -->
-    <div id="content"></div>
-
-    <!-- Save to Dataverse Modal -->
-    <div class="modal fade" id="saveModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                    <h4 class="modal-title">
-                        <span class="glyphicon glyphicon-cloud-upload"></span>
-                        Save to Dataverse
-                    </h4>
-                </div>
-                <div class="modal-body">
-                    <p>To save your changes back to Dataverse, you need to provide an API token with write access to this dataset.</p>
-                    <div class="form-group">
-                        <label for="apiTokenInput">Dataverse API Token:</label>
-                        <input type="password" class="form-control" id="apiTokenInput" placeholder="Enter your API token">
-                        <small class="help-block">
-                            You can create an API token in Dataverse under your account settings.
-                            <a href="https://guides.dataverse.org/en/latest/api/auth.html" target="_blank">Learn more</a>
-                        </small>
-                    </div>
-                    <div class="alert alert-info">
-                        <strong>What will be saved:</strong>
-                        <ul>
-                            <li>All property changes you've made</li>
-                            <li>New properties you've added</li>
-                            <li>Deleted properties (will be removed)</li>
-                        </ul>
-                        <p><strong>Note:</strong> This will replace the existing file in Dataverse with your modified version.</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmSaveBtn">
-                        <span class="glyphicon glyphicon-floppy-disk"></span> Save to Dataverse
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="css/cdi-preview.css" />
+    
     <!-- External JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    
-    <!-- CDI Viewer Bundle - includes all viewer code, validation, N3.js, JSON-LD, and SHACL engine with SPARQL target support -->
+
+    <!-- CDI Viewer Application (ES6 modules with SHACL + SPARQL validation) -->
     <script src="lib/cdi-viewer.bundle.min.js"></script>
-</body>
+  </head>
+
+  <body>
+    <script>loadBody()</script>
+  </body>
 </html>
