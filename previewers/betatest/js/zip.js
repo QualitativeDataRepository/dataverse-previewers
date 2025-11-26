@@ -22,7 +22,13 @@ let entries;
 async function readZip(fileUrl) {
 
     try {
-        const reader = new zip.ZipReader(new zip.HttpRangeReader(fileUrl, {forceRangeRequests: true}));
+        //Just a workaround, as current Dataverse delivers https links for localhost
+        if (fileUrl.startsWith('https://localhost')) {
+            fileUrl = fileUrl.replace('https://localhost', 'http://localhost');
+        }
+
+
+        const reader = new zip.ZipReader(new zip.HttpRangeReader(fileUrl));
 
         // get all entries from the zip
         entries = await reader.getEntries();
