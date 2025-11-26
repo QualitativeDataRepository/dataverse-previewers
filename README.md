@@ -84,7 +84,9 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 
 [Max Planck Digital Library](https://github.com/MPDL) contributed the ZIP Previewer.
 
-[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer, the RO-Crate previewer, and the CDI (DDI Cross-Domain Integration) previewer. The CDI previewer displays all JSON-LD data nodes and properties with real-time SHACL validation, smart property classification (required/optional/extra fields), complex nested object support, and professional editing capabilities. It uses [SHACL shapes](https://www.w3.org/TR/shacl/) from the [Cross-Domain Interoperability Framework](https://github.com/Cross-Domain-Interoperability-Framework/validation) for validation and property suggestions, along with [N3.js](https://github.com/rdfjs/N3.js) for RDF parsing and [shacl-engine](https://github.com/jeswr/shacl-engine) for validation.
+[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer, the RO-Crate previewer, and the CDI (DDI Cross-Domain Integration) previewer. The CDI previewer displays all JSON-LD data nodes and properties with real-time SHACL validation, smart property classification (required/optional/extra fields), complex nested object support, and professional editing capabilities. It uses [SHACL shapes](https://www.w3.org/TR/shacl/) from the [Cross-Domain Interoperability Framework](https://github.com/Cross-Domain-Interoperability-Framework/validation) for validation and property suggestions, along with [N3.js](https://github.com/rdfjs/N3.js) for RDF parsing and 
+
+The CDI viewer implementation and bundle are available at: https://github.com/libis/cdi-viewer
 
 [Jan Range](https://github.com/JR-1991) contributed the H5Web Previewer, Rich Html Previewer.
 
