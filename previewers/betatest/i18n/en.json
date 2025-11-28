@@ -22,6 +22,7 @@
   "mdPreviewText": "Markdown Preview",
   "ncmlPreviewText": "NcML Preview",
   "rocratePreviewText": "RO-Crate Preview",
+  "cdiPreviewText": "CDI Preview",
   "prev": "Previous",
   "next": "Next",
   "pageText": "Page:",

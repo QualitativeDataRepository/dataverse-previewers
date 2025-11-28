@@ -22,6 +22,7 @@
   "mdPreviewText": "Aperçu Markdown",
   "ncmlPreviewText": "Aperçu NcML",
   "rocratePreviewText": "Aperçu RO-Crate",
+  "cdiPreviewText": "Aperçu CDI",
   "prev": "Précédent",
   "next": "Suivant",
   "pageText": "Page:",
