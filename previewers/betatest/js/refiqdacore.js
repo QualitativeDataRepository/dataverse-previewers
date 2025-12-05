@@ -611,13 +611,14 @@ $("#filterby")
         userDataTable.draw();
       }
       
+
       // Destroy and recreate codeDataTable
       if (codeDataTable) {
         codeDataTable.destroy();
       }
       if ($(".codetable").length) {
         // Need to check if color column exists before recreating the table
-        let hasColorColumn = $('.codetable thead th').length === 5;
+        let hasColorColumn = $('.codetable thead th').length === 4; // 4 columns means Color is present
         let codeConfig = {
           select: $('#filterby').val() == 'Codes'
         };
@@ -641,6 +642,7 @@ $("#filterby")
             }
           ];
         } else {
+          // No color column, so Codable is at index 2
           codeConfig.columnDefs = [
             {
               "render": function(data, type, row) {
