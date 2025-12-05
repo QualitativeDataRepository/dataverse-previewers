@@ -204,7 +204,7 @@ function parseData2(data) {
 
     }
 
-    // Configure DataTable with conditional columnDefs
+// Configure DataTable with conditional columnDefs
     let dataTableConfig = {
         select: $('#filterby').val() == 'Codes'
     };
@@ -212,20 +212,18 @@ function parseData2(data) {
     if (hasColorAttribute) {
         dataTableConfig.columnDefs = [
             {
-                // The `data` parameter refers to the data for the cell (defined by the
-                // `data` option, which defaults to the column being worked with, in
-                // this case `data: 0`.
                 "render": function(data, type, row) {
                     return '<span class="colortile" style="display:block;background-color:' + data + '">&nbsp;</span>';
                 },
                 "targets": 2
             },
             {
-                // The `data` parameter refers to the data for the cell (defined by the
-                // `data` option, which defaults to the column being worked with, in
-                // this case `data: 0`.
                 "render": function(data, type, row) {
-                    return '<input class="codable" disabled type="checkbox" checked="' + data + '"/>';
+                    // Check if data is already HTML (to avoid double-rendering)
+                    if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
+                        return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
+                    }
+                    return data;
                 },
                 "width": "20%",
                 "targets": 3
@@ -235,10 +233,14 @@ function parseData2(data) {
         dataTableConfig.columnDefs = [
             {
                 "render": function(data, type, row) {
-                    return '<input class="codable" disabled type="checkbox" checked="' + data + '"/>';
+                    // Check if data is already HTML (to avoid double-rendering)
+                    if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
+                        return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
+                    }
+                    return data;
                 },
                 "width": "20%",
-                "targets": 2  // Codable is now in column 2 instead of 3
+                "targets": 2
             }
         ];
     }
@@ -541,7 +543,10 @@ $("#filterby")
           },
           {
             "render": function(data, type, row) {
-              return '<input class="codable" disabled type="checkbox" checked="' + data + '"/>';
+              if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
+                return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
+              }
+              return data;
             },
             "width": "20%",
             "targets": 3
@@ -551,7 +556,10 @@ $("#filterby")
         codeConfig.columnDefs = [
           {
             "render": function(data, type, row) {
-              return '<input class="codable" disabled type="checkbox" checked="' + data + '"/>';
+              if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
+                return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
+              }
+              return data;
             },
             "width": "20%",
             "targets": 2
