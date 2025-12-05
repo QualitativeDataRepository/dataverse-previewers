@@ -108,6 +108,7 @@ function parseData2(data) {
     //Add a Filter By option
     let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     filterBlock.append($("<h2/>").html("Enable Filtering By"));
+    filterBlock.append($("<p/>").html("Select a table and then select and entry in that table to filter the other tables."));
     filterBlock.append($('<select/>').prop('id', 'filterby'));
     $('#filterby').append($('<option/>').prop('value', 'None').text('No Filtering'));
     //As tables are created, they will be added to the option list here
