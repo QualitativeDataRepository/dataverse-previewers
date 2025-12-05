@@ -266,68 +266,141 @@ function parseData2(data) {
   }
 
 
-  if (xmlDoc.getElementsByTagName("Sources")[0]) {
+if (xmlDoc.getElementsByTagName("Sources")[0]) {
     let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
     if (sources != null && sources.length > 0) {
-      $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
-      let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-      sourceBlock.append($("<h2/>").html("Sources"));
-      let sourceTable = createTable("Sources", "Name", "Type", "Selection", "Codes").appendTo(sourceBlock);
-      sourceTable.addClass("sourcetable compact stripe");
-
+      
+      // First pass: collect annotations and whole documents separately
+      let annotationRows = [];
+      let sourceRows = [];
+      
       for (let source of sources) {
         if (source.nodeName.endsWith("Source")) {
           sourceMap.set(source.getAttribute("guid"), source);
-          let tr = null;
+          
           let sourceMatches = source.getAttribute("creatingUser") + source.getAttribute("modifyingUser");
-
-
           let selections = getSelections(source);
+          
           if (selections != null && selections.length != 0) {
             selections.forEach(function(selection) {
               let selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser");
               selectionMatches = selectionMatches + getCodeRelatedGUIDs(selection);
-              tr = addRow(sourceTable, createSourceReference(source, zipUrl), selection.nodeName, selection.getAttribute("name"), getCodeNames(selection));
-              tr.attr('data-guid', selection.getAttribute("guid"));
-              tr.attr('data-matches', selectionMatches);
+              
+              let rowData = {
+                sourceRef: createSourceReference(source, zipUrl),
+                type: selection.nodeName,
+                name: selection.getAttribute("name"),
+                codes: getCodeNames(selection),
+                guid: selection.getAttribute("guid"),
+                matches: selectionMatches
+              };
+              
+              // Check if this is a PDFSelection or PlainTextSelection
+              if (selection.nodeName === "PDFSelection" || selection.nodeName === "PlainTextSelection") {
+                annotationRows.push(rowData);
+              } else {
+                sourceRows.push(rowData);
+              }
             });
           }
-          //else {
-          tr = addRow(sourceTable, createSourceReference(source, zipUrl), source.nodeName, "Whole Document", "");
-          tr.attr('data-guid', source.getAttribute("guid"));
-          tr.attr('data-matches', sourceMatches);
-          //}
+          
+          // Add whole document entry to sources
+          sourceRows.push({
+            sourceRef: createSourceReference(source, zipUrl),
+            type: source.nodeName,
+            name: "Whole Document",
+            codes: "",
+            guid: source.getAttribute("guid"),
+            matches: sourceMatches
+          });
         }
-
       }
-      sourceDataTable = $(".sourcetable").DataTable({
-        select: $('#filterby').val() == 'Sources'
-      });
-      if (typeof downloadFile === 'function') {
-        $("a[data-entry-index]").click(downloadFile);
-        $("a[data-entry-index]").each(function() { console.log('Here: ' + $(this).attr('data-entry-index')) });
-        $('.sourcetable').on('draw.dt', function() {
-          console.log("Draw!!!!");
-          $("a[data-entry-index]").each(function() { console.log('There: ' + $(this).attr('data-entry-index')) });
-          $("a[data-entry-index]").off('click');
+      
+      // Create Annotations table if there are any annotations
+      if (annotationRows.length > 0) {
+        $('#filterby').append($('<option/>').prop('value', 'Annotations').text('Annotations'));
+        
+        let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        annotationBlock.append($("<h2/>").html("Annotations"));
+        let annotationTable = createTable("Annotations", "Name", "Type", "Selection", "Codes").appendTo(annotationBlock);
+        annotationTable.addClass("annotationtable compact stripe");
+        
+        annotationRows.forEach(function(rowData) {
+          let tr = addRow(annotationTable, rowData.sourceRef, rowData.type, rowData.name, rowData.codes);
+          tr.attr('data-guid', rowData.guid);
+          tr.attr('data-matches', rowData.matches);
+        });
+        
+        var annotationDataTable = $(".annotationtable").DataTable({
+          select: $('#filterby').val() == 'Annotations'
+        });
+        
+        if (typeof downloadFile === 'function') {
           $("a[data-entry-index]").click(downloadFile);
+          $('.annotationtable').on('draw.dt', function() {
+            $("a[data-entry-index]").off('click');
+            $("a[data-entry-index]").click(downloadFile);
+          });
+        }
+        
+        tables.push(annotationDataTable);
+        annotationDataTable.on('select deselect', function(e, dt, type, indexes) {
+          if (type === 'row') {
+            var data = annotationDataTable.rows(indexes).data().pluck('id');
+            annotationDataTable[type](indexes).nodes().to$().addClass('custom-selected');
+            console.log('uG: ' + annotationDataTable[type](indexes).nodes().to$().attr('data-guid'));
+            console.log(annotationDataTable.rows({ selected: true }).count());
+            console.log("clearing sG in annotation");
+            selectedGUIDs = new Array();
+            annotationDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
+            selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
+            tables.filter(function(curTable) { return curTable !== annotationDataTable }).forEach(table => { table.draw() });
+          }
         });
       }
-      tables.push(sourceDataTable);
-      sourceDataTable.on('select deselect', function(e, dt, type, indexes) {
-        if (type === 'row') {
-          var data = sourceDataTable.rows(indexes).data().pluck('id');
-          sourceDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-          console.log('uG: ' + sourceDataTable[type](indexes).nodes().to$().attr('data-guid'));
-          console.log(sourceDataTable.rows({ selected: true }).count());
-          console.log("clearing sG in source");
-          selectedGUIDs = new Array();
-          sourceDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
-          selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-          // do something with the ID of the selected items
-          tables.filter(function(curTable) { return curTable !== sourceDataTable }).forEach(table => { table.draw() });
+      
+      // Create Sources table if there are any sources
+      if (sourceRows.length > 0) {
+        $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
+        
+        let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        sourceBlock.append($("<h2/>").html("Sources"));
+        let sourceTable = createTable("Sources", "Name", "Type", "Selection", "Codes").appendTo(sourceBlock);
+        sourceTable.addClass("sourcetable compact stripe");
+        
+        sourceRows.forEach(function(rowData) {
+          let tr = addRow(sourceTable, rowData.sourceRef, rowData.type, rowData.name, rowData.codes);
+          tr.attr('data-guid', rowData.guid);
+          tr.attr('data-matches', rowData.matches);
+        });
+        
+        sourceDataTable = $(".sourcetable").DataTable({
+          select: $('#filterby').val() == 'Sources'
+        });
+        
+        if (typeof downloadFile === 'function') {
+          $("a[data-entry-index]").click(downloadFile);
+          $('.sourcetable').on('draw.dt', function() {
+            $("a[data-entry-index]").off('click');
+            $("a[data-entry-index]").click(downloadFile);
+          });
         }
-      });
+        
+        tables.push(sourceDataTable);
+        sourceDataTable.on('select deselect', function(e, dt, type, indexes) {
+          if (type === 'row') {
+            var data = sourceDataTable.rows(indexes).data().pluck('id');
+            sourceDataTable[type](indexes).nodes().to$().addClass('custom-selected');
+            console.log('uG: ' + sourceDataTable[type](indexes).nodes().to$().attr('data-guid'));
+            console.log(sourceDataTable.rows({ selected: true }).count());
+            console.log("clearing sG in source");
+            selectedGUIDs = new Array();
+            sourceDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
+            selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
+            tables.filter(function(curTable) { return curTable !== sourceDataTable }).forEach(table => { table.draw() });
+          }
+        });
+      }
     }
   }
 
