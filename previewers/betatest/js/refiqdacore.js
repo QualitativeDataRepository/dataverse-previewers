@@ -595,13 +595,19 @@ $("#filterby")
     var str = "";
     $("#filterby option:selected").each(function() {
       console.log('Changed to ' + $(this).text());
-      //Todo - use array or map? Or createDataTableX methods
-      userDataTable.destroy();
+      
+      // Destroy and recreate userDataTable
+      if (userDataTable) {
+        userDataTable.destroy();
+      }
       userDataTable = $(".usertable").DataTable({
         select: $('#filterby').val() == 'Users'
       });
       
-      codeDataTable.destroy();
+      // Destroy and recreate codeDataTable
+      if (codeDataTable) {
+        codeDataTable.destroy();
+      }
       // Need to check if color column exists before recreating the table
       let hasColorColumn = $('.codetable thead th').length === 5; // 5 columns means Color is present
       let codeConfig = {
@@ -642,23 +648,37 @@ $("#filterby")
       }
       codeDataTable = $(".codetable").DataTable(codeConfig);
       
-      sourceDataTable.destroy();
+      // Destroy and recreate sourceDataTable
+      if (sourceDataTable) {
+        sourceDataTable.destroy();
+      }
       sourceDataTable = $(".sourcetable").DataTable({
         select: $('#filterby').val() == 'Sources'
       });
 
-      noteDataTable.destroy();
+      // Destroy and recreate annotationDataTable
+      if (annotationDataTable) {
+        annotationDataTable.destroy();
+      }
+      annotationDataTable = $(".annotationtable").DataTable({
+        select: $('#filterby').val() == 'Annotations'
+      });
+
+      // Destroy and recreate noteDataTable
+      if (noteDataTable) {
+        noteDataTable.destroy();
+      }
       noteDataTable = $(".notetable").DataTable({
         select: $('#filterby').val() == 'Notes'
-        //columnDefs:[{target:0,visible:false,seachable:false}]
       });
-      setDataTable.destroy();
+      
+      // Destroy and recreate setDataTable
+      if (setDataTable) {
+        setDataTable.destroy();
+      }
       setDataTable = $(".settable").DataTable({
         select: $('#filterby').val() == 'Sets'
       });
-
-
-      //                  userDataTable.draw();
     });
   });
 
