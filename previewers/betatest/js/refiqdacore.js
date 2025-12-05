@@ -590,95 +590,117 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
 
   }
 
+
 $("#filterby")
   .change(function() {
     var str = "";
     $("#filterby option:selected").each(function() {
       console.log('Changed to ' + $(this).text());
       
+      // Clear selections when changing filter
+      selectedGUIDs = [];
+      
       // Destroy and recreate userDataTable
       if (userDataTable) {
         userDataTable.destroy();
       }
-      userDataTable = $(".usertable").DataTable({
-        select: $('#filterby').val() == 'Users'
-      });
+      if ($(".usertable").length) {
+        userDataTable = $(".usertable").DataTable({
+          select: $('#filterby').val() == 'Users'
+        });
+        userDataTable.draw();
+      }
       
       // Destroy and recreate codeDataTable
       if (codeDataTable) {
         codeDataTable.destroy();
       }
-      // Need to check if color column exists before recreating the table
-      let hasColorColumn = $('.codetable thead th').length === 5; // 5 columns means Color is present
-      let codeConfig = {
-        select: $('#filterby').val() == 'Codes'
-      };
-      if (hasColorColumn) {
-        codeConfig.columnDefs = [
-          {
-            "render": function(data, type, row) {
-              return '<span class="colortile" style="display:block;background-color:' + data + '">&nbsp;</span>';
+      if ($(".codetable").length) {
+        // Need to check if color column exists before recreating the table
+        let hasColorColumn = $('.codetable thead th').length === 5;
+        let codeConfig = {
+          select: $('#filterby').val() == 'Codes'
+        };
+        if (hasColorColumn) {
+          codeConfig.columnDefs = [
+            {
+              "render": function(data, type, row) {
+                return '<span class="colortile" style="display:block;background-color:' + data + '">&nbsp;</span>';
+              },
+              "targets": 2
             },
-            "targets": 2
-          },
-          {
-            "render": function(data, type, row) {
-              if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
-                return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
-              }
-              return data;
-            },
-            "width": "20%",
-            "targets": 3
-          }
-        ];
-      } else {
-        codeConfig.columnDefs = [
-          {
-            "render": function(data, type, row) {
-              if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
-                return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
-              }
-              return data;
-            },
-            "width": "20%",
-            "targets": 2
-          }
-        ];
+            {
+              "render": function(data, type, row) {
+                if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
+                  return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
+                }
+                return data;
+              },
+              "width": "20%",
+              "targets": 3
+            }
+          ];
+        } else {
+          codeConfig.columnDefs = [
+            {
+              "render": function(data, type, row) {
+                if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
+                  return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
+                }
+                return data;
+              },
+              "width": "20%",
+              "targets": 2
+            }
+          ];
+        }
+        codeDataTable = $(".codetable").DataTable(codeConfig);
+        codeDataTable.draw();
       }
-      codeDataTable = $(".codetable").DataTable(codeConfig);
       
       // Destroy and recreate sourceDataTable
       if (sourceDataTable) {
         sourceDataTable.destroy();
       }
-      sourceDataTable = $(".sourcetable").DataTable({
-        select: $('#filterby').val() == 'Sources'
-      });
+      if ($(".sourcetable").length) {
+        sourceDataTable = $(".sourcetable").DataTable({
+          select: $('#filterby').val() == 'Sources'
+        });
+        sourceDataTable.draw();
+      }
 
       // Destroy and recreate annotationDataTable
       if (annotationDataTable) {
         annotationDataTable.destroy();
       }
-      annotationDataTable = $(".annotationtable").DataTable({
-        select: $('#filterby').val() == 'Annotations'
-      });
+      if ($(".annotationtable").length) {
+        annotationDataTable = $(".annotationtable").DataTable({
+          select: $('#filterby').val() == 'Annotations'
+        });
+        annotationDataTable.draw();
+      }
 
       // Destroy and recreate noteDataTable
       if (noteDataTable) {
         noteDataTable.destroy();
       }
-      noteDataTable = $(".notetable").DataTable({
-        select: $('#filterby').val() == 'Notes'
-      });
+      if ($(".notetable").length) {
+        noteDataTable = $(".notetable").DataTable({
+          select: $('#filterby').val() == 'Notes'
+        });
+        noteDataTable.draw();
+      }
       
       // Destroy and recreate setDataTable
       if (setDataTable) {
         setDataTable.destroy();
       }
-      setDataTable = $(".settable").DataTable({
-        select: $('#filterby').val() == 'Sets'
-      });
+      if ($(".settable").length) {
+        setDataTable = $(".settable").DataTable({
+          select: $('#filterby').val() == 'Sets'
+        });
+        setDataTable.draw();
+      }
     });
   });
 
