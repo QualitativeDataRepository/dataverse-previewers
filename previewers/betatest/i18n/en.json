@@ -22,6 +22,8 @@
   "mdPreviewText": "Markdown Preview",
   "ncmlPreviewText": "NcML Preview",
   "rocratePreviewText": "RO-Crate Preview",
+  "refiqdpxPreviewText": "REFI-QDA Project Preview",
+  "refiqdcPreviewText": "REFI-QDA Codebook Preview",
   "prev": "Previous",
   "next": "Next",
   "pageText": "Page:",
