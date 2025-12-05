@@ -322,7 +322,7 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
         
         let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         annotationBlock.append($("<h2/>").html("Annotations"));
-        let annotationTable = createTable("Annotations", "Name", "Type", "Selection", "Codes").appendTo(annotationBlock);
+        let annotationTable = createTable("Annotations", "Filename", "Type", "Selection", "Codes").appendTo(annotationBlock);
         annotationTable.addClass("annotationtable compact stripe");
         
         annotationRows.forEach(function(rowData) {
@@ -365,7 +365,7 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
         
         let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         sourceBlock.append($("<h2/>").html("Sources"));
-        let sourceTable = createTable("Sources", "Name", "Type", "Selection", "Codes").appendTo(sourceBlock);
+        let sourceTable = createTable("Sources", "Filename", "Type", "Selection", "Codes").appendTo(sourceBlock);
         sourceTable.addClass("sourcetable compact stripe");
         
         sourceRows.forEach(function(rowData) {
