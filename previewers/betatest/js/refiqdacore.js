@@ -115,7 +115,7 @@ function parseData2(data) {
 
   //User table
   var users = xmlDoc.getElementsByTagName("User");
-  if (users != null) {
+  if (users != null && users.length > 0) {
     //Add to filter by options
     $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
 
@@ -158,7 +158,7 @@ function parseData2(data) {
   console.log("Starting codes");
   //    var codes = codebook[0].getElementsByTagName("Code");
   var codes = xmlDoc.getElementsByTagName("Code");
-  if (codes != null) {
+  if (codes != null  && codes.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Codes').text('Codes'));
 
     // Check if any codes have a color attribute
@@ -268,7 +268,7 @@ function parseData2(data) {
 
   if (xmlDoc.getElementsByTagName("Sources")[0]) {
     let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
-    if (sources != null) {
+    if (sources != null && sources.length > 0) {
       $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
       let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
       sourceBlock.append($("<h2/>").html("Sources"));
@@ -334,7 +334,7 @@ function parseData2(data) {
 
   var notes = xmlDoc.getElementsByTagName("Note");
 
-  if (notes != null) {
+  if (notes != null && notes.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Notes').text('Notes'));
     let noteBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     noteBlock.append($("<h2/>").html("Notes"));
@@ -387,7 +387,7 @@ function parseData2(data) {
   }
 
   let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
-  if (sets != null) {
+  if (sets != null && sets.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Sets').text('Sets'));
     let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     setBlock.append($("<h2/>").html("Sets"));
@@ -447,7 +447,7 @@ function parseData2(data) {
 
   if (xmlDoc.getElementsByTagName("Graphs")[0]) {
     let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
-    if (graphs != null) {
+    if (graphs != null && graphs.length > 0) {
       let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
       graphBlock.append($("<h2/>").html("Graphs").append($('<span/>').attr('id', 'reset').text('Reset').addClass('btn btn-default')));
 
