@@ -213,7 +213,11 @@ function parseData2(data) {
         dataTableConfig.columnDefs = [
             {
                 "render": function(data, type, row) {
-                    return '<span class="colortile" style="display:block;background-color:' + data + '">&nbsp;</span>';
+                    // Check if data is already HTML (to avoid double-rendering)
+                    if (type === 'display' && typeof data === 'string' && !data.includes('<span')) {
+                        return '<span class="colortile" style="display:block;background-color:' + data + '">&nbsp;</span>';
+                    }
+                    return data;
                 },
                 "targets": 2
             },
