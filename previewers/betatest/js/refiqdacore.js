@@ -160,6 +160,7 @@ function parseData2(data) {
         tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => { table.draw() });
       }
     });
+    }
   }
   
   console.log("Starting codes");
