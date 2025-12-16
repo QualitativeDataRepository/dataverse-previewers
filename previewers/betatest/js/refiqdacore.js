@@ -61,8 +61,8 @@ function parseData2(data) {
   // If there is no filtering or the method is called on the table to filter by, all rows are returned.
 
   // Check if it hasn't been registered already to avoid duplicates
-  if ($.fn.dataTable && $.fn.dataTable.ext.search.length === 0) {
-    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+  if ($.fn.dataTable && !$.fn.dataTable.ext.search.some(fn => fn.name === 'refiqdaFilter')) {
+    const refiqdaFilter = function(settings, data, dataIndex) {
       console.log('filtering: ' + dataIndex);
       var filterTerm = $('#filterby');
       if (settings.nTable.id == filterTerm.val() || filterTerm.val() == 'None' || selectedGUIDs.length === 0) {
@@ -75,17 +75,18 @@ function parseData2(data) {
         let found = false;
         selectedGUIDs.forEach(guid => {
           console.log("Looking for " + guid);
-          //var curGuid = settings.nTBody.parentElement.childNodes[1].childNodes[0].dataset.guid;
-
-          //var curGuid = findDataAttribute('data-guid', settings.aoData[dataIndex].nTr.attributes);
-          var curGuid = findDataAttribute('data-guid', settings.aoData[dataIndex].nTr.attributes);
+          
+          var rowNode = settings.aoData[dataIndex]?.nTr;
+          if (!rowNode) return;
+          
+          var curGuid = findDataAttribute('data-guid', rowNode.attributes);
           console.log('Examining ' + curGuid);
           // If the current row includes a selected guid in its list of related items (forward/child relationships) then show it
-          //let matches = $('[data-guid="' + curGuid + '"]').attr('data-matches');
-          let matches = findDataAttribute('data-matches', settings.aoData[dataIndex].nTr.attributes);
+          let matches = findDataAttribute('data-matches', rowNode.attributes);
           console.log('Forward Matching: ' + matches);
           if (matches.includes(guid)) {
-            console.log('found'); found = true;
+            console.log('found'); 
+            found = true;
           } else {
             //if the guid for the current row shows up in the list of forward/child relationships for one of the selected items, show it
             let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches');
@@ -102,7 +103,10 @@ function parseData2(data) {
         });
         return found;
       }
-    });
+    };
+    // Add name property for identification
+    refiqdaFilter.name = 'refiqdaFilter';
+    $.fn.dataTable.ext.search.push(refiqdaFilter);
   }
 
   //Add a Filter By option
@@ -119,7 +123,11 @@ function parseData2(data) {
     //Add to filter by options
     $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
 
-    //Add user table
+  //User table
+  var users = xmlDoc.getElementsByTagName("User");
+  if (users != null && users.length > 0) {
+    $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
+
     let userBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     userBlock.append($("<h2>").html("Users"));
     //Users only has a "Name" column
@@ -133,7 +141,8 @@ function parseData2(data) {
       userMap.set(user.getAttribute("guid"), user);
     }
     console.log('Done with users');
-    userDataTable = $(".usertable").DataTable({
+    
+    userDataTable = new DataTable(".usertable", {
       //Allow table rows to be selectable if this is the filter by table
       select: $('#filterby').val() == 'Users'
     });
@@ -141,22 +150,19 @@ function parseData2(data) {
     //When selections are made, update the array of selected GUIDs and redraw other tables so they get filtered.
     userDataTable.on('select deselect', function(e, dt, type, indexes) {
       if (type === 'row') {
-        var data = userDataTable.rows(indexes).data().pluck('id');
-        userDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-        console.log('uG: ' + userDataTable[type](indexes).nodes().to$().attr('data-guid'));
-        console.log(userDataTable.rows({ selected: true }).count());
         console.log("clearing sG in user");
         selectedGUIDs = new Array();
-        userDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
+        userDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { 
+          selectedGUIDs.push(element.dataset.guid) 
+        });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
         tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => { table.draw() });
       }
     });
-
   }
+  
   console.log("Starting codes");
-  //    var codes = codebook[0].getElementsByTagName("Code");
   var codes = xmlDoc.getElementsByTagName("Code");
   if (codes != null  && codes.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Codes').text('Codes'));
@@ -201,10 +207,9 @@ function parseData2(data) {
       //Currently codes don't appear to have forward links to other data types, so no data-matches attribute
       tr.attr('data-matches', '');
       codeMap.set(code.getAttribute("guid"), code);
-
     }
 
-// Configure DataTable with conditional columnDefs
+    // Configure DataTable with conditional columnDefs
     let dataTableConfig = {
         select: $('#filterby').val() == 'Codes'
     };
@@ -212,65 +217,61 @@ function parseData2(data) {
     if (hasColorAttribute) {
         dataTableConfig.columnDefs = [
             {
-                "render": function(data, type, row) {
+                render: function(data, type, row) {
                     // Check if data is already HTML (to avoid double-rendering)
                     if (type === 'display' && typeof data === 'string' && !data.includes('<span')) {
                         return '<span class="colortile" style="display:block;background-color:' + data + '">&nbsp;</span>';
                     }
                     return data;
                 },
-                "targets": 2
+                targets: 2
             },
             {
-                "render": function(data, type, row) {
+                render: function(data, type, row) {
                     // Check if data is already HTML (to avoid double-rendering)
                     if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
                         return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
                     }
                     return data;
                 },
-                "width": "20%",
-                "targets": 3
+                width: "20%",
+                targets: 3
             }
         ];
     } else {
         dataTableConfig.columnDefs = [
             {
-                "render": function(data, type, row) {
+                render: function(data, type, row) {
                     // Check if data is already HTML (to avoid double-rendering)
                     if (type === 'display' && typeof data === 'string' && !data.includes('<input')) {
                         return '<input class="codable" disabled type="checkbox"' + (data === 'true' ? ' checked' : '') + '/>';
                     }
                     return data;
                 },
-                "width": "20%",
-                "targets": 2
+                width: "20%",
+                targets: 2
             }
         ];
     }
     
-    codeDataTable = $(".codetable").DataTable(dataTableConfig);
+    codeDataTable = new DataTable(".codetable", dataTableConfig);
 
     tables.push(codeDataTable);
     codeDataTable.on('select deselect', function(e, dt, type, indexes) {
       if (type === 'row') {
-        var data = codeDataTable.rows(indexes).data().pluck('id');
-        codeDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-        console.log('guid' + codeDataTable[type](indexes).nodes().to$().attr('data-guid'));
-        console.log(codeDataTable.rows({ selected: true }).count());
         selectedGUIDs = new Array();
         console.log('sg cleared in codes');
-        codeDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
+        codeDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { 
+          selectedGUIDs.push(element.dataset.guid) 
+        });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        // do something with the ID of the selected items
         tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { table.draw() });
       }
     });
-
   }
 
 
-if (xmlDoc.getElementsByTagName("Sources")[0]) {
+ if (xmlDoc.getElementsByTagName("Sources")[0]) {
     let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
     if (sources != null && sources.length > 0) {
       
@@ -335,7 +336,7 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
           tr.attr('data-matches', rowData.matches);
         });
         
-        sourceDataTable = $(".sourcetable").DataTable({
+        sourceDataTable = new DataTable(".sourcetable", {
           select: $('#filterby').val() == 'Sources'
         });
         
@@ -350,10 +351,6 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
         tables.push(sourceDataTable);
         sourceDataTable.on('select deselect', function(e, dt, type, indexes) {
           if (type === 'row') {
-            var data = sourceDataTable.rows(indexes).data().pluck('id');
-            sourceDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-            console.log('uG: ' + sourceDataTable[type](indexes).nodes().to$().attr('data-guid'));
-            console.log(sourceDataTable.rows({ selected: true }).count());
             console.log("clearing sG in source");
             selectedGUIDs = new Array();
             sourceDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
@@ -379,7 +376,8 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
           tr.attr('data-matches', rowData.matches);
         });
         
-        var annotationDataTable = $(".annotationtable").DataTable({
+
+        var annotationDataTable = new DataTable(".annotationtable", {
           select: $('#filterby').val() == 'Annotations'
         });
         
@@ -394,7 +392,7 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
         tables.push(annotationDataTable);
         annotationDataTable.on('select deselect', function(e, dt, type, indexes) {
           if (type === 'row') {
-            var data = annotationDataTable.rows(indexes).data().pluck('id');
+            var data = annotationDataTable.rows(indexes).data().toArray().map(row => row.id);
             annotationDataTable[type](indexes).nodes().to$().addClass('custom-selected');
             console.log('uG: ' + annotationDataTable[type](indexes).nodes().to$().attr('data-guid'));
             console.log(annotationDataTable.rows({ selected: true }).count());
@@ -443,14 +441,15 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
       noteMap.set(note.getAttribute("guid"), note);
 
     }
-    noteDataTable = $(".notetable").DataTable({
+
+    noteDataTable = new DataTable(".notetable", {
       select: $('#filterby').val() == 'Notes'
       //columnDefs:[{target:0,visible:false,seachable:false}]
     });
     tables.push(noteDataTable);
     noteDataTable.on('select deselect', function(e, dt, type, indexes) {
       if (type === 'row') {
-        var data = noteDataTable.rows(indexes).data().pluck('id');
+        var data = noteDataTable.rows(indexes).data().toArray().map(row => row.id);
         noteDataTable[type](indexes).nodes().to$().addClass('custom-selected');
         console.log('uG: ' + noteDataTable[type](indexes).nodes().to$().attr('data-guid'));
         console.log(noteDataTable.rows({ selected: true }).count());
@@ -503,13 +502,13 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
         tr.attr('data-guid', set.getAttribute('guid'));
       }
     }
-    setDataTable = $(".settable").DataTable({
+    setDataTable = new DataTable(".settable", {
       select: $('#filterby').val() == 'Sets'
     });
     tables.push(setDataTable);
     setDataTable.on('select deselect', function(e, dt, type, indexes) {
       if (type === 'row') {
-        var data = setDataTable.rows(indexes).data().pluck('id');
+        var data = setDataTable.rows(indexes).data().toArray().map(row => row.id);
         setDataTable[type](indexes).nodes().to$().addClass('custom-selected');
         console.log('uG: ' + setDataTable[type](indexes).nodes().to$().attr('data-guid'));
         console.log(setDataTable.rows({ selected: true }).count());
@@ -594,7 +593,6 @@ if (xmlDoc.getElementsByTagName("Sources")[0]) {
 
   }
 
-
 $("#filterby")
   .change(function() {
     var str = "";
@@ -609,7 +607,7 @@ $("#filterby")
         userDataTable.destroy();
       }
       if ($(".usertable").length) {
-        userDataTable = $(".usertable").DataTable({
+        userDataTable = new DataTable(".usertable", {
           select: $('#filterby').val() == 'Users'
         });
         userDataTable.draw('page');
@@ -664,7 +662,7 @@ $("#filterby")
             }
           ];
         }
-        codeDataTable = $(".codetable").DataTable(codeConfig);
+        codeDataTable = new DataTable(".codetable", codeConfig);
         codeDataTable.draw('page');
       }
       
@@ -673,7 +671,7 @@ $("#filterby")
         sourceDataTable.destroy();
       }
       if ($(".sourcetable").length) {
-        sourceDataTable = $(".sourcetable").DataTable({
+        sourceDataTable = new DataTable(".sourcetable", {
           select: $('#filterby').val() == 'Sources'
         });
         sourceDataTable.draw('page');
@@ -684,7 +682,7 @@ $("#filterby")
         annotationDataTable.destroy();
       }
       if ($(".annotationtable").length) {
-        annotationDataTable = $(".annotationtable").DataTable({
+        annotationDataTable = new DataTable(".annotationtable", {
           select: $('#filterby').val() == 'Annotations'
         });
         annotationDataTable.draw('page');
@@ -695,7 +693,7 @@ $("#filterby")
         noteDataTable.destroy();
       }
       if ($(".notetable").length) {
-        noteDataTable = $(".notetable").DataTable({
+        noteDataTable = new DataTable(".notetable", {
           select: $('#filterby').val() == 'Notes'
         });
         noteDataTable.draw('page');
@@ -706,7 +704,7 @@ $("#filterby")
         setDataTable.destroy();
       }
       if ($(".settable").length) {
-        setDataTable = $(".settable").DataTable({
+        setDataTable = new DataTable(".settable", {
           select: $('#filterby').val() == 'Sets'
         });
         setDataTable.draw('page');
@@ -717,6 +715,7 @@ $("#filterby")
 
   $('#waiting').remove();
 }
+
 function createTable() {
   let table = $("<table/>");
   table.prop('id', arguments[0]);
