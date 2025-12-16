@@ -120,12 +120,6 @@ function parseData2(data) {
   //User table
   var users = xmlDoc.getElementsByTagName("User");
   if (users != null && users.length > 0) {
-    //Add to filter by options
-    $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
-
-  //User table
-  var users = xmlDoc.getElementsByTagName("User");
-  if (users != null && users.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
 
     let userBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
@@ -160,7 +154,6 @@ function parseData2(data) {
         tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => { table.draw() });
       }
     });
-    }
   }
   
   console.log("Starting codes");
@@ -272,8 +265,7 @@ function parseData2(data) {
   }
 
 
- if (xmlDoc.getElementsByTagName("Sources")[0]) {
-    let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
+    let sources = xmlDoc.getElementsByTagName("Source");
     if (sources != null && sources.length > 0) {
       
       // First pass: collect annotations and whole documents separately
@@ -405,7 +397,6 @@ function parseData2(data) {
           }
         });
       }
-    }
   }
 
 
@@ -464,7 +455,7 @@ function parseData2(data) {
     });
   }
 
-  let sets = xmlDoc.getElementsByTagName("Sets")[0].childNodes;
+  let sets = xmlDoc.getElementsByTagName("Set");
   if (sets != null && sets.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Sets').text('Sets'));
     let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
@@ -477,7 +468,7 @@ function parseData2(data) {
       let codeNames = '';
       let sourceNames = '';
       let matches = '';
-      if (!set.nodeName.endsWith("#text")) {
+
         let members = set.getElementsByTagName("MemberCode");
         for (let member of members) {
           let codeId = member.getAttribute('targetGUID');
@@ -501,7 +492,6 @@ function parseData2(data) {
         let tr = addRow(setTable, set.getAttribute("name"), sourceNames, codeNames);
         tr.attr('data-matches', matches);
         tr.attr('data-guid', set.getAttribute('guid'));
-      }
     }
     setDataTable = new DataTable(".settable", {
       select: $('#filterby').val() == 'Sets'
@@ -523,15 +513,13 @@ function parseData2(data) {
     });
   }
 
-  if (xmlDoc.getElementsByTagName("Graphs")[0]) {
-    let graphs = xmlDoc.getElementsByTagName("Graphs")[0].childNodes;
+    let graphs = xmlDoc.getElementsByTagName("Graph");
     if (graphs != null && graphs.length > 0) {
       let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
       graphBlock.append($("<h2/>").html("Graphs").append($('<span/>').attr('id', 'reset').text('Reset').addClass('btn btn-default')));
 
       let elements = [];
       for (let graph of graphs) {
-        if (!graph.nodeName.endsWith("#text")) {
           let vertexes = graph.getElementsByTagName("Vertex");
           for (let vertex of vertexes) {
             var data = {};
@@ -553,7 +541,6 @@ function parseData2(data) {
             gnode.data = data;
             elements.push(gnode);
           }
-        }
       }
       let cyContainer = $('<div/>').width("100%").height("400px").attr('id', 'cy').appendTo(graphBlock);
       cyContainer.css("background-color", "aliceblue");
@@ -590,8 +577,6 @@ function parseData2(data) {
         pan: { x: 0, y: 0 },
       });
       $('#reset').click(function() { cy.fit() });
-    }
-
   }
 
 $("#filterby")
