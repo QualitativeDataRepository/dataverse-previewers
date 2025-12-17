@@ -138,7 +138,8 @@ function parseData2(data) {
     
     userDataTable = new DataTable(".usertable", {
       //Allow table rows to be selectable if this is the filter by table
-      select: $('#filterby').val() == 'Users'
+      select: $('#filterby').val() == 'Users',
+      order: [[0, 'asc']]
     });
     tables.push(userDataTable);
     //When selections are made, update the array of selected GUIDs and redraw other tables so they get filtered.
