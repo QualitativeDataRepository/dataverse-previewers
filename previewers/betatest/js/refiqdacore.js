@@ -127,8 +127,15 @@ function parseData2(data) {
     //Users only has a "Name" column
     let userTable = createTable("Users", "Name").appendTo(userBlock);
     userTable.addClass("usertable compact stripe");
+    
+      // Convert HTMLCollection to array and sort by name
+    let usersArray = Array.from(users).sort((a, b) => {
+        let nameA = a.getAttribute("name");
+        let nameB = b.getAttribute("name");
+        return nameA.localeCompare(nameB);
+    });
     //Create rows
-    for (let user of users) {
+    for (let user of usersArray) {
       console.log("adding user row");
       let tr = addRow(userTable, user.getAttribute("name"));
       tr.attr('data-guid', user.getAttribute("guid"));
