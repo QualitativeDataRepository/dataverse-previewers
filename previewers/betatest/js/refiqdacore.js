@@ -597,7 +597,8 @@ $("#filterby")
       }
       if ($(".usertable").length) {
         userDataTable = new DataTable(".usertable", {
-          select: $('#filterby').val() == 'Users'
+          select: $('#filterby').val() == 'Users',
+          order: [[0, 'asc']]
         });
         userDataTable.draw('page');
       }
