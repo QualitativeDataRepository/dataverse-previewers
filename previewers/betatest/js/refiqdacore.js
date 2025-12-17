@@ -315,6 +315,50 @@ function parseData2(data) {
         }
       }
       
+                  
+      // Create Annotations table if there are any annotations
+      if (annotationRows.length > 0) {
+        $('#filterby').append($('<option/>').prop('value', 'Annotations').text('Annotations'));
+        
+        let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+        annotationBlock.append($("<h2/>").html("Annotations"));
+        let annotationTable = createTable("Annotations", "Filename", "Type", "Selection", "Codes").appendTo(annotationBlock);
+        annotationTable.addClass("annotationtable compact stripe");
+        
+        annotationRows.forEach(function(rowData) {
+          let tr = addRow(annotationTable, rowData.sourceRef, rowData.type, rowData.name, rowData.codes);
+          tr.attr('data-guid', rowData.guid);
+          tr.attr('data-matches', rowData.matches);
+        });
+        
+        var annotationDataTable = new DataTable(".annotationtable", {
+          select: $('#filterby').val() == 'Annotations'
+        });
+        
+        if (typeof downloadFile === 'function') {
+          $("a[data-entry-index]").click(downloadFile);
+          $('.annotationtable').on('draw.dt', function() {
+            $("a[data-entry-index]").off('click');
+            $("a[data-entry-index]").click(downloadFile);
+          });
+        }
+        
+        tables.push(annotationDataTable);
+        annotationDataTable.on('select deselect', function(e, dt, type, indexes) {
+          if (type === 'row') {
+            var data = annotationDataTable.rows(indexes).data().toArray().map(row => row.id);
+            annotationDataTable[type](indexes).nodes().to$().addClass('custom-selected');
+            console.log('uG: ' + annotationDataTable[type](indexes).nodes().to$().attr('data-guid'));
+            console.log(annotationDataTable.rows({ selected: true }).count());
+            console.log("clearing sG in annotation");
+            selectedGUIDs = new Array();
+            annotationDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
+            selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
+            tables.filter(function(curTable) { return curTable !== annotationDataTable }).forEach(table => { table.draw() });
+          }
+        });
+      }
+
       // Create Sources table if there are any sources
       if (sourceRows.length > 0) {
         $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
@@ -354,50 +398,6 @@ function parseData2(data) {
         });
       }
       
-            
-      // Create Annotations table if there are any annotations
-      if (annotationRows.length > 0) {
-        $('#filterby').append($('<option/>').prop('value', 'Annotations').text('Annotations'));
-        
-        let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        annotationBlock.append($("<h2/>").html("Annotations"));
-        let annotationTable = createTable("Annotations", "Filename", "Type", "Selection", "Codes").appendTo(annotationBlock);
-        annotationTable.addClass("annotationtable compact stripe");
-        
-        annotationRows.forEach(function(rowData) {
-          let tr = addRow(annotationTable, rowData.sourceRef, rowData.type, rowData.name, rowData.codes);
-          tr.attr('data-guid', rowData.guid);
-          tr.attr('data-matches', rowData.matches);
-        });
-        
-
-        var annotationDataTable = new DataTable(".annotationtable", {
-          select: $('#filterby').val() == 'Annotations'
-        });
-        
-        if (typeof downloadFile === 'function') {
-          $("a[data-entry-index]").click(downloadFile);
-          $('.annotationtable').on('draw.dt', function() {
-            $("a[data-entry-index]").off('click');
-            $("a[data-entry-index]").click(downloadFile);
-          });
-        }
-        
-        tables.push(annotationDataTable);
-        annotationDataTable.on('select deselect', function(e, dt, type, indexes) {
-          if (type === 'row') {
-            var data = annotationDataTable.rows(indexes).data().toArray().map(row => row.id);
-            annotationDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-            console.log('uG: ' + annotationDataTable[type](indexes).nodes().to$().attr('data-guid'));
-            console.log(annotationDataTable.rows({ selected: true }).count());
-            console.log("clearing sG in annotation");
-            selectedGUIDs = new Array();
-            annotationDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
-            selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-            tables.filter(function(curTable) { return curTable !== annotationDataTable }).forEach(table => { table.draw() });
-          }
-        });
-      }
     }
   }
 
