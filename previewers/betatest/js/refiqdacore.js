@@ -609,7 +609,7 @@ $("#filterby")
           select: $('#filterby').val() == 'Users',
           order: [[0, 'asc']]
         });
-        userDataTable.draw('page');
+        userDataTable.draw();
       }
       
 
@@ -662,7 +662,7 @@ $("#filterby")
           ];
         }
         codeDataTable = new DataTable(".codetable", codeConfig);
-        codeDataTable.draw('page');
+        codeDataTable.draw();
       }
       
       // Destroy and recreate sourceDataTable
@@ -673,7 +673,7 @@ $("#filterby")
         sourceDataTable = new DataTable(".sourcetable", {
           select: $('#filterby').val() == 'Sources'
         });
-        sourceDataTable.draw('page');
+        sourceDataTable.draw();
       }
 
       // Destroy and recreate annotationDataTable
@@ -684,7 +684,7 @@ $("#filterby")
         annotationDataTable = new DataTable(".annotationtable", {
           select: $('#filterby').val() == 'Annotations'
         });
-        annotationDataTable.draw('page');
+        annotationDataTable.draw();
       }
 
       // Destroy and recreate noteDataTable
@@ -695,7 +695,7 @@ $("#filterby")
         noteDataTable = new DataTable(".notetable", {
           select: $('#filterby').val() == 'Notes'
         });
-        noteDataTable.draw('page');
+        noteDataTable.draw();
       }
       
       // Destroy and recreate setDataTable
@@ -706,7 +706,7 @@ $("#filterby")
         setDataTable = new DataTable(".settable", {
           select: $('#filterby').val() == 'Sets'
         });
-        setDataTable.draw('page');
+        setDataTable.draw();
       }
     });
   });
