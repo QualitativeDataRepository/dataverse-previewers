@@ -42,7 +42,7 @@ function parseData(data) {
   $('#waiting').remove();
   wait = $('<div/>').attr('id', 'waiting');
   $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
-  $('<span/>').text('Found Project File. Parsing Contents...').appendTo(wait);
+    $('<span/>').text('Found Project File. Parsing Contents...').appendTo(wait);
   wait.appendTo($('.preview'));
 
   new Promise((resolve) => setTimeout(resolve, 500)).then(() => { parseData2(data) });
@@ -265,7 +265,8 @@ function parseData2(data) {
   }
 
 
-    let sources = xmlDoc.getElementsByTagName("Source");
+  if (xmlDoc.getElementsByTagName("Sources")[0]) {
+    let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
     if (sources != null && sources.length > 0) {
       
       // First pass: collect annotations and whole documents separately
@@ -397,6 +398,7 @@ function parseData2(data) {
           }
         });
       }
+    }
   }
 
 
