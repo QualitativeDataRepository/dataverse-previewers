@@ -141,6 +141,8 @@ function parseData2(data) {
       select: $('#filterby').val() == 'Users',
       order: [[0, 'asc']]
     });
+    //Draw to set order
+    userDataTable.draw();
     tables.push(userDataTable);
     //When selections are made, update the array of selected GUIDs and redraw other tables so they get filtered.
     userDataTable.on('select deselect', function(e, dt, type, indexes) {
