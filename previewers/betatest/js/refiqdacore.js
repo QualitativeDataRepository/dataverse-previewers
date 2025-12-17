@@ -161,7 +161,7 @@ function parseData2(data) {
         });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => { table.draw(false) });
+        tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => { table.draw() });
       }
     });
   }
@@ -269,7 +269,7 @@ function parseData2(data) {
           selectedGUIDs.push(element.dataset.guid) 
         });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { table.draw(false) });
+        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { table.draw() });
       }
     });
   }
@@ -364,7 +364,7 @@ function parseData2(data) {
             selectedGUIDs = new Array();
             annotationDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
             selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-            tables.filter(function(curTable) { return curTable !== annotationDataTable }).forEach(table => { table.draw(false) });
+            tables.filter(function(curTable) { return curTable !== annotationDataTable }).forEach(table => { table.draw() });
           }
         });
       }
@@ -403,7 +403,7 @@ function parseData2(data) {
             selectedGUIDs = new Array();
             sourceDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
             selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-            tables.filter(function(curTable) { return curTable !== sourceDataTable }).forEach(table => { table.draw(false) });
+            tables.filter(function(curTable) { return curTable !== sourceDataTable }).forEach(table => { table.draw() });
           }
         });
       }
@@ -462,7 +462,7 @@ function parseData2(data) {
         noteDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== noteDataTable }).forEach(table => { table.draw(false) });
+        tables.filter(function(curTable) { return curTable !== noteDataTable }).forEach(table => { table.draw() });
       }
     });
   }
@@ -520,7 +520,7 @@ function parseData2(data) {
         setDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== setDataTable }).forEach(table => { table.draw(false) });
+        tables.filter(function(curTable) { return curTable !== setDataTable }).forEach(table => { table.draw() });
       }
     });
   }
