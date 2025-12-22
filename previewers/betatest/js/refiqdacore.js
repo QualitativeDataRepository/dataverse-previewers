@@ -2,7 +2,7 @@ var userMap = new Map();
 var codeMap = new Map();
 var sourceMap = new Map();
 var noteMap = new Map();
-var tableWidth = '80%';
+var tableWidth = '90%';
 var selectedGUIDs = new Array();
 var noteDataTable;
 var userDataTable;
