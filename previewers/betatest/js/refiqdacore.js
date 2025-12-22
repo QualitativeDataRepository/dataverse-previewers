@@ -60,62 +60,44 @@ function parseData2(data) {
   // becomes a generic way to filter by user, code, source, etc.
   // If there is no filtering or the method is called on the table to filter by, all rows are returned.
 
-  // Check if it hasn't been registered already to avoid duplicates
-  if ($.fn.dataTable && !$.fn.dataTable.ext.search.some(fn => fn.name === 'refiqdaFilter')) {
-const refiqdaFilter = function(settings, data, dataIndex) {
-  console.log('filtering: ' + dataIndex);
-  var filterTerm = $('#filterby');
-  if (settings.nTable.id == filterTerm.val() || filterTerm.val() == 'None' || selectedGUIDs.length === 0) {
-    return true;
-  } else {
-    console.log('Deciding');
-    console.log(data[0]);
-    
-    // Get the actual row from the table using the API
-    var api = new $.fn.dataTable.Api(settings);
-    var rowNode = api.row(dataIndex).node();
+function createRefiqdaFilterFunction(dataTable) {
+  return function(searchStr, data, index) {
+    // console.log('Filtering: ' + index);
+
+    if (selectedGUIDs.length === 0) {
+      return true;
+    }
+
+    var rowNode = dataTable.row(index).node();
     
     if (!rowNode) {
-      console.log('No row node found for index: ' + dataIndex);
-      return true; // If we can't find the node, show it by default
+      console.log('No row node found for index: ' + index);
+      return true;
     }
-    
+
     var curGuid = $(rowNode).attr('data-guid');
     var matches = $(rowNode).attr('data-matches') || '';
-    
-    console.log('Examining ' + curGuid + ' with matches: ' + matches);
-    
-    let found = false;
-    selectedGUIDs.forEach(guid => {
-      console.log("Looking for " + guid);
-      
-      // If the current row includes a selected guid in its list of related items (forward/child relationships) then show it
-      if (matches.includes(guid)) {
-        console.log('found in matches'); 
-        found = true;
-      } else {
-        // If the guid for the current row shows up in the list of forward/child relationships for one of the selected items, show it
-        let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches');
-        if (typeof revMatches === 'undefined') {
-          revMatches = '';
-        }
-        console.log('Rev matches: ' + revMatches);
-        console.log('curGUID: ' + curGuid);
-        if (revMatches.includes(curGuid)) {
-          console.log('rev found');
-          found = true;
-        }
-      }
-    });
-    return found;
-  }
-};
-    // Add name property for identification
-    refiqdaFilter.name = 'refiqdaFilter';
-    $.fn.dataTable.ext.search.push(refiqdaFilter);
-  }
 
-  //Add a Filter By option
+    let found = false;
+    for (let guid of selectedGUIDs) {
+      if (!guid) continue;
+      
+      if (matches.includes(guid)) {
+        found = true;
+        break;
+      }
+      let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches') || '';
+      if (revMatches.includes(curGuid)) {
+        found = true;
+        break;
+      }
+    }
+    // console.log('Result: ' + found);
+    return found;
+  };
+}
+
+    //Add a Filter By option
   let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
   filterBlock.append($("<h2/>").html("Enable Filtering By"));
   filterBlock.append($("<p/>").html("Select a table and then select entries in that table to filter the other tables."));
@@ -133,22 +115,16 @@ const refiqdaFilter = function(settings, data, dataIndex) {
     //Users only has a "Name" column
     let userTable = createTable("Users", "Name").appendTo(userBlock);
     userTable.addClass("usertable compact stripe");
-    
-      // Convert HTMLCollection to array and sort by name
-    let usersArray = Array.from(users).sort((a, b) => {
-        let nameA = a.getAttribute("name");
-        let nameB = b.getAttribute("name");
-        return nameA.localeCompare(nameB);
-    });
+
     //Create rows
-    for (let user of usersArray) {
+    for (let user of users) {
       console.log("adding user row");
       let tr = addRow(userTable, user.getAttribute("name"));
       tr.attr('data-guid', user.getAttribute("guid"));
       userMap.set(user.getAttribute("guid"), user);
     }
     console.log('Done with users');
-    
+
     userDataTable = new DataTable(".usertable", {
       //Allow table rows to be selectable if this is the filter by table
       select: $('#filterby').val() == 'Users',
@@ -162,16 +138,18 @@ const refiqdaFilter = function(settings, data, dataIndex) {
       if (type === 'row') {
         console.log("clearing sG in user");
         selectedGUIDs = new Array();
-        userDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { 
-          selectedGUIDs.push(element.dataset.guid) 
+        userDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) {
+          selectedGUIDs.push(element.dataset.guid)
         });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => { table.draw() });
+        tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => {
+          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+          table.draw() });
       }
     });
   }
-  
+
   console.log("Starting codes");
   var codes = xmlDoc.getElementsByTagName("Code");
   if (codes != null  && codes.length > 0) {
@@ -223,7 +201,7 @@ const refiqdaFilter = function(settings, data, dataIndex) {
     let dataTableConfig = {
         select: $('#filterby').val() == 'Codes'
     };
-    
+
     if (hasColorAttribute) {
         dataTableConfig.columnDefs = [
             {
@@ -263,7 +241,7 @@ const refiqdaFilter = function(settings, data, dataIndex) {
             }
         ];
     }
-    
+
     codeDataTable = new DataTable(".codetable", dataTableConfig);
 
     tables.push(codeDataTable);
@@ -271,11 +249,14 @@ const refiqdaFilter = function(settings, data, dataIndex) {
       if (type === 'row') {
         selectedGUIDs = new Array();
         console.log('sg cleared in codes');
-        codeDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { 
-          selectedGUIDs.push(element.dataset.guid) 
+        codeDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) {
+          selectedGUIDs.push(element.dataset.guid)
         });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { table.draw() });
+        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
+          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+          table.draw()
+        });
       }
     });
   }
@@ -284,23 +265,23 @@ const refiqdaFilter = function(settings, data, dataIndex) {
   if (xmlDoc.getElementsByTagName("Sources")[0]) {
     let sources = xmlDoc.getElementsByTagName("Sources")[0].childNodes;
     if (sources != null && sources.length > 0) {
-      
+
       // First pass: collect annotations and whole documents separately
       let annotationRows = [];
       let sourceRows = [];
-      
+
       for (let source of sources) {
         if (source.nodeName.endsWith("Source")) {
           sourceMap.set(source.getAttribute("guid"), source);
-          
+
           let sourceMatches = source.getAttribute("creatingUser") + source.getAttribute("modifyingUser");
           let selections = getSelections(source);
-          
+
           if (selections != null && selections.length != 0) {
             selections.forEach(function(selection) {
               let selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser");
               selectionMatches = selectionMatches + getCodeRelatedGUIDs(selection);
-              
+
               let rowData = {
                 sourceRef: createSourceReference(source, zipUrl),
                 type: selection.nodeName,
@@ -309,7 +290,7 @@ const refiqdaFilter = function(settings, data, dataIndex) {
                 guid: selection.getAttribute("guid"),
                 matches: selectionMatches
               };
-              
+
               // Check if this is a PDFSelection or PlainTextSelection
               if (selection.nodeName === "PDFSelection" || selection.nodeName === "PlainTextSelection") {
                 annotationRows.push(rowData);
@@ -318,7 +299,7 @@ const refiqdaFilter = function(settings, data, dataIndex) {
               }
             });
           }
-          
+
           // Add whole document entry to sources
           sourceRows.push({
             sourceRef: createSourceReference(source, zipUrl),
@@ -330,27 +311,27 @@ const refiqdaFilter = function(settings, data, dataIndex) {
           });
         }
       }
-      
-                  
+
+
       // Create Annotations table if there are any annotations
       if (annotationRows.length > 0) {
         $('#filterby').append($('<option/>').prop('value', 'Annotations').text('Annotations'));
-        
+
         let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         annotationBlock.append($("<h2/>").html("Annotations"));
         let annotationTable = createTable("Annotations", "Filename", "Type", "Selection", "Codes").appendTo(annotationBlock);
         annotationTable.addClass("annotationtable compact stripe");
-        
+
         annotationRows.forEach(function(rowData) {
           let tr = addRow(annotationTable, rowData.sourceRef, rowData.type, rowData.name, rowData.codes);
           tr.attr('data-guid', rowData.guid);
           tr.attr('data-matches', rowData.matches);
         });
-        
+
         var annotationDataTable = new DataTable(".annotationtable", {
           select: $('#filterby').val() == 'Annotations'
         });
-        
+
         if (typeof downloadFile === 'function') {
           $("a[data-entry-index]").click(downloadFile);
           $('.annotationtable').on('draw.dt', function() {
@@ -358,7 +339,7 @@ const refiqdaFilter = function(settings, data, dataIndex) {
             $("a[data-entry-index]").click(downloadFile);
           });
         }
-        
+
         tables.push(annotationDataTable);
         annotationDataTable.on('select deselect', function(e, dt, type, indexes) {
           if (type === 'row') {
@@ -370,7 +351,10 @@ const refiqdaFilter = function(settings, data, dataIndex) {
             selectedGUIDs = new Array();
             annotationDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
             selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-            tables.filter(function(curTable) { return curTable !== annotationDataTable }).forEach(table => { table.draw() });
+            tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
+              table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+              table.draw()
+            });
           }
         });
       }
@@ -378,22 +362,22 @@ const refiqdaFilter = function(settings, data, dataIndex) {
       // Create Sources table if there are any sources
       if (sourceRows.length > 0) {
         $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
-        
+
         let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         sourceBlock.append($("<h2/>").html("Sources"));
         let sourceTable = createTable("Sources", "Filename", "Type", "Selection", "Codes").appendTo(sourceBlock);
         sourceTable.addClass("sourcetable compact stripe");
-        
+
         sourceRows.forEach(function(rowData) {
           let tr = addRow(sourceTable, rowData.sourceRef, rowData.type, rowData.name, rowData.codes);
           tr.attr('data-guid', rowData.guid);
           tr.attr('data-matches', rowData.matches);
         });
-        
+
         sourceDataTable = new DataTable(".sourcetable", {
           select: $('#filterby').val() == 'Sources'
         });
-        
+
         if (typeof downloadFile === 'function') {
           $("a[data-entry-index]").click(downloadFile);
           $('.sourcetable').on('draw.dt', function() {
@@ -401,7 +385,7 @@ const refiqdaFilter = function(settings, data, dataIndex) {
             $("a[data-entry-index]").click(downloadFile);
           });
         }
-        
+
         tables.push(sourceDataTable);
         sourceDataTable.on('select deselect', function(e, dt, type, indexes) {
           if (type === 'row') {
@@ -409,11 +393,14 @@ const refiqdaFilter = function(settings, data, dataIndex) {
             selectedGUIDs = new Array();
             sourceDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
             selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-            tables.filter(function(curTable) { return curTable !== sourceDataTable }).forEach(table => { table.draw() });
+            tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
+              table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+              table.draw()
+            });
           }
         });
       }
-      
+
     }
   }
 
@@ -468,7 +455,10 @@ const refiqdaFilter = function(settings, data, dataIndex) {
         noteDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== noteDataTable }).forEach(table => { table.draw() });
+        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
+          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+          table.draw()
+        });
       }
     });
   }
@@ -526,7 +516,10 @@ const refiqdaFilter = function(settings, data, dataIndex) {
         setDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
         selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
         // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== setDataTable }).forEach(table => { table.draw() });
+        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
+          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+          table.draw()
+        });
       }
     });
   }
@@ -602,10 +595,11 @@ $("#filterby")
     var str = "";
     $("#filterby option:selected").each(function() {
       console.log('Changed to ' + $(this).text());
-      
+
       // Clear selections when changing filter
       selectedGUIDs = [];
-      
+        tables=new Array();
+
       // Destroy and recreate userDataTable
       if (userDataTable) {
         userDataTable.destroy();
@@ -616,8 +610,9 @@ $("#filterby")
           order: [[0, 'asc']]
         });
         userDataTable.draw();
+        tables.push(userDataTable);
       }
-      
+
 
       // Destroy and recreate codeDataTable
       if (codeDataTable) {
@@ -669,8 +664,9 @@ $("#filterby")
         }
         codeDataTable = new DataTable(".codetable", codeConfig);
         codeDataTable.draw();
+        tables.push(codeDataTable);
       }
-      
+
       // Destroy and recreate sourceDataTable
       if (sourceDataTable) {
         sourceDataTable.destroy();
@@ -680,6 +676,7 @@ $("#filterby")
           select: $('#filterby').val() == 'Sources'
         });
         sourceDataTable.draw();
+        tables.push(sourceDataTable);
       }
 
       // Destroy and recreate annotationDataTable
@@ -691,6 +688,7 @@ $("#filterby")
           select: $('#filterby').val() == 'Annotations'
         });
         annotationDataTable.draw();
+        tables.push(annotationDataTable);
       }
 
       // Destroy and recreate noteDataTable
@@ -702,8 +700,9 @@ $("#filterby")
           select: $('#filterby').val() == 'Notes'
         });
         noteDataTable.draw();
+        tables.push(noteDataTable);
       }
-      
+
       // Destroy and recreate setDataTable
       if (setDataTable) {
         setDataTable.destroy();
@@ -713,6 +712,7 @@ $("#filterby")
           select: $('#filterby').val() == 'Sets'
         });
         setDataTable.draw();
+        tables.push(setDataTable);
       }
     });
   });
