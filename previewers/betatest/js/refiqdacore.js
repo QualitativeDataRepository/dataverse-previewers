@@ -1,3 +1,4 @@
+
 var userMap = new Map();
 var codeMap = new Map();
 var sourceMap = new Map();
@@ -164,14 +165,24 @@ function createRefiqdaFilterFunction(dataTable) {
       }
     }
 
+    // Count code usage across all CodeRef elements
+    let codeUsageMap = new Map();
+    let allCodeRefs = xmlDoc.getElementsByTagName("CodeRef");
+    for (let codeRef of allCodeRefs) {
+      let targetGUID = codeRef.getAttribute("targetGUID");
+      if (targetGUID) {
+        codeUsageMap.set(targetGUID, (codeUsageMap.get(targetGUID) || 0) + 1);
+      }
+    }
+
     let codeBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     codeBlock.append($("<h2/>").html("Codes"));
     // Create table with or without Color column based on whether color attributes exist
     let codeTable;
     if (hasColorAttribute) {
-      codeTable = createTable("Codes", "Code", "Description", "Color", "Codable").appendTo(codeBlock);
+      codeTable = createTable("Codes", "Code", "Description", "Color", "Codable", "# of Uses").appendTo(codeBlock);
     } else {
-      codeTable = createTable("Codes", "Code", "Description", "Codable").appendTo(codeBlock);
+      codeTable = createTable("Codes", "Code", "Description", "Codable", "# of Uses").appendTo(codeBlock);
     }
     codeTable.addClass("codetable compact stripe");
 
@@ -184,12 +195,17 @@ function createRefiqdaFilterFunction(dataTable) {
         desc = "";
       }
       console.log("adding code row");
+      
+      // Get usage count for this code
+      let codeGuid = code.getAttribute("guid");
+      let usageCount = codeUsageMap.get(codeGuid) || 0;
+      
       // Add row with or without color based on whether color attributes exist
       let tr;
       if (hasColorAttribute) {
-        tr = addRow(codeTable, code.getAttribute("name"), desc, code.getAttribute("color"), code.getAttribute("isCodable"));
+        tr = addRow(codeTable, code.getAttribute("name"), desc, code.getAttribute("color"), code.getAttribute("isCodable"), usageCount);
       } else {
-        tr = addRow(codeTable, code.getAttribute("name"), desc, code.getAttribute("isCodable"));
+        tr = addRow(codeTable, code.getAttribute("name"), desc, code.getAttribute("isCodable"), usageCount);
       }
       tr.attr('data-guid', code.getAttribute("guid"));
       //Currently codes don't appear to have forward links to other data types, so no data-matches attribute
@@ -224,6 +240,11 @@ function createRefiqdaFilterFunction(dataTable) {
                 },
                 width: "20%",
                 targets: 3
+            },
+            {
+                // Right-align the usage count column
+                className: "dt-right",
+                targets: 4
             }
         ];
     } else {
@@ -238,6 +259,11 @@ function createRefiqdaFilterFunction(dataTable) {
                 },
                 width: "20%",
                 targets: 2
+            },
+            {
+                // Right-align the usage count column
+                className: "dt-right",
+                targets: 3
             }
         ];
     }
@@ -620,7 +646,7 @@ $("#filterby")
       }
       if ($(".codetable").length) {
         // Need to check if color column exists before recreating the table
-        let hasColorColumn = $('.codetable thead th').length === 4; // 4 columns means Color is present
+        let hasColorColumn = $('.codetable thead th').length === 5; // 5 columns means Color is present plus # of Uses
         let codeConfig = {
           select: $('#filterby').val() == 'Codes'
         };
@@ -645,6 +671,11 @@ $("#filterby")
               },
               "width": "20%",
               "targets": 3
+            },
+            {
+              // Right-align the usage count column
+              className: "dt-right",
+              targets: 4
             }
           ];
         } else {
@@ -659,6 +690,11 @@ $("#filterby")
               },
               "width": "20%",
               "targets": 2
+            },
+            {
+              // Right-align the usage count column
+              className: "dt-right",
+              targets: 3
             }
           ];
         }
