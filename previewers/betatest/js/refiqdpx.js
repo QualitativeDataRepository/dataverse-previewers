@@ -1,5 +1,9 @@
 function writeContent(fileUrl, file, title, authors) {
     addStandardPreviewHeader(file, title, authors);
+    
+    // Set the global zipUrl variable so other code knows we're in zip mode
+    zipUrl = fileUrl;
+    
     readZip(fileUrl);
 }
 
@@ -70,6 +74,34 @@ async function readZip(fileUrl) {
         const throbber = document.getElementById("throbber");
         if (throbber)
             throbber.parentNode.removeChild(throbber);
+    }
+}
+
+// Add this function to fetch text excerpts from zip entries
+async function fetchTextExcerpt(entryFilename, startPos, endPos) {
+    try {
+        // Find the entry in the entryMap
+        const entryIndex = entryMap[entryFilename];
+        if (entryIndex === undefined) {
+            throw new Error('File not found in archive: ' + entryFilename);
+        }
+
+        const entry = entries[entryIndex];
+        
+        // Get the text content from the zip entry
+        // The zip.js library will handle decompression automatically
+        const text = await entry.getData(new zip.TextWriter());
+
+        // Extract the requested portion
+        const start = parseInt(startPos);
+        const end = parseInt(endPos);
+        const excerpt = text.substring(start, end);
+        
+        return excerpt;
+
+    } catch (error) {
+        console.error('Error fetching text excerpt:', error);
+        throw error;
     }
 }
 
