@@ -22,6 +22,7 @@
   "ncmlPreviewText": "Previsualización de NcML",
   "rocratePreviewText": "Previsualización de RO-Crate",
   "jupyterPreviewText": "Previsualización de Jupyter Notebook",
+  "cdiPreviewText": "Previsualización de CDI",
   "prev": "Anterior",
   "next": "Siguiente",
   "pageText": "Página:",
