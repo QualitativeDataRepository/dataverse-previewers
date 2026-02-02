@@ -865,7 +865,7 @@ function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, seco
 
 function formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY) {
     return `
-        <div style="padding: 8px; font-family: sans-serif;">
+        <div class="tooltip-text">
             Page: ${page}<br>
             From: (${firstX}, ${firstY})<br>
             To: (${secondX}, ${secondY})
@@ -876,27 +876,25 @@ function formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY) {
 function initializePdfCoordTooltips() {
     $('.selection-with-pdf-coords').each(function() {
         const $span = $(this);
-        // Check if tooltip has already been initialized
-        if ($span.data('tooltip-initialized')) {
-            return;
+        // Check if tooltip has already been added
+        if ($span.children('.tooltip-content').length > 0) {
+            return; // Skip if already initialized
         }
-        $span.data('tooltip-initialized', true);
 
         const page = $span.data('page');
-        const firstX = $span.data('first-x');
-        const firstY = $span.data('first-y');
-        const secondX = $span.data('second-x');
-        const secondY = $span.data('second-y');
+        const firstX = $span.data('firstx');
+        const firstY = $span.data('firsty');
+        const secondX = $span.data('secondx');
+        const secondY = $span.data('secondy');
 
-        // Add the class that triggers the tooltip CSS
+        // 1. Add the class that triggers the tooltip CSS
         $span.addClass('selection-tooltip');
 
-        // Format the content for the tooltip
+        // 2. Create the tooltip content
         const tooltipHtml = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
 
-        // Create and append the tooltip content element
-        const $tooltipContent = $('<div class="tooltip-content"></div>').html(tooltipHtml);
-        $span.append($tooltipContent);
+        // 3. Append the tooltip content container
+        $span.append(`<div class="tooltip-content">${tooltipHtml}</div>`);
     });
 }
 
