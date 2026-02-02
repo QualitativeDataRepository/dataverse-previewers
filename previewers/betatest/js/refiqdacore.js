@@ -352,6 +352,7 @@ function parseData2(data) {
 
           // Initialize tooltips after table is created (ONLY for annotations table)
           initializeExcerptTooltips();
+          initializePdfCoordTooltips();
 
           if (typeof downloadFile === 'function') {
               $("a[data-entry-index]").click(downloadFile);
@@ -360,6 +361,7 @@ function parseData2(data) {
                   $("a[data-entry-index]").click(downloadFile);
                   // Reinitialize tooltips after redraw (ONLY for annotations)
                   initializeExcerptTooltips();
+                  initializePdfCoordTooltips();
               });
           }
 
@@ -864,16 +866,33 @@ function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, seco
 function formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY) {
     return `
         <div style="padding: 8px; font-family: sans-serif;">
-            <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
-                PDF Selection Coordinates
-            </div>
-            <div style="font-size: 13px; line-height: 1.5;">
-                <strong>Page:</strong> ${page}<br>
-                <strong>Start (X, Y):</strong> ${firstX}, ${firstY}<br>
-                <strong>End (X, Y):</strong> ${secondX}, ${secondY}
-            </div>
+            Page: ${page}<br>
+            From: (${firstX}, ${firstY})<br>
+            To: (${secondX}, ${secondY})
         </div>
     `;
+}
+
+function initializePdfCoordTooltips() {
+    $('.selection-with-pdf-coords').each(function() {
+        const $span = $(this);
+        // Check if tooltip has already been initialized
+        if ($span.data('tooltip-initialized')) {
+            return;
+        }
+        $span.data('tooltip-initialized', true);
+
+        const page = $span.data('page');
+        const firstX = $span.data('first-x');
+        const firstY = $span.data('first-y');
+        const secondX = $span.data('second-x');
+        const secondY = $span.data('second-y');
+
+        const tooltipContent = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
+
+        const tooltip = $('<div class="tooltip-content"></div>').html(tooltipContent);
+        $span.addClass('selection-tooltip').append(tooltip);
+    });
 }
 
 function createSourceReference(source) {
