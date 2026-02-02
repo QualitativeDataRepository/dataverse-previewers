@@ -888,10 +888,15 @@ function initializePdfCoordTooltips() {
         const secondX = $span.data('second-x');
         const secondY = $span.data('second-y');
 
-        const tooltipContent = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
+        // Add the class that triggers the tooltip CSS
+        $span.addClass('selection-tooltip');
 
-        const tooltip = $('<div class="tooltip-content"></div>').html(tooltipContent);
-        $span.addClass('selection-tooltip').append(tooltip);
+        // Format the content for the tooltip
+        const tooltipHtml = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
+
+        // Create and append the tooltip content element
+        const $tooltipContent = $('<div class="tooltip-content"></div>').html(tooltipHtml);
+        $span.append($tooltipContent);
     });
 }
 
