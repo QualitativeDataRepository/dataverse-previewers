@@ -23,6 +23,44 @@ function translateBaseHtmlPage() {
   $('.refiqdaPreviewText').text(refiqdaPreviewText);
 }
 
+function addSelectAllAndUnselectButtons(dataTable, tableContainer, tableId) {
+  // Add "Unselect All" button next to the table title
+  const unselectAllButton = $('<button>Unselect All</button>')
+    .addClass('unselect-all-btn')
+    .hide()
+    .on('click', function() {
+      dataTable.rows({ selected: true }).deselect();
+    });
+  tableContainer.find('h2').first().append(unselectAllButton);
+
+  // Add "Select All" checkbox to the table header
+  const selectAllCheckbox = $('<input type="checkbox" title="Select all rows in this table" />');
+  $('#' + tableId + ' thead tr').prepend($('<th class="select-all">').append(selectAllCheckbox));
+  $('#' + tableId + ' tbody tr').prepend($('<td class="select-all">')); // Placeholder for alignment
+
+  selectAllCheckbox.on('click', function() {
+    if (this.checked) {
+      dataTable.rows().select();
+    } else {
+      dataTable.rows().deselect();
+    }
+  });
+
+  // Show/hide "Unselect All" button and manage "Select All" checkbox state
+  dataTable.on('select deselect', function() {
+    const selectedRows = dataTable.rows({ selected: true }).count();
+    const totalRows = dataTable.rows().count();
+
+    if (selectedRows > 0) {
+      unselectAllButton.show();
+    } else {
+      unselectAllButton.hide();
+    }
+
+    selectAllCheckbox.prop('checked', selectedRows === totalRows);
+  });
+}
+
 var zipUrl = '';
 
 //zipUrl is set in refiqdpx.js - the zip file case
@@ -63,47 +101,6 @@ function parseData2(data) {
   parser = new DOMParser();
   xmlDoc = parser.parseFromString(data, "text/xml");
 
-  // Add a  method that filters results based on whether a GUID exists in the 'Related' hidden column.
-  // The idea is that each table puts the GUIDs of all related items (in other tables) in that column so this method
-  // becomes a generic way to filter by user, code, source, etc.
-  // If there is no filtering or the method is called on the table to filter by, all rows are returned.
-
-function createRefiqdaFilterFunction(dataTable) {
-  return function(searchStr, data, index) {
-    // console.log('Filtering: ' + index);
-
-    if (selectedGUIDs.length === 0) {
-      return true;
-    }
-
-    var rowNode = dataTable.row(index).node();
-    
-    if (!rowNode) {
-      console.log('No row node found for index: ' + index);
-      return true;
-    }
-
-    var curGuid = $(rowNode).attr('data-guid');
-    var matches = $(rowNode).attr('data-matches') || '';
-
-    let found = false;
-    for (let guid of selectedGUIDs) {
-      if (!guid) continue;
-      
-      if (matches.includes(guid)) {
-        found = true;
-        break;
-      }
-      let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches') || '';
-      if (revMatches.includes(curGuid)) {
-        found = true;
-        break;
-      }
-    }
-    // console.log('Result: ' + found);
-    return found;
-  };
-}
 
     //Add a Filter By option
   let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
@@ -122,6 +119,7 @@ function createRefiqdaFilterFunction(dataTable) {
     userBlock.append($("<h2>").html("Users"));
     //Users only has a "Name" column
     let userTable = createTable("Users", "Name").appendTo(userBlock);
+    userTable.attr('id', 'usertable');
     userTable.addClass("usertable compact stripe");
 
     //Create rows
@@ -141,21 +139,6 @@ function createRefiqdaFilterFunction(dataTable) {
     //Draw to set order
     userDataTable.draw();
     tables.push(userDataTable);
-    //When selections are made, update the array of selected GUIDs and redraw other tables so they get filtered.
-    userDataTable.on('select deselect', function(e, dt, type, indexes) {
-      if (type === 'row') {
-        console.log("clearing sG in user");
-        selectedGUIDs = new Array();
-        userDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) {
-          selectedGUIDs.push(element.dataset.guid)
-        });
-        selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== userDataTable }).forEach(table => {
-          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
-          table.draw() });
-      }
-    });
   }
 
   console.log("Starting codes");
@@ -191,6 +174,7 @@ function createRefiqdaFilterFunction(dataTable) {
     } else {
       codeTable = createTable("Codes", "Code", "Description", "Codable", "# of Uses").appendTo(codeBlock);
     }
+    codeTable.attr('id', 'codetable');
     codeTable.addClass("codetable compact stripe");
 
     for (let code of codes) {
@@ -278,20 +262,6 @@ function createRefiqdaFilterFunction(dataTable) {
     codeDataTable = new DataTable(".codetable", dataTableConfig);
 
     tables.push(codeDataTable);
-    codeDataTable.on('select deselect', function(e, dt, type, indexes) {
-      if (type === 'row') {
-        selectedGUIDs = new Array();
-        console.log('sg cleared in codes');
-        codeDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) {
-          selectedGUIDs.push(element.dataset.guid)
-        });
-        selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
-          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
-          table.draw()
-        });
-      }
-    });
   }
 
 
@@ -385,22 +355,6 @@ function createRefiqdaFilterFunction(dataTable) {
           }
 
           tables.push(annotationDataTable);
-          annotationDataTable.on('select deselect', function(e, dt, type, indexes) {
-              if (type === 'row') {
-                  var data = annotationDataTable.rows(indexes).data().toArray().map(row => row.id);
-                  annotationDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-                  console.log('uG: ' + annotationDataTable[type](indexes).nodes().to$().attr('data-guid'));
-                  console.log(annotationDataTable.rows({ selected: true }).count());
-                  console.log("clearing sG in annotation");
-                  selectedGUIDs = new Array();
-                  annotationDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
-                  selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-                  tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
-                      table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
-                      table.draw()
-                  });
-              }
-          });
       }
 
       // Create Sources table if there are any sources
@@ -431,18 +385,6 @@ function createRefiqdaFilterFunction(dataTable) {
         }
 
         tables.push(sourceDataTable);
-        sourceDataTable.on('select deselect', function(e, dt, type, indexes) {
-          if (type === 'row') {
-            console.log("clearing sG in source");
-            selectedGUIDs = new Array();
-            sourceDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
-            selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-            tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
-              table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
-              table.draw()
-            });
-          }
-        });
       }
 
     }
@@ -488,23 +430,6 @@ function createRefiqdaFilterFunction(dataTable) {
       //columnDefs:[{target:0,visible:false,seachable:false}]
     });
     tables.push(noteDataTable);
-    noteDataTable.on('select deselect', function(e, dt, type, indexes) {
-      if (type === 'row') {
-        var data = noteDataTable.rows(indexes).data().toArray().map(row => row.id);
-        noteDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-        console.log('uG: ' + noteDataTable[type](indexes).nodes().to$().attr('data-guid'));
-        console.log(noteDataTable.rows({ selected: true }).count());
-        console.log("clearing sG in note");
-        selectedGUIDs = new Array();
-        noteDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
-        selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
-          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
-          table.draw()
-        });
-      }
-    });
   }
 
   let sets = xmlDoc.getElementsByTagName("Set");
@@ -549,23 +474,6 @@ function createRefiqdaFilterFunction(dataTable) {
       select: $('#filterby').val() == 'Sets'
     });
     tables.push(setDataTable);
-    setDataTable.on('select deselect', function(e, dt, type, indexes) {
-      if (type === 'row') {
-        var data = setDataTable.rows(indexes).data().toArray().map(row => row.id);
-        setDataTable[type](indexes).nodes().to$().addClass('custom-selected');
-        console.log('uG: ' + setDataTable[type](indexes).nodes().to$().attr('data-guid'));
-        console.log(setDataTable.rows({ selected: true }).count());
-        console.log("clearing sG in set");
-        selectedGUIDs = new Array();
-        setDataTable.rows({ selected: true }).nodes().to$().each(function(index, element) { selectedGUIDs.push(element.dataset.guid) });
-        selectedGUIDs.forEach(guid => { console.log('Added ' + guid); });
-        // do something with the ID of the selected items
-        tables.filter(function(curTable) { return curTable !== codeDataTable }).forEach(table => { 
-          table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
-          table.draw()
-        });
-      }
-    });
   }
 
     let graphs = xmlDoc.getElementsByTagName("Graph");
@@ -647,12 +555,15 @@ $("#filterby")
       // Destroy and recreate userDataTable
       if (userDataTable) {
         userDataTable.destroy();
+        //Also remove event handlers
+        $(".usertable").off('select.dt deselect.dt');
       }
       if ($(".usertable").length) {
         userDataTable = new DataTable(".usertable", {
           select: $('#filterby').val() == 'Users',
           order: [[0, 'asc']]
         });
+        attachFilterHandler(userDataTable);
         userDataTable.draw();
         tables.push(userDataTable);
       }
@@ -661,6 +572,7 @@ $("#filterby")
       // Destroy and recreate codeDataTable
       if (codeDataTable) {
         codeDataTable.destroy();
+        $(".codetable").off('select.dt deselect.dt');
       }
       if ($(".codetable").length) {
         // Need to check if color column exists before recreating the table
@@ -717,6 +629,7 @@ $("#filterby")
           ];
         }
         codeDataTable = new DataTable(".codetable", codeConfig);
+        attachFilterHandler(codeDataTable);
         codeDataTable.draw();
         tables.push(codeDataTable);
       }
@@ -724,11 +637,13 @@ $("#filterby")
       // Destroy and recreate sourceDataTable
       if (sourceDataTable) {
         sourceDataTable.destroy();
+        $(".sourcetable").off('select.dt deselect.dt');
       }
       if ($(".sourcetable").length) {
         sourceDataTable = new DataTable(".sourcetable", {
           select: $('#filterby').val() == 'Sources'
         });
+        attachFilterHandler(sourceDataTable);
         sourceDataTable.draw();
         tables.push(sourceDataTable);
       }
@@ -736,11 +651,13 @@ $("#filterby")
       // Destroy and recreate annotationDataTable
       if (annotationDataTable) {
         annotationDataTable.destroy();
+        $(".annotationtable").off('select.dt deselect.dt');
       }
       if ($(".annotationtable").length) {
         annotationDataTable = new DataTable(".annotationtable", {
           select: $('#filterby').val() == 'Annotations'
         });
+        attachFilterHandler(annotationDataTable);
         annotationDataTable.draw();
         tables.push(annotationDataTable);
       }
@@ -748,11 +665,13 @@ $("#filterby")
       // Destroy and recreate noteDataTable
       if (noteDataTable) {
         noteDataTable.destroy();
+        $(".notetable").off('select.dt deselect.dt');
       }
       if ($(".notetable").length) {
         noteDataTable = new DataTable(".notetable", {
           select: $('#filterby').val() == 'Notes'
         });
+        attachFilterHandler(noteDataTable);
         noteDataTable.draw();
         tables.push(noteDataTable);
       }
@@ -760,11 +679,13 @@ $("#filterby")
       // Destroy and recreate setDataTable
       if (setDataTable) {
         setDataTable.destroy();
+        $(".settable").off('select.dt deselect.dt');
       }
       if ($(".settable").length) {
         setDataTable = new DataTable(".settable", {
           select: $('#filterby').val() == 'Sets'
         });
+        attachFilterHandler(setDataTable);
         setDataTable.draw();
         tables.push(setDataTable);
       }
@@ -800,6 +721,66 @@ function addRow(table, ...values) {
   });
   tr.appendTo(table);
   return tr;
+}
+
+// Helper function to attach the filtering logic
+function attachFilterHandler(dataTable) {
+  //When selections are made, update the array of selected GUIDs and redraw other tables so they get filtered.
+  dataTable.on('select deselect', function(e, dt, type, indexes) {
+    if (type === 'row') {
+      selectedGUIDs = new Array();
+      dataTable.rows({ selected: true }).nodes().to$().each(function(index, element) {
+        selectedGUIDs.push(element.dataset.guid);
+      });
+      // Filter all other tables using the CURRENT `tables` array
+      tables.filter(curTable => curTable !== dataTable).forEach(table => {
+        table.search.fixed('refiqdaFilter', selectedGUIDs.length === 0 ? null : createRefiqdaFilterFunction(table));
+        table.draw();
+      });
+    }
+  });
+}
+
+  // Add a  method that filters results based on whether a GUID exists in the 'Related' hidden column.
+  // The idea is that each table puts the GUIDs of all related items (in other tables) in that column so this method
+  // becomes a generic way to filter by user, code, source, etc.
+  // If there is no filtering or the method is called on the table to filter by, all rows are returned.
+
+function createRefiqdaFilterFunction(dataTable) {
+  return function(searchStr, data, index) {
+    // console.log('Filtering: ' + index);
+
+    if (selectedGUIDs.length === 0) {
+      return true;
+    }
+
+    var rowNode = dataTable.row(index).node();
+    
+    if (!rowNode) {
+      console.log('No row node found for index: ' + index);
+      return true;
+    }
+
+    var curGuid = $(rowNode).attr('data-guid');
+    var matches = $(rowNode).attr('data-matches') || '';
+
+    let found = false;
+    for (let guid of selectedGUIDs) {
+      if (!guid) continue;
+      
+      if (matches.includes(guid)) {
+        found = true;
+        break;
+      }
+      let revMatches = $('[data-guid="' + guid + '"]').attr('data-matches') || '';
+      if (revMatches.includes(curGuid)) {
+        found = true;
+        break;
+      }
+    }
+    // console.log('Result: ' + found);
+    return found;
+  };
 }
 
 function getSelections(source) {
@@ -842,15 +823,14 @@ function getCodeNames(selection) {
   return codeNames;
 }
 
-// Update the createSelectionWithTooltip function
+// Update the createSelectionWithTooltip function to use a simpler data structure
 function createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid) {
     // Create a span with data attributes that we'll use for the tooltip
     let spanHtml = '<span class="selection-with-excerpt" ' +
         'data-start="' + startPos + '" ' +
         'data-end="' + endPos + '" ' +
         'data-path="' + plainTextPath + '" ' +
-        'data-source-guid="' + sourceGuid + '" ' +
-        'title="Hover to see details">' +
+        'data-source-guid="' + sourceGuid + '">' +
         selectionName +
         '</span>';
     
@@ -880,72 +860,132 @@ function createSourceReference(source) {
     }
 }
 
+function formatExcerptTooltip(excerpt, startPos, endPos) {
+    //const maxLength = 300; // Increased since we're getting exact excerpts
+    let displayExcerpt = excerpt;
+    
+    // Trim whitespace
+    displayExcerpt = displayExcerpt.trim();
+    
+    //if (displayExcerpt.length > maxLength) {
+    //    displayExcerpt = displayExcerpt.substring(0, maxLength) + '...';
+    //}
+    
+    // Escape HTML to prevent injection, but preserve line breaks
+    displayExcerpt = displayExcerpt
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
+    
+    return `
+        <div style="padding: 8px; font-family: sans-serif;">
+            <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+                Text Excerpt (Position ${startPos}-${endPos})
+            </div>
+            <div style="font-size: 13px; line-height: 1.5; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
+                "${displayExcerpt}"
+            </div>
+        </div>
+    `;
+}
 
+// Update the initializeExcerptTooltips function with better error handling
 function initializeExcerptTooltips() {
-    $('.selection-with-excerpt').off('mouseenter').on('mouseenter', function() {
-        let $this = $(this);
-        
-        // Check if we've already loaded the excerpt/info
-        if ($this.data('info-loaded')) {
-            return;
-        }
-        
-        let start = $this.attr('data-start');
-        let end = $this.attr('data-end');
-        let path = $this.attr('data-path');
-        if(path.startsWith("internal:")) {
-          path='sources/' + path.substring("internal:".length);
-        }
-        
-        if (isZipMode()) {
-            // In zip mode, fetch and show the actual excerpt
-            $this.attr('title', 'Loading excerpt...');
-            
-            if (typeof fetchTextExcerpt === 'function') {
-                fetchTextExcerpt(path, start, end)
-                    .then(excerpt => {
-                        $this.attr('title', excerpt);
-                        $this.data('info-loaded', true);
-                        
-                        // If using Bootstrap tooltip, reinitialize
-                        if (typeof $.fn.tooltip !== 'undefined') {
-                            $this.tooltip('dispose');
-                            $this.tooltip({ 
-                                title: excerpt,
-                                placement: 'top',
-                                trigger: 'hover'
-                            });
-                            $this.tooltip('show');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching excerpt:', error);
-                        $this.attr('title', 'Error loading excerpt: ' + error.message);
-                    });
-            } else {
-                $this.attr('title', 'Excerpt loading not available');
-            }
-        } else {
-            // In non-zip mode, just show information about the selection
-            let length = parseInt(end) - parseInt(start);
-            let info = 'File: ' + path + '\n' +
-                      'Position: ' + start + ' - ' + end + '\n' +
-                      'Length: ' + length + ' characters';
-            
-            $this.attr('title', info);
-            $this.data('info-loaded', true);
-            
-            // If using Bootstrap tooltip, initialize
-            if (typeof $.fn.tooltip !== 'undefined') {
-                $this.tooltip('dispose');
-                $this.tooltip({ 
-                    title: info,
-                    placement: 'top',
-                    trigger: 'hover',
-                    html: false
-                });
-                $this.tooltip('show');
-            }
+    // Destroy any existing Tippy instances to avoid duplicates
+    $('.selection-with-excerpt').each(function() {
+        if (this._tippy) {
+            this._tippy.destroy();
         }
     });
+
+    // Initialize Tippy for all selection elements
+    tippy('.selection-with-excerpt', {
+        content: 'Loading excerpt...',
+        allowHTML: true,
+        interactive: true,
+        theme: 'light-border',
+        maxWidth: 450,
+        placement: 'top',
+        trigger: 'mouseenter focus',
+        delay: [200, 0], // 200ms delay on show, 0ms on hide
+        onShow(instance) {
+            const element = instance.reference;
+            const startPos = parseInt(element.getAttribute('data-start'));
+            const endPos = parseInt(element.getAttribute('data-end'));
+            const plainTextPath = element.getAttribute('data-path');
+            const sourceGuid = element.getAttribute('data-source-guid');
+
+            // If content is already loaded, show it immediately
+            if (element.getAttribute('data-excerpt-loaded') === 'true') {
+                return; // Content already set, just show the tooltip
+            }
+
+            // Set loading state
+            instance.setContent('<div style="padding: 8px;"><em>Loading excerpt...</em></div>');
+
+            // Load the excerpt asynchronously
+            loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid)
+                .then(excerpt => {
+                    if (excerpt) {
+                        const formattedContent = formatExcerptTooltip(excerpt, startPos, endPos);
+                        instance.setContent(formattedContent);
+                        element.setAttribute('data-excerpt-loaded', 'true');
+                    } else {
+                        instance.setContent('<div style="padding: 8px; color: #999;"><em>Could not load excerpt</em></div>');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading excerpt:', error);
+                    instance.setContent(`<div style="padding: 8px; color: #d32f2f;"><em>Error: ${error.message || 'Could not load excerpt'}</em></div>`);
+                });
+        },
+        onHidden(instance) {
+            // Optional: Clear loading state when hidden
+            // This allows the tooltip to reload if shown again
+            // Remove this if you want to keep cached content
+            // instance.reference.removeAttribute('data-excerpt-loaded');
+        }
+    });
+}
+
+// Function to load text excerpt from file
+async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
+    try {
+        // Check cache first - cache the full text to avoid repeated zip reads
+        if (textSourceCache.has(sourceGuid)) {
+            const fullText = textSourceCache.get(sourceGuid);
+            return fullText.substring(startPos, endPos);
+        }
+
+        // For zip mode, use the fetchTextExcerpt function from refiqdpx.js
+        if (isZipMode() && typeof fetchTextExcerpt === 'function') {
+            // fetchTextExcerpt already handles the substring extraction
+            let bagPath = plainTextPath.replace("internal://","sources/");
+            const excerpt = await fetchTextExcerpt(bagPath, startPos, endPos);
+            
+            // Note: We're not caching here because fetchTextExcerpt is efficient
+            // and only fetches the bytes we need. If you want to cache full files
+            // for multiple excerpts from the same file, you'd need to modify
+            // fetchTextExcerpt to optionally return the full text
+            return excerpt;
+        } else {
+            // Fallback for non-zip mode (direct file access)
+            const response = await fetch(plainTextPath);
+            if (!response.ok) {
+                console.warn('Could not load file:', plainTextPath);
+                return null;
+            }
+            const fileContent = await response.text();
+            
+            // Cache the full text for future excerpts from the same file
+            textSourceCache.set(sourceGuid, fileContent);
+            
+            // Return the excerpt
+            return fileContent.substring(startPos, endPos);
+        }
+    } catch (error) {
+        console.error('Error loading text excerpt:', error);
+        return null;
+    }
 }
