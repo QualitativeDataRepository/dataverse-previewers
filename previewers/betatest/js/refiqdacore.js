@@ -295,7 +295,16 @@ function parseData2(data) {
                   // Create tooltip-enabled name if we have position data
                   let displayName = selectionName;
                   if (startPos && endPos && plainTextPath && (selection.nodeName === "PlainTextSelection" || selection.nodeName === "PDFSelection")) {
-                      displayName = createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid);
+                      if (selection.nodeName === "PDFSelection") {
+                          let page = selection.getAttribute("page");
+                          let firstX = selection.getAttribute("firstX");
+                          let firstY = selection.getAttribute("firstY");
+                          let secondX = selection.getAttribute("secondX");
+                          let secondY = selection.getAttribute("secondY");
+                          displayName = createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid);
+                      } else {
+                          displayName = createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid);
+                      }
                   }
 
                   annotationRows.push({
@@ -837,6 +846,36 @@ function createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPa
     return spanHtml;
 }
 
+function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid) {
+    // Create a span with data attributes for the tooltip
+    let spanHtml = '<span class="selection-with-pdf-coords" ' +
+        'data-page="' + page + '" ' +
+        'data-first-x="' + firstX + '" ' +
+        'data-first-y="' + firstY + '" ' +
+        'data-second-x="' + secondX + '" ' +
+        'data-second-y="' + secondY + '" ' +
+        'data-source-guid="' + sourceGuid + '">' +
+        selectionName +
+        '</span>';
+    
+    return spanHtml;
+}
+
+function formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY) {
+    return `
+        <div style="padding: 8px; font-family: sans-serif;">
+            <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+                PDF Selection Coordinates
+            </div>
+            <div style="font-size: 13px; line-height: 1.5;">
+                <strong>Page:</strong> ${page}<br>
+                <strong>Start (X, Y):</strong> ${firstX}, ${firstY}<br>
+                <strong>End (X, Y):</strong> ${secondX}, ${secondY}
+            </div>
+        </div>
+    `;
+}
+
 function createSourceReference(source) {
     let sourceName = source.getAttribute("name");
     let plainTextPath = source.getAttribute("plainTextPath");
@@ -893,15 +932,15 @@ function formatExcerptTooltip(excerpt, startPos, endPos) {
 // Update the initializeExcerptTooltips function with better error handling
 function initializeExcerptTooltips() {
     // Destroy any existing Tippy instances to avoid duplicates
-    $('.selection-with-excerpt').each(function() {
+    $('.selection-with-excerpt, .selection-with-pdf-coords').each(function() {
         if (this._tippy) {
             this._tippy.destroy();
         }
     });
 
     // Initialize Tippy for all selection elements
-    tippy('.selection-with-excerpt', {
-        content: 'Loading excerpt...',
+    tippy('.selection-with-excerpt, .selection-with-pdf-coords', {
+        content: 'Loading...',
         allowHTML: true,
         interactive: true,
         theme: 'light-border',
@@ -911,40 +950,56 @@ function initializeExcerptTooltips() {
         delay: [200, 0], // 200ms delay on show, 0ms on hide
         onShow(instance) {
             const element = instance.reference;
-            const startPos = parseInt(element.getAttribute('data-start'));
-            const endPos = parseInt(element.getAttribute('data-end'));
-            const plainTextPath = element.getAttribute('data-path');
-            const sourceGuid = element.getAttribute('data-source-guid');
-
+            
             // If content is already loaded, show it immediately
-            if (element.getAttribute('data-excerpt-loaded') === 'true') {
+            if (element.getAttribute('data-tooltip-loaded') === 'true') {
                 return; // Content already set, just show the tooltip
             }
 
-            // Set loading state
-            instance.setContent('<div style="padding: 8px;"><em>Loading excerpt...</em></div>');
+            if (element.classList.contains('selection-with-pdf-coords')) {
+                // Handle PDF coordinate tooltips
+                const page = element.getAttribute('data-page');
+                const firstX = element.getAttribute('data-first-x');
+                const firstY = element.getAttribute('data-first-y');
+                const secondX = element.getAttribute('data-second-x');
+                const secondY = element.getAttribute('data-second-y');
 
-            // Load the excerpt asynchronously
-            loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid)
-                .then(excerpt => {
-                    if (excerpt) {
-                        const formattedContent = formatExcerptTooltip(excerpt, startPos, endPos);
-                        instance.setContent(formattedContent);
-                        element.setAttribute('data-excerpt-loaded', 'true');
-                    } else {
-                        instance.setContent('<div style="padding: 8px; color: #999;"><em>Could not load excerpt</em></div>');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading excerpt:', error);
-                    instance.setContent(`<div style="padding: 8px; color: #d32f2f;"><em>Error: ${error.message || 'Could not load excerpt'}</em></div>`);
-                });
+                const formattedContent = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
+                instance.setContent(formattedContent);
+                element.setAttribute('data-tooltip-loaded', 'true');
+
+            } else if (element.classList.contains('selection-with-excerpt')) {
+                // Handle text excerpt tooltips
+                const startPos = parseInt(element.getAttribute('data-start'));
+                const endPos = parseInt(element.getAttribute('data-end'));
+                const plainTextPath = element.getAttribute('data-path');
+                const sourceGuid = element.getAttribute('data-source-guid');
+
+                // Set loading state
+                instance.setContent('<div style="padding: 8px;"><em>Loading excerpt...</em></div>');
+
+                // Load the excerpt asynchronously
+                loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid)
+                    .then(excerpt => {
+                        if (excerpt) {
+                            const formattedContent = formatExcerptTooltip(excerpt, startPos, endPos);
+                            instance.setContent(formattedContent);
+                            element.setAttribute('data-tooltip-loaded', 'true');
+                        } else {
+                            instance.setContent('<div style="padding: 8px; color: #999;"><em>Could not load excerpt</em></div>');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading excerpt:', error);
+                        instance.setContent(`<div style="padding: 8px; color: #d32f2f;"><em>Error: ${error.message || 'Could not load excerpt'}</em></div>`);
+                    });
+            }
         },
         onHidden(instance) {
             // Optional: Clear loading state when hidden
             // This allows the tooltip to reload if shown again
             // Remove this if you want to keep cached content
-            // instance.reference.removeAttribute('data-excerpt-loaded');
+            // instance.reference.removeAttribute('data-tooltip-loaded');
         }
     });
 }
