@@ -281,41 +281,39 @@ function parseData2(data) {
           let selections = getSelections(source);
 
           if (selections != null && selections.length != 0) {
-              selections.forEach(function(selection) {
-                  let selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser");
-                  selectionMatches = selectionMatches + getCodeRelatedGUIDs(selection);
+            selections.forEach(function(selection) {
+              let selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser");
+              selectionMatches = selectionMatches + getCodeRelatedGUIDs(selection);
 
-                  // Get position information for PlainTextSelection
-                  let selectionName = selection.getAttribute("name");
-                  let startPos = selection.getAttribute("startPosition");
-                  let endPos = selection.getAttribute("endPosition");
-                  let plainTextPath = source.getAttribute("plainTextPath");
-                  let sourceGuid = source.getAttribute("guid");
+              // Get position information for PlainTextSelection
+              let selectionName = selection.getAttribute("name");
+              let startPos = selection.getAttribute("startPosition");
+              let endPos = selection.getAttribute("endPosition");
+              let plainTextPath = source.getAttribute("plainTextPath");
+              let sourceGuid = source.getAttribute("guid");
 
-                  // Create tooltip-enabled name if we have position data
-                  let displayName = selectionName;
-                  if (startPos && endPos && plainTextPath && (selection.nodeName === "PlainTextSelection" || selection.nodeName === "PDFSelection")) {
-                      if (selection.nodeName === "PDFSelection") {
-                          let page = selection.getAttribute("page");
-                          let firstX = selection.getAttribute("firstX");
-                          let firstY = selection.getAttribute("firstY");
-                          let secondX = selection.getAttribute("secondX");
-                          let secondY = selection.getAttribute("secondY");
-                          displayName = createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid);
-                      } else {
-                          displayName = createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid);
-                      }
-                  }
+              // Create tooltip-enabled name if we have position data
+              let displayName = selectionName;
+              if (selection.nodeName === "PDFSelection") {
+                let page = selection.getAttribute("page");
+                let firstX = selection.getAttribute("firstX");
+                let firstY = selection.getAttribute("firstY");
+                let secondX = selection.getAttribute("secondX");
+                let secondY = selection.getAttribute("secondY");
+                displayName = createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid);
+              } else if (selection.nodeName === "PlainTextSelection" && startPos && endPos && plainTextPath) {
+                displayName = createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid);
+              }
 
-                  annotationRows.push({
-                      sourceRef: createSourceReference(source),
-                      type: source.nodeName,
-                      name: displayName,
-                      codes: getCodeNames(selection),
-                      guid: selection.getAttribute("guid"),
-                      matches: selectionMatches
-                  });
+              annotationRows.push({
+                sourceRef: createSourceReference(source),
+                type: source.nodeName,
+                name: displayName,
+                codes: getCodeNames(selection),
+                guid: selection.getAttribute("guid"),
+                matches: selectionMatches
               });
+            });
           }
 
           // Add whole document entry to sources
@@ -352,7 +350,6 @@ function parseData2(data) {
 
           // Initialize tooltips after table is created (ONLY for annotations table)
           initializeExcerptTooltips();
-          initializePdfCoordTooltips();
 
           if (typeof downloadFile === 'function') {
               $("a[data-entry-index]").click(downloadFile);
@@ -361,7 +358,6 @@ function parseData2(data) {
                   $("a[data-entry-index]").click(downloadFile);
                   // Reinitialize tooltips after redraw (ONLY for annotations)
                   initializeExcerptTooltips();
-                  initializePdfCoordTooltips();
               });
           }
 
@@ -849,8 +845,12 @@ function createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPa
 }
 
 function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid) {
-    // Create a span with data attributes for the tooltip
+    // Create the HTML content for the Tippy tooltip
+    let tooltipContent = `Page: ${page}<br>From: (X:${firstX}, Y:${firstY})<br>To: (X:${secondX}, Y:${secondY})`;
+
+    // Create a span with data attributes for functionality and the data-tippy-content attribute for the tooltip
     let spanHtml = '<span class="selection-with-pdf-coords" ' +
+        'data-tippy-content="' + tooltipContent + '" ' +
         'data-page="' + page + '" ' +
         'data-first-x="' + firstX + '" ' +
         'data-first-y="' + firstY + '" ' +
@@ -861,41 +861,6 @@ function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, seco
         '</span>';
     
     return spanHtml;
-}
-
-function formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY) {
-    return `
-        <div class="tooltip-text">
-            Page: ${page}<br>
-            From: (${firstX}, ${firstY})<br>
-            To: (${secondX}, ${secondY})
-        </div>
-    `;
-}
-
-function initializePdfCoordTooltips() {
-    $('.selection-with-pdf-coords').each(function() {
-        const $span = $(this);
-        // Check if tooltip has already been added
-        if ($span.children('.tooltip-content').length > 0) {
-            return; // Skip if already initialized
-        }
-
-        const page = $span.data('page');
-        const firstX = $span.data('firstx');
-        const firstY = $span.data('firsty');
-        const secondX = $span.data('secondx');
-        const secondY = $span.data('secondy');
-
-        // 1. Add the class that triggers the tooltip CSS
-        $span.addClass('selection-tooltip');
-
-        // 2. Create the tooltip content
-        const tooltipHtml = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
-
-        // 3. Append the tooltip content container
-        $span.append(`<div class="tooltip-content">${tooltipHtml}</div>`);
-    });
 }
 
 function createSourceReference(source) {
@@ -978,19 +943,7 @@ function initializeExcerptTooltips() {
                 return; // Content already set, just show the tooltip
             }
 
-            if (element.classList.contains('selection-with-pdf-coords')) {
-                // Handle PDF coordinate tooltips
-                const page = element.getAttribute('data-page');
-                const firstX = element.getAttribute('data-first-x');
-                const firstY = element.getAttribute('data-first-y');
-                const secondX = element.getAttribute('data-second-x');
-                const secondY = element.getAttribute('data-second-y');
-
-                const formattedContent = formatPdfCoordsTooltip(page, firstX, firstY, secondX, secondY);
-                instance.setContent(formattedContent);
-                element.setAttribute('data-tooltip-loaded', 'true');
-
-            } else if (element.classList.contains('selection-with-excerpt')) {
+            if (element.classList.contains('selection-with-excerpt')) {
                 // Handle text excerpt tooltips
                 const startPos = parseInt(element.getAttribute('data-start'));
                 const endPos = parseInt(element.getAttribute('data-end'));
