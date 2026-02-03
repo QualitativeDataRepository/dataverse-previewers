@@ -282,35 +282,61 @@ function parseData2(data) {
 
           if (selections != null && selections.length != 0) {
             selections.forEach(function(selection) {
-              let selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser");
-              selectionMatches = selectionMatches + getCodeRelatedGUIDs(selection);
+              let displayName;
+              let selectionMatches;
+              let guid;
+              let codes;
 
-              // Get position information for PlainTextSelection
-              let selectionName = selection.getAttribute("name");
-              let startPos = selection.getAttribute("startPosition");
-              let endPos = selection.getAttribute("endPosition");
-              let plainTextPath = source.getAttribute("plainTextPath");
-              let sourceGuid = source.getAttribute("guid");
+              if (selection.isMerged) {
+                // Handle merged selection object
+                let pdfSel = selection.pdfSelection;
+                let textSel = selection.plainTextSelection;
+                let selectionName = pdfSel.getAttribute("name");
+                guid = pdfSel.getAttribute("guid");
+                codes = getCodeNames(pdfSel); // Codes are on the PDF selection
 
-              // Create tooltip-enabled name if we have position data
-              let displayName = selectionName;
-              if (selection.nodeName === "PDFSelection") {
-                let page = selection.getAttribute("page");
-                let firstX = selection.getAttribute("firstX");
-                let firstY = selection.getAttribute("firstY");
-                let secondX = selection.getAttribute("secondX");
-                let secondY = selection.getAttribute("secondY");
-                displayName = createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid);
-              } else if (selection.nodeName === "PlainTextSelection" && startPos && endPos && plainTextPath) {
-                displayName = createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid);
+                selectionMatches = sourceMatches +
+                  pdfSel.getAttribute("creatingUser") + pdfSel.getAttribute("modifyingUser") +
+                  textSel.getAttribute("creatingUser") + textSel.getAttribute("modifyingUser") +
+                  getCodeRelatedGUIDs(pdfSel);
+
+                let sourceGuid = source.getAttribute("guid");
+
+                displayName = createMergedSelectionWithTooltip(selectionName, pdfSel, textSel, sourceGuid);
+
+              } else {
+                // Handle regular selection node
+                let selectionName = selection.getAttribute("name");
+                guid = selection.getAttribute("guid");
+                codes = getCodeNames(selection);
+                selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser") + getCodeRelatedGUIDs(selection);
+
+                let sourceGuid = source.getAttribute("guid");
+                displayName = selectionName; // Default display name
+
+                if (selection.nodeName === "PDFSelection") {
+                  let page = selection.getAttribute("page");
+                  let firstX = selection.getAttribute("firstX");
+                  let firstY = selection.getAttribute("firstY");
+                  let secondX = selection.getAttribute("secondX");
+                  let secondY = selection.getAttribute("secondY");
+                  displayName = createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, secondX, secondY, sourceGuid);
+                } else if (selection.nodeName === "PlainTextSelection") {
+                  let startPos = selection.getAttribute("startPosition");
+                  let endPos = selection.getAttribute("endPosition");
+                  let plainTextPath = source.getAttribute("plainTextPath");
+                  if (startPos && endPos && plainTextPath) {
+                    displayName = createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid);
+                  }
+                }
               }
 
               annotationRows.push({
-                sourceRef: createSourceReference(source),
+                sourceRef: createSourceReference(source, zipUrl),
                 type: source.nodeName,
                 name: displayName,
-                codes: getCodeNames(selection),
-                guid: selection.getAttribute("guid"),
+                codes: codes,
+                guid: guid,
                 matches: selectionMatches
               });
             });
@@ -791,12 +817,44 @@ function createRefiqdaFilterFunction(dataTable) {
 }
 
 function getSelections(source) {
-  let children = source.getElementsByTagName("*");
   let selections = [];
-  for (let child of children) {
-    if (child.nodeName.endsWith("Selection")) {
-      //    console.log(child.getAttribute("name"));
-      selections.push(child);
+  // If it's a PDF source, we look for both PDF and PlainText selections to merge them
+  if (source.nodeName === "PDFSource") {
+    const representation = source.querySelector("Representation");
+    const plainTextSelections = new Map();
+
+    // Map PlainTextSelections by their GUID from the Representation, if it exists
+    if (representation) {
+      for (const pts of representation.getElementsByTagName("PlainTextSelection")) {
+        plainTextSelections.set(pts.getAttribute("guid"), pts);
+      }
+    }
+
+    // Process PDFSelections
+    for (const pdfSel of source.getElementsByTagName("PDFSelection")) {
+      const guid = pdfSel.getAttribute("guid");
+      const matchingPlainTextSel = plainTextSelections.get(guid);
+
+      if (matchingPlainTextSel) {
+        // Found a pair, create a merged object
+        selections.push({
+          isMerged: true,
+          pdfSelection: pdfSel,
+          plainTextSelection: matchingPlainTextSel
+        });
+        // Remove from map so we don't process it again
+        plainTextSelections.delete(guid);
+      } else {
+        // It's a PDF-only selection
+        selections.push(pdfSel);
+      }
+    }
+  } else {
+    // For other source types, get direct children ending in "Selection"
+    for (const child of source.children) {
+      if (child.nodeName.endsWith("Selection")) {
+        selections.push(child);
+      }
     }
   }
   return selections;
@@ -816,24 +874,57 @@ function getCodeRelatedGUIDs(selection) {
 }
 
 function getCodeNames(selection) {
-  let codeNames = '';
+  let codeNameList = [];
   let codings = selection.getElementsByTagName("Coding");
   if (codings != null) {
     for (let coding of codings) {
       let codeId = coding.getElementsByTagName("CodeRef")[0].getAttribute("targetGUID");
       let code = codeMap.get(codeId);
       if (code != null) {
-        codeNames = codeNames + ' ' + code.getAttribute("name");
+        codeNameList.push(code.getAttribute("name"));
       }
     }
   }
-  return codeNames;
+  return codeNameList.join(', ');
 }
 
 // Update the createSelectionWithTooltip function to use a simpler data structure
 function createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid) {
     // Create a span with data attributes that we'll use for the tooltip
     let spanHtml = '<span class="selection-with-excerpt" ' +
+        'data-start="' + startPos + '" ' +
+        'data-end="' + endPos + '" ' +
+        'data-path="' + plainTextPath + '" ' +
+        'data-source-guid="' + sourceGuid + '">' +
+        selectionName +
+        '</span>';
+    
+    return spanHtml;
+}
+
+function createMergedSelectionWithTooltip(selectionName, pdfSel, plainTextSel, sourceGuid) {
+    // Extract data from both selection types
+    const page = pdfSel.getAttribute("page");
+    const firstX = pdfSel.getAttribute("firstX");
+    const firstY = pdfSel.getAttribute("firstY");
+    const secondX = pdfSel.getAttribute("secondX");
+    const secondY = pdfSel.getAttribute("secondY");
+
+    const startPos = plainTextSel.getAttribute("startPosition");
+    const endPos = plainTextSel.getAttribute("endPosition");
+    const plainTextPath = plainTextSel.closest("Representation").getAttribute("plainTextPath");
+
+    // Create the HTML content for the Tippy tooltip
+    let tooltipContent = `Page: ${page} (X:${firstX}, Y:${firstY}) to (X:${secondX}, Y:${secondY})`;
+
+    // Create a span with data attributes for both PDF and Text functionality
+    let spanHtml = '<span class="selection-with-excerpt selection-with-pdf-coords" ' +
+        'data-tippy-content="' + tooltipContent + '" ' +
+        'data-page="' + page + '" ' +
+        'data-first-x="' + firstX + '" ' +
+        'data-first-y="' + firstY + '" ' +
+        'data-second-x="' + secondX + '" ' +
+        'data-second-y="' + secondY + '" ' +
         'data-start="' + startPos + '" ' +
         'data-end="' + endPos + '" ' +
         'data-path="' + plainTextPath + '" ' +
@@ -957,7 +1048,15 @@ function initializeExcerptTooltips() {
                 loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid)
                     .then(excerpt => {
                         if (excerpt) {
-                            const formattedContent = formatExcerptTooltip(excerpt, startPos, endPos);
+                            let formattedContent = formatExcerptTooltip(excerpt, startPos, endPos);
+                            // For merged selections, prepend the PDF coordinate info
+                            if (element.classList.contains('selection-with-pdf-coords')) {
+                                const pdfInfo = element.getAttribute('data-tippy-content');
+                                if (pdfInfo) {
+                                    const pdfHtml = `<div style="padding: 8px 8px 0 8px; font-family: sans-serif; font-size: 11px; color: #666;">${pdfInfo}</div>`;
+                                    formattedContent = pdfHtml + formattedContent;
+                                }
+                            }
                             instance.setContent(formattedContent);
                             element.setAttribute('data-tooltip-loaded', 'true');
                         } else {
