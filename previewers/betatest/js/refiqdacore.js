@@ -897,7 +897,7 @@ function getCodeNames(selection) {
       }
     }
   }
-  return codeNameList.join(', ');
+  return codeNameList.join('; ');
 }
 
 // Update the createSelectionWithTooltip function to use a simpler data structure
