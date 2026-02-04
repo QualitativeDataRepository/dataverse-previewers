@@ -258,7 +258,10 @@ function parseData2(data) {
             }
         ];
     }
-
+    // Set default sorting for the 'Uses' column (descending)
+    // The column index depends on whether the color column is present
+    const usesColumnIndex = hasColorAttribute ? 4 : 3;
+    dataTableConfig.order = [[usesColumnIndex, "desc"]];
     codeDataTable = new DataTable(".codetable", dataTableConfig);
 
     tables.push(codeDataTable);
@@ -603,7 +606,9 @@ $("#filterby")
 
 
       // Destroy and recreate codeDataTable
+      let codeTableOrder;
       if (codeDataTable) {
+      codeTableOrder = codeDataTable.order();
         codeDataTable.destroy();
         $(".codetable").off('select.dt deselect.dt');
       }
@@ -660,6 +665,13 @@ $("#filterby")
               targets: 3
             }
           ];
+        }
+        // If a previous sort order exists, use it. Otherwise, default to sorting by 'Uses' descending.
+        if (codeTableOrder) {
+            codeConfig.order = codeTableOrder;
+        } else {
+            const usesColumnIndex = hasColorColumn ? 4 : 3;
+            codeConfig.order = [[usesColumnIndex, "desc"]];
         }
         codeDataTable = new DataTable(".codetable", codeConfig);
         attachFilterHandler(codeDataTable);
