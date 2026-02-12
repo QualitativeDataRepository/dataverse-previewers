@@ -1009,7 +1009,7 @@ function formatExcerptTooltip(excerpt, startPos, endPos) {
     
     return `
         <div style="padding: 8px; font-family: sans-serif;">
-            <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+            <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #999; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
                 Text Excerpt (Position ${startPos}-${endPos})
             </div>
             <div style="font-size: 13px; line-height: 1.5; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
@@ -1037,7 +1037,8 @@ function initializeExcerptTooltips() {
         maxWidth: 450,
         placement: 'top',
         trigger: 'mouseenter focus',
-        delay: [200, 0], // 200ms delay on show, 0ms on hide
+        delay: [200, 200], // 200ms delay on show/hide
+        appendTo: () => document.body, // Append to body to prevent clipping
         onShow(instance) {
             const element = instance.reference;
             
@@ -1065,7 +1066,7 @@ function initializeExcerptTooltips() {
                             if (element.classList.contains('selection-with-pdf-coords')) {
                                 const pdfInfo = element.getAttribute('data-tippy-content');
                                 if (pdfInfo) {
-                                    const pdfHtml = `<div style="padding: 8px 8px 0 8px; font-family: sans-serif; font-size: 11px; color: #666;">${pdfInfo}</div>`;
+                                    const pdfHtml = `<div style="padding: 8px 8px 0 8px; font-family: sans-serif; font-size: 11px; color: #999;">${pdfInfo}</div>`;
                                     formattedContent = pdfHtml + formattedContent;
                                 }
                             }
