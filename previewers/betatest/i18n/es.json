@@ -23,6 +23,8 @@
   "rocratePreviewText": "Previsualización de RO-Crate",
   "jupyterPreviewText": "Previsualización de Jupyter Notebook",
   "cdiPreviewText": "Previsualización de CDI",
+  "refiqdpxPreviewText": "Previsualización del proyecto REFI-QDA",
+  "refiqdcPreviewText": "Previsualización del libro de códigos REFI-QDA",
   "prev": "Anterior",
   "next": "Siguiente",
   "pageText": "Página:",

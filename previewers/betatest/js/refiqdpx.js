@@ -1,0 +1,156 @@
+function writeContent(fileUrl, file, title, authors) {
+    addStandardPreviewHeader(file, title, authors);
+    
+    // Set the global zipUrl variable so other code knows we're in zip mode
+    zipUrl = fileUrl;
+    
+    readZip(fileUrl);
+}
+
+let entries;
+const entryMap = {};
+
+async function readZip(fileUrl) {
+        wait = $('<div/>').attr('id', 'waiting');
+        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').attr('id','throbber').appendTo(wait);
+        $('<span/>').text(' Reading QPDX file. Parsing Contents...').appendTo(wait);
+        wait.appendTo($('.preview'));
+
+    try {
+        //Just a workaround, as current Dataverse delivers https links for localhost
+        if (fileUrl.startsWith('https://localhost')) {
+            fileUrl = fileUrl.replace('https://localhost', 'http://localhost');
+        }
+
+
+        const reader = new zip.ZipReader(new zip.HttpRangeReader(fileUrl, ));
+
+        // get all entries from the zip
+        entries = await reader.getEntries();
+        if (entries.length) {
+
+
+            // First pass: Find and process the .qde file
+            const qdeEntry = entries.find(entry => entry.filename.endsWith('.qde'));
+            
+            if (qdeEntry) {
+                var projectBlob = qdeEntry.getData(new zip.TextWriter(), {
+                  onprogress: (index, max) => {
+
+                    const percent = Math.round(index / max * 100);
+                    console.log(index + "   " + max + "   " + percent);
+                    setProgressBarValue(percent);
+
+                  },
+                });
+                projectBlob.then(text => parseData(text)).catch((err)=> {
+                    document.getElementById('waiting').innerHTML= "<span>Unable to continue: " + err + "</span>";
+                });
+
+                // Second pass: Build entry map for all other files
+                entries.forEach(function(entry, index) {
+                    if (!entry.directory && !entry.filename.endsWith('.qde')) {
+                        entryMap[entry.filename] = index;
+                    }
+                });
+            } else {
+                document.getElementById('waiting').innerHTML= "<span>Unable to continue: No .qde file found in archive</span>";
+            }
+        }
+
+            // close the ZipReader
+            await reader.close();
+
+    }
+    catch (err) {
+        //Display error message
+        const errorMsg = document.createTextNode("Zip file structure could not be read (" + err + "). You can still download the zip file.");
+        document.getElementById('waiting').innerHTML="<span>Unable to continue: " + errorMsg + "</span>";
+        console.log(err);
+
+    }
+    finally {
+        //remove throbber
+        const throbber = document.getElementById("throbber");
+        if (throbber)
+            throbber.parentNode.removeChild(throbber);
+    }
+}
+
+// Add this function to fetch text excerpts from zip entries
+async function fetchTextExcerpt(entryFilename, startPos, endPos) {
+    try {
+        // Find the entry in the entryMap
+        const entryIndex = entryMap[entryFilename];
+        if (entryIndex === undefined) {
+            throw new Error('File not found in archive: ' + entryFilename);
+        }
+
+        const entry = entries[entryIndex];
+        
+        // Get the text content from the zip entry
+        // The zip.js library will handle decompression automatically
+        const text = await entry.getData(new zip.TextWriter());
+
+        // Extract the requested portion
+        const start = parseInt(startPos);
+        const end = parseInt(endPos);
+        const excerpt = text.substring(start, end);
+        
+        return excerpt;
+
+    } catch (error) {
+        console.error('Error fetching text excerpt:', error);
+        throw error;
+    }
+}
+
+async function downloadFile(event) {
+    const target = event.currentTarget;
+    let href = target.getAttribute("href");
+    if (target.dataset.entryIndex !== undefined && !target.download) {
+            console.log('Downloading');
+        target.removeAttribute("href");
+        event.preventDefault();
+        try {
+            await download(entries[Number(target.dataset.entryIndex)], target.parentElement, target);
+            href = target.getAttribute("href");
+        } catch (error) {
+            alert(error);
+        }
+        target.setAttribute("href", href);
+    }
+}
+
+async function download(entry, li, a) {
+    if (!li.classList.contains("busy")) {
+
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        li.classList.add("busy");
+        try {
+            const blobURL = URL.createObjectURL(await entry.getData(new zip.BlobWriter(), {
+                onprogress: (index, max) => {
+
+                    const percent = Math.round(index/max*100);
+                    console.log(index + "   " + max  + "   " + percent);
+                    //setProgressBarValue(percent);
+
+                },
+            }))
+            var index = a.getAttribute("data-entry-index");
+            console.log("index: " + index);
+            $("a[data-entry-index='" + index + "']").attr('href',blobURL);
+             $("a[data-entry-index='" + index + "']").attr('download',a.text);
+            const clickEvent = new MouseEvent("click");
+            a.dispatchEvent(clickEvent);
+        } catch (error) {
+            if (error.message != zip.ERR_ABORT) {
+                throw error;
+            }
+        } finally {
+            li.classList.remove("busy");
+        }
+    }
+}

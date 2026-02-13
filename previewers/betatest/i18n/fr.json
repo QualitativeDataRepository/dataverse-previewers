@@ -24,6 +24,8 @@
   "rocratePreviewText": "Aperçu RO-Crate",
   "jupyterPreviewText": "Aperçu Jupyter Notebook",
   "cdiPreviewText": "Aperçu CDI",
+  "refiqdpxPreviewText": "Aperçu  du projet REFI-QDA",
+  "refiqdcPreviewText": "Aperçu du codebook REFI-QDA",
   "prev": "Précédent",
   "next": "Suivant",
   "pageText": "Page:",
