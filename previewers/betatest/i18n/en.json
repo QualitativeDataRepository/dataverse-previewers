@@ -24,6 +24,8 @@
   "rocratePreviewText": "RO-Crate Preview",
   "jupyterPreviewText": "Jupyter Notebook Preview",
   "cdiPreviewText": "CDI Preview",
+  "refiqdpxPreviewText": "REFI-QDA Project Preview",
+  "refiqdcPreviewText": "REFI-QDA Codebook Preview",
   "prev": "Previous",
   "next": "Next",
   "pageText": "Page:",
