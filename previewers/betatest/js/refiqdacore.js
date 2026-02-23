@@ -298,12 +298,12 @@ function parseData2(data) {
                 guid = pdfSel.getAttribute("guid");
                 codes = getCodeNames(pdfSel); // Codes are on the PDF selection
 
+                let sourceGuid = source.getAttribute("guid");
+                
                 selectionMatches = sourceMatches +
                   pdfSel.getAttribute("creatingUser") + pdfSel.getAttribute("modifyingUser") +
                   textSel.getAttribute("creatingUser") + textSel.getAttribute("modifyingUser") +
-                  getCodeRelatedGUIDs(pdfSel);
-
-                let sourceGuid = source.getAttribute("guid");
+                  getCodeRelatedGUIDs(pdfSel) + sourceGuid;
 
                 displayName = createMergedSelectionWithTooltip(selectionName, pdfSel, textSel, sourceGuid);
 
@@ -312,9 +312,10 @@ function parseData2(data) {
                 let selectionName = selection.getAttribute("name");
                 guid = selection.getAttribute("guid");
                 codes = getCodeNames(selection);
-                selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser") + getCodeRelatedGUIDs(selection);
-
                 let sourceGuid = source.getAttribute("guid");
+                
+                selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser") + getCodeRelatedGUIDs(selection) + sourceGuid;
+
                 displayName = selectionName; // Default display name
 
                 if (selection.nodeName === "PDFSelection") {
