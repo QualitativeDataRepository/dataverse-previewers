@@ -447,14 +447,21 @@ function parseData2(data) {
         desc = desc[0].childNodes[0];
       }
       let matches = '';
-      if (note.getAttribute("creatingUser")) {
-        matches = matches + note.getAttribute("creatingUser");
+      let name = '';
+      let user = note.getAttribute("creatingUser");
+      if (user) {
+        matches = matches + user;
+        name = userMap.get(user).getAttribute("name");
       }
-      if (note.getAttribute("modifyingUser")) {
-        matches = matches + note.getAttribute("modifyingUser");
+      user = note.getAttribute("modifyingUser"); 
+      if (user) {
+        matches = matches + user;
+        if(name === '') {
+          name = userMap.get(user).getAttribute("name");
+        }
       }
 
-      let tr = addRow(noteTable, note.getAttribute("name"), ptc, desc, userMap.get(note.getAttribute("creatingUser")).getAttribute("name"));
+      let tr = addRow(noteTable, note.getAttribute("name"), ptc, desc, name);
       tr.attr('data-guid', note.getAttribute("guid"));
       tr.attr('data-matches', matches);
 
