@@ -295,6 +295,9 @@ function parseData2(data) {
                 let pdfSel = selection.pdfSelection;
                 let textSel = selection.plainTextSelection;
                 let selectionName = pdfSel.getAttribute("name");
+                if(!selectionName) {
+                  selectionName = "(Hover for more info)";
+                }
                 guid = pdfSel.getAttribute("guid");
                 codes = getCodeNames(pdfSel); // Codes are on the PDF selection
 
@@ -310,6 +313,9 @@ function parseData2(data) {
               } else {
                 // Handle regular selection node
                 let selectionName = selection.getAttribute("name");
+                if(!selectionName) {
+                  selectionName = "(Hover for more info)";
+                }
                 guid = selection.getAttribute("guid");
                 codes = getCodeNames(selection);
                 let sourceGuid = source.getAttribute("guid");
