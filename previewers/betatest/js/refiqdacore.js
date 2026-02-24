@@ -448,18 +448,26 @@ function parseData2(data) {
       }
       let matches = '';
       let name = '';
-      let user = note.getAttribute("creatingUser");
-      if (user) {
-        matches = matches + user;
-        name = userMap.get(user).getAttribute("name");
-      }
-      user = note.getAttribute("modifyingUser"); 
-      if (user) {
-        matches = matches + user;
-        if(name === '') {
-          name = userMap.get(user).getAttribute("name");
+      let creatingUserGuid = note.getAttribute("creatingUser");
+      let modifyingUserGuid = note.getAttribute("modifyingUser");
+      let userNames = new Set();
+
+      if (creatingUserGuid) {
+        matches += creatingUserGuid;
+        let user = userMap.get(creatingUserGuid);
+        if (user) {
+          userNames.add(user.getAttribute("name"));
         }
       }
+
+      if (modifyingUserGuid) {
+        matches += modifyingUserGuid;
+        let user = userMap.get(modifyingUserGuid);
+        if (user) {
+          userNames.add(user.getAttribute("name"));
+        }
+      }
+      name = Array.from(userNames).join(', ');
 
       let tr = addRow(noteTable, note.getAttribute("name"), ptc, desc, name);
       tr.attr('data-guid', note.getAttribute("guid"));
@@ -476,6 +484,62 @@ function parseData2(data) {
     tables.push(noteDataTable);
   }
 
+ let variables = xmlDoc.getElementsByTagName("Variable");
+  let cases = xmlDoc.getElementsByTagName("Case");
+
+  if (variables.length > 0 && cases.length > 0) {
+    let variableMap = new Map();
+    let variableHeaders = ["Source"]; // First column is the source document
+
+    for (let variable of variables) {
+      let guid = variable.getAttribute("guid");
+      let name = variable.getAttribute("name");
+      // Store the variable name and its column index in the table
+      variableMap.set(guid, { name: name, index: variableHeaders.length });
+      variableHeaders.push(name);
+    }
+
+    let caseBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+    caseBlock.append($("<h2/>").html("Cases"));
+    let caseTable = createTable("Cases", ...variableHeaders).appendTo(caseBlock);
+    caseTable.addClass("casetable compact stripe");
+
+    for (let caseNode of cases) {
+      let rowData = new Array(variableHeaders.length).fill(""); // Initialize row with empty strings
+
+      // Find the source document for the case
+      let sourceRef = caseNode.getElementsByTagName("SourceRef")[0];
+      if (sourceRef) {
+        let sourceGuid = sourceRef.getAttribute("targetGUID");
+        let source = sourceMap.get(sourceGuid);
+        if (source) {
+          rowData[0] = createSourceReference(source, zipUrl);
+        }
+      }
+
+      // Populate variable values for the case
+      let variableValues = caseNode.getElementsByTagName("VariableValue");
+      for (let varValue of variableValues) {
+        let varRef = varValue.getElementsByTagName("VariableRef")[0];
+        let textValue = varValue.getElementsByTagName("TextValue")[0];
+        if (varRef && textValue) {
+          let varGuid = varRef.getAttribute("targetGUID");
+          let variableInfo = variableMap.get(varGuid);
+          if (variableInfo) {
+            rowData[variableInfo.index] = textValue.textContent;
+          }
+        }
+      }
+      addRow(caseTable, ...rowData);
+    }
+
+    // Initialize DataTable for cases, but don't add to filterable tables
+    new DataTable(".casetable", {
+      select: false // This table should not be selectable
+    });
+  }
+
+ 
   let sets = xmlDoc.getElementsByTagName("Set");
   if (sets != null && sets.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Sets').text('Sets'));
@@ -495,7 +559,7 @@ function parseData2(data) {
           let codeId = member.getAttribute('targetGUID');
           let code = codeMap.get(codeId);
           if (code != null) {
-            codeNames = codeNames + ' ' + code.getAttribute("name");
+            codeNames = codeNames + '; ' + code.getAttribute("name");
           }
           matches += codeId;
         }
