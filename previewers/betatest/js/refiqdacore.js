@@ -23,44 +23,6 @@ function translateBaseHtmlPage() {
   $('.refiqdaPreviewText').text(refiqdaPreviewText);
 }
 
-function addSelectAllAndUnselectButtons(dataTable, tableContainer, tableId) {
-  // Add "Unselect All" button next to the table title
-  const unselectAllButton = $('<button>Unselect All</button>')
-    .addClass('unselect-all-btn')
-    .hide()
-    .on('click', function() {
-      dataTable.rows({ selected: true }).deselect();
-    });
-  tableContainer.find('h2').first().append(unselectAllButton);
-
-  // Add "Select All" checkbox to the table header
-  const selectAllCheckbox = $('<input type="checkbox" title="Select all rows in this table" />');
-  $('#' + tableId + ' thead tr').prepend($('<th class="select-all">').append(selectAllCheckbox));
-  $('#' + tableId + ' tbody tr').prepend($('<td class="select-all">')); // Placeholder for alignment
-
-  selectAllCheckbox.on('click', function() {
-    if (this.checked) {
-      dataTable.rows().select();
-    } else {
-      dataTable.rows().deselect();
-    }
-  });
-
-  // Show/hide "Unselect All" button and manage "Select All" checkbox state
-  dataTable.on('select deselect', function() {
-    const selectedRows = dataTable.rows({ selected: true }).count();
-    const totalRows = dataTable.rows().count();
-
-    if (selectedRows > 0) {
-      unselectAllButton.show();
-    } else {
-      unselectAllButton.hide();
-    }
-
-    selectAllCheckbox.prop('checked', selectedRows === totalRows);
-  });
-}
-
 var zipUrl = '';
 
 //zipUrl is set in refiqdpx.js - the zip file case
@@ -445,8 +407,6 @@ function parseData2(data) {
         }
 
         tables.push(sourceDataTable);
-        addSelectAllAndUnselectButtons(sourceDataTable, sourceBlock, 'sourcetable');
-        addRedactionButton(sourceDataTable, sourceBlock);
       }
 
     }
@@ -780,7 +740,6 @@ $("#filterby")
       if (sourceDataTable) {
         sourceDataTable.destroy();
         $(".sourcetable").off('select.dt deselect.dt');
-        $('.redact-btn').remove();
       }
       if ($(".sourcetable").length) {
         let dtOptions = {
@@ -803,14 +762,36 @@ $("#filterby")
           dtOptions.layout = {
             top2End: 'buttons'
           };
-          dtOptions.buttons = ['selectAll', 'selectNone'];
+          dtOptions.buttons = [
+            'selectAll', 
+            'selectNone',
+            {
+              text: 'Redact',
+              className: 'redact-btn',
+              titleAttr: 'Create a redacted version of the datafile with the selected sources, and any related annotations, removed.',
+              action: function ( e, dt, node, config ) {
+                let selectedRows = dt.rows( { selected: true } );
+                let sourceGuids = [];
+                selectedRows.nodes().to$().each(function() {
+                    sourceGuids.push($(this).data('guid'));
+                });
+                redactSources(sourceGuids);
+              },
+              enabled: false
+            }
+          ];
         }
 
         sourceDataTable = new DataTable(".sourcetable", dtOptions);
-        attachFilterHandler(sourceDataTable);
+        
         if ($('#filterby').val() == 'Sources') {
-            addRedactionButton(sourceDataTable, $('#sources'));
+            sourceDataTable.on('select deselect', function () {
+                var selectedRows = sourceDataTable.rows({ selected: true }).count();
+                sourceDataTable.button('.redact-btn').enable(selectedRows > 0);
+            });
         }
+        
+        attachFilterHandler(sourceDataTable);
         sourceDataTable.draw();
 
         tables.push(sourceDataTable);
@@ -1254,55 +1235,6 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
         return null;
     }
 }
-
-function addRedactionButton(dataTable) {
-  // Create the button with jQuery
-  const redactButton = $('<button>Create Redacted Project from Selection</button>')
-    .addClass('redact-btn')
-    .hide() // Initially hidden
-    .on('click', function() {
-      const selectedRows = dataTable.rows({ selected: true }).data();
-      const guidsToRedact = [];
-      
-      // Get GUID from the data of selected rows
-      dataTable.rows({ selected: true }).every(function() {
-        const rowNode = this.node();
-        const guid = $(rowNode).data('guid');
-        if (guid) {
-          guidsToRedact.push(guid);
-        }
-      });
-
-      if (guidsToRedact.length > 0) {
-        redactSources(guidsToRedact);
-      } else {
-        alert("No sources selected for redaction.");
-      }
-    });
-
-  // Find or create the DataTables button container
-  let buttonContainer = $(dataTable.table().container()).find('.dt-buttons');
-  if (buttonContainer.length === 0) {
-    // If the button container doesn't exist, create it and prepend it
-    // to the main DataTables control header.
-    buttonContainer = $('<div class="dt-buttons btn-group"/>');
-    $(dataTable.table().container()).find('.dataTables_filter').before(buttonContainer);
-  }
-  
-  // Append the button to the container
-  buttonContainer.append(redactButton);
-
-  // Show/hide button on selection change
-  dataTable.on('select deselect', function() {
-    const selectedCount = dataTable.rows({ selected: true }).count();
-    if (selectedCount > 0) {
-      redactButton.show();
-    } else {
-      redactButton.hide();
-    }
-  });
-}
-
 
 function redactSources(guidsToRedact) {
   console.log("Redacting sources with GUIDs:", guidsToRedact);
