@@ -53,8 +53,8 @@ async function checkPermissions() {
             const response = await fetch(permissionsUrl);
             if (response.ok) {
                 const json = await response.json();
-                if (json.status === 'OK' && json.data && json.data.permissions) {
-                    canRedact = json.data.permissions.includes('EditDataset');
+                if (json.status === 'OK' && json.data && json.data.canEditDataset) {
+                    canRedact = true;
                 }
             }
         } catch (error) {
