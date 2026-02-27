@@ -4,6 +4,11 @@ function writeContent(fileUrl, file, title, authors) {
     // Set the global zipUrl variable so other code knows we're in zip mode
     zipUrl = fileUrl;
     
+    if(fileUrl.includes('auxiliary/qdpx')) {
+      redactedMode = true;
+    } else {
+      redactedMode = false;
+    }
     readZip(fileUrl);
 }
 

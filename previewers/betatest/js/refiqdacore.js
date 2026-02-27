@@ -68,6 +68,8 @@ function isZipMode() {
     return typeof zipUrl !== 'undefined' && zipUrl !== null && zipUrl !== '';
 }
 
+var redactedMode;
+
 var wait;
 var cy;
 
@@ -101,7 +103,9 @@ function parseData2(data) {
   parser = new DOMParser();
   xmlDoc = parser.parseFromString(data, "text/xml");
 
-
+  if(redactedMode) {
+    let redactedNotice = $('<h2/>').addClass('redacted-notice').text("Note: This is a redacted, public view of the restricted QDAS file").appendTo($(".preview"));
+  }
     //Add a Filter By option
   let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
   filterBlock.append($("<h2/>").html("Enable Filtering By"));
