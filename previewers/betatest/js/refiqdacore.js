@@ -421,7 +421,7 @@ function parseData2(data) {
         });
 
         sourceDataTable = new DataTable(".sourcetable", {
-          select: $('#filterby').val() == 'Sources',
+         select: $('#filterby').val() == 'Sources',
           order: [[0, 'asc']],
           columnDefs: [
             {
@@ -783,14 +783,36 @@ $("#filterby")
         $('.redact-btn').remove();
       }
       if ($(".sourcetable").length) {
-        sourceDataTable = new DataTable(".sourcetable", {
-          select: $('#filterby').val() == 'Sources'
-        });
+        let dtOptions = {
+          select: $('#filterby').val() == 'Sources',
+          columnDefs: [
+            {
+              render: function(data, type, row) {
+                if (type === 'display' && data !== null && data.length > 50) {
+                  return '<span title="' + data + '">' + data.substr(0, 50) + '...</span>';
+                }
+                return data;
+              },
+              targets: 1
+            }
+          ]
+          
+        };
+
+        if ($('#filterby').val() == 'Sources') {
+          dtOptions.layout = {
+            top2End: 'buttons'
+          };
+          dtOptions.buttons = ['selectAll', 'selectNone'];
+        }
+
+        sourceDataTable = new DataTable(".sourcetable", dtOptions);
         attachFilterHandler(sourceDataTable);
-        sourceDataTable.draw();
         if ($('#filterby').val() == 'Sources') {
             addRedactionButton(sourceDataTable, $('#sources'));
         }
+        sourceDataTable.draw();
+
         tables.push(sourceDataTable);
       }
 
@@ -1233,38 +1255,54 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
     }
 }
 
-function addRedactionButton(dataTable, tableContainer) {
+function addRedactionButton(dataTable) {
+  // Create the button with jQuery
   const redactButton = $('<button>Create Redacted Project from Selection</button>')
     .addClass('redact-btn')
-    .hide()
+    .hide() // Initially hidden
     .on('click', function() {
       const selectedRows = dataTable.rows({ selected: true }).data();
       const guidsToRedact = [];
-      for (let i = 0; i < selectedRows.length; i++) {
-        // Assuming the GUID is stored in a data attribute of the row
-        const rowNode = dataTable.row(selectedRows.nodes()[i]).node();
+      
+      // Get GUID from the data of selected rows
+      dataTable.rows({ selected: true }).every(function() {
+        const rowNode = this.node();
         const guid = $(rowNode).data('guid');
         if (guid) {
           guidsToRedact.push(guid);
         }
-      }
+      });
+
       if (guidsToRedact.length > 0) {
         redactSources(guidsToRedact);
       } else {
         alert("No sources selected for redaction.");
       }
     });
-  tableContainer.find('h2').first().append(redactButton);
 
+  // Find or create the DataTables button container
+  let buttonContainer = $(dataTable.table().container()).find('.dt-buttons');
+  if (buttonContainer.length === 0) {
+    // If the button container doesn't exist, create it and prepend it
+    // to the main DataTables control header.
+    buttonContainer = $('<div class="dt-buttons btn-group"/>');
+    $(dataTable.table().container()).find('.dataTables_filter').before(buttonContainer);
+  }
+  
+  // Append the button to the container
+  buttonContainer.append(redactButton);
+
+  // Show/hide button on selection change
   dataTable.on('select deselect', function() {
-    const selectedRows = dataTable.rows({ selected: true }).count();
-    if (selectedRows > 0) {
+    const selectedCount = dataTable.rows({ selected: true }).count();
+    if (selectedCount > 0) {
       redactButton.show();
     } else {
       redactButton.hide();
     }
   });
 }
+
 
 function redactSources(guidsToRedact) {
   console.log("Redacting sources with GUIDs:", guidsToRedact);
