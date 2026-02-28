@@ -1073,23 +1073,18 @@ function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, seco
 function createSourceReference(source) {
     let sourceName = source.getAttribute("name");
     let plainTextPath = source.getAttribute("plainTextPath");
-    
+    let path = plainTextPath.replace("internal://","sources/")
     if (isZipMode()) {
         // In zip mode, create a link that uses the zip entry
-        if (typeof entryMap !== 'undefined' && plainTextPath && entryMap[plainTextPath] !== undefined) {
-            let entryIndex = entryMap[plainTextPath];
-            return '<a href="#" data-entry-index="' + entryIndex + '">' + sourceName + '</a>';
+        if (typeof entryMap !== 'undefined' && path && entryMap[path] !== undefined) {
+            let entryIndex = entryMap[path];
+            return sourceName + ' <a href="#" data-entry-index="' + entryIndex + '" data-entry-name="' + sourceName + '" title="Download Source: ' + sourceName + '"><span class="glyphicon glyphicon-download-alt"></span></a>';
         } else {
             // No link if file not found in zip
             return sourceName;
         }
     } else {
-        // In non-zip mode, create a direct link to the file if it exists
-        if (plainTextPath) {
-            return '<a href="' + plainTextPath + '" target="_blank">' + sourceName + '</a>';
-        } else {
-            return sourceName;
-        }
+        return sourceName;
     }
 }
 
@@ -1237,10 +1232,25 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
 }
 
 function redactSources(guidsToRedact) {
-  console.log("Redacting sources with GUIDs:", guidsToRedact);
-  alert("Redaction functionality is not yet implemented.\nSelected source GUIDs: " + guidsToRedact.join(', '));
+ console.log("Redacting sources with GUIDs:", guidsToRedact);
+
+  let redactedXmlDoc = xmlDoc.cloneNode(true);
+
+  for (const guid of guidsToRedact) {
+    // Find any source element by its GUID and remove it.
+    // This will also remove all its children, including annotations.
+    let sourceElement = redactedXmlDoc.querySelector('[guid="' + guid + '"]');
+    if (sourceElement && sourceElement.parentNode) {
+      sourceElement.parentNode.removeChild(sourceElement);
+      console.log("Removed source element and its annotations with GUID:", guid);
+    }
+  }
+
+  // For now, let's just log the redacted XML to the console to verify
+  console.log("Redacted XML:", new XMLSerializer().serializeToString(redactedXmlDoc));
+  alert("Redaction of XML complete. See console for redacted XML. Next steps will handle file saving.");
+
   // In the next steps, we will implement the logic here to:
-  // 1. Modify the XML codebook to remove selected sources and their annotations.
-  // 2. If it's a zip file, remove the source files from the archive.
-  // 3. POST the new redacted file to Dataverse.
+  // 1. If it's a zip file, remove the source files from the archive.
+  // 2. POST the new redacted file to Dataverse.
 }

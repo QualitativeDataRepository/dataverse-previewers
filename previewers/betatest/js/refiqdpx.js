@@ -128,12 +128,13 @@ async function downloadFile(event) {
 }
 
 async function download(entry, li, a) {
-    if (!li.classList.contains("busy")) {
+    const parentCell = $(a).closest('td');
+    if (!parentCell.hasClass("busy")) {
 
         const controller = new AbortController();
         const signal = controller.signal;
 
-        li.classList.add("busy");
+        parentCell.addClass("busy");
         try {
             const blobURL = URL.createObjectURL(await entry.getData(new zip.BlobWriter(), {
                 onprogress: (index, max) => {
@@ -146,8 +147,11 @@ async function download(entry, li, a) {
             }))
             var index = a.getAttribute("data-entry-index");
             console.log("index: " + index);
+
+            const filename = a.getAttribute("data-entry-name");
+
             $("a[data-entry-index='" + index + "']").attr('href',blobURL);
-             $("a[data-entry-index='" + index + "']").attr('download',a.text);
+             $("a[data-entry-index='" + index + "']").attr('download', filename || a.text);
             const clickEvent = new MouseEvent("click");
             a.dispatchEvent(clickEvent);
         } catch (error) {
@@ -155,7 +159,7 @@ async function download(entry, li, a) {
                 throw error;
             }
         } finally {
-            li.classList.remove("busy");
+            parentCell.removeClass("busy");
         }
     }
 }
