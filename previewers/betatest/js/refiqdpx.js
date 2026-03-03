@@ -9,13 +9,13 @@ function writeContent(fileUrl, file, title, authors) {
     } else {
       redactedMode = false;
     }
-    readZip(fileUrl);
+    readZip(fileUrl, file);
 }
 
 let entries;
 const entryMap = {};
 
-async function readZip(fileUrl) {
+async function readZip(fileUrl, file) {
         wait = $('<div/>').attr('id', 'waiting');
         $('<img/>').width('15%').attr('src','images/Loading_icon.gif').attr('id','throbber').appendTo(wait);
         $('<span/>').text(' Reading QPDX file. Parsing Contents...').appendTo(wait);
@@ -48,7 +48,7 @@ async function readZip(fileUrl) {
 
                   },
                 });
-                projectBlob.then(text => parseData(text)).catch((err)=> {
+                projectBlob.then(text => parseData(text, file)).catch((err)=> {
                     document.getElementById('waiting').innerHTML= "<span>Unable to continue: " + err + "</span>";
                 });
 

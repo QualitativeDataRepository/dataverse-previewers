@@ -16,5 +16,5 @@ function writeContent(fileUrl, file, title, authors) {
   }
   fetch(fileUrl)
     .then(response => response.text())
-    .then(data => parseData(data));
+    .then(data => parseData(data, file));
 }

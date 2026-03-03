@@ -12,6 +12,7 @@ var sourceDataTable;
 var setDataTable;
 var tables = new Array();
 
+let file;
 var textSourceCache = new Map(); // Cache for loaded text files
 
 $(document).ready(function() {
@@ -48,7 +49,8 @@ function findDataAttribute(name, attrNamedNodeMap) {
 
 // Start parsing project file
 // This function just adds a loading icon and initial text to the page and then calls parseData2
-function parseData(data) {
+function parseData(data, filejson) {
+  file=filejson;
   $('#waiting').remove();
   wait = $('<div/>').attr('id', 'waiting');
   $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
@@ -1070,22 +1072,91 @@ function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, seco
     return spanHtml;
 }
 
-function createSourceReference(source) {
-    let sourceName = source.getAttribute("name");
-    let plainTextPath = source.getAttribute("plainTextPath");
-    let path = plainTextPath.replace("internal://","sources/")
-    if (isZipMode()) {
-        // In zip mode, create a link that uses the zip entry
-        if (typeof entryMap !== 'undefined' && path && entryMap[path] !== undefined) {
-            let entryIndex = entryMap[path];
-            return sourceName + ' <a href="#" data-entry-index="' + entryIndex + '" data-entry-name="' + sourceName + '" title="Download Source: ' + sourceName + '"><span class="glyphicon glyphicon-download-alt"></span></a>';
-        } else {
-            // No link if file not found in zip
-            return sourceName;
+function createSourceReference(sourceElement) {
+    const sourceName = sourceElement.getAttribute("name");
+    const sourceGuid = sourceElement.getAttribute("guid");
+    const path = sourceElement.getAttribute("path");
+    const plainTextPath = sourceElement.getAttribute("plainTextPath");
+    const richTextPath = sourceElement.getAttribute("richTextPath");
+
+    const referenceDiv = document.createElement('div');
+    referenceDiv.className = 'source-reference';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = `${sourceName} (`;
+    referenceDiv.appendChild(nameSpan);
+
+    const links = [];
+
+    // Handle binary files (like PDFs) that have a 'path'
+    if (path) {
+        const pdfLink = document.createElement('a');
+        pdfLink.href = '#';
+        pdfLink.textContent = 'PDF';
+        pdfLink.title = 'Download PDF';
+        pdfLink.onclick = (e) => {
+            e.preventDefault();
+            downloadSourceFile(sourceGuid, path);
+        };
+        links.push(pdfLink);
+
+        // Check for a plain text representation of the binary file
+        const representation = sourceElement.querySelector('Representation[plainTextPath]');
+        if (representation) {
+            const textRepresentationPath = representation.getAttribute('plainTextPath');
+            const textLink = document.createElement('a');
+            textLink.href = '#';
+            textLink.textContent = 'TXT';
+            textLink.title='Download Text';
+            textLink.onclick = (e) => {
+                e.preventDefault();
+                downloadSourceFile(sourceGuid, textRepresentationPath);
+            };
+            links.push(textLink);
         }
-    } else {
-        return sourceName;
     }
+    // Handle plain text files that only have a 'plainTextPath'
+    else if (plainTextPath) {
+        const textLink = document.createElement('a');
+        textLink.href = '#';
+        textLink.textContent = 'TXT';
+        textLink.title = 'Download Text';
+        textLink.onclick = (e) => {
+            e.preventDefault();
+            downloadSourceFile(sourceGuid, plainTextPath);
+        };
+        links.push(textLink);
+    }
+
+    // Handle rich text files (like DOCX) that have a 'richTextPath'
+    if (richTextPath) {
+        const richTextLink = document.createElement('a');
+        richTextLink.href = '#';
+        const extension = richTextPath.split('.').pop().toUpperCase();
+        richTextLink.textContent = extension;
+        richTextLink.title = 'Download Rich Text';
+        richTextLink.onclick = (e) => {
+            e.preventDefault();
+            downloadSourceFile(sourceGuid, richTextPath);
+        };
+        links.push(richTextLink);
+    }
+    
+    // Append all created links with separators
+    links.forEach((link, index) => {
+        referenceDiv.appendChild(link);
+        if (index < links.length - 1) {
+            const separator = document.createElement('span');
+            separator.textContent = ' | ';
+            referenceDiv.appendChild(separator);
+        }
+    });
+
+    const closingParen = document.createElement('span');
+    closingParen.textContent = ')';
+    referenceDiv.appendChild(closingParen);
+
+    return referenceDiv;
 }
 
 function formatExcerptTooltip(excerpt, startPos, endPos) {
@@ -1232,7 +1303,22 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
 }
 
 function redactSources(guidsToRedact) {
- console.log("Redacting sources with GUIDs:", guidsToRedact);
+  console.log("Redacting sources with GUIDs:", guidsToRedact);
+
+  // Find the paths of the source files to remove from the zip archive.
+  const pathsToRemove = new Set();
+  for (const guid of guidsToRedact) {
+    const sourceElement = xmlDoc.querySelector(`[guid="${guid}"]`);
+    if (sourceElement) {
+      const plainTextPath = sourceElement.getAttribute("plainTextPath");
+      if (plainTextPath) {
+        // The path in the zip is typically "sources/..."
+        pathsToRemove.add(plainTextPath.replace("internal://", ""));
+      }
+    }
+  }
+  console.log("Paths to remove from zip:", Array.from(pathsToRemove));
+
 
   let redactedXmlDoc = xmlDoc.cloneNode(true);
 
@@ -1246,11 +1332,115 @@ function redactSources(guidsToRedact) {
     }
   }
 
-  // For now, let's just log the redacted XML to the console to verify
-  console.log("Redacted XML:", new XMLSerializer().serializeToString(redactedXmlDoc));
-  alert("Redaction of XML complete. See console for redacted XML. Next steps will handle file saving.");
+  const redactedXmlString = new XMLSerializer().serializeToString(redactedXmlDoc);
 
-  // In the next steps, we will implement the logic here to:
-  // 1. If it's a zip file, remove the source files from the archive.
-  // 2. POST the new redacted file to Dataverse.
+  if (isZipMode() && typeof zip !== 'undefined') {
+    // Use an async function to handle zip operations
+    (async () => {
+ try {
+        // Fetch the original zip file as a blob on-demand
+        const zipResponse = await fetch(zipUrl);
+        if (!zipResponse.ok) {
+          throw new Error(`HTTP error! status: ${zipResponse.status}`);
+        }
+        zipFileBlob = await zipResponse.blob();
+
+        // 1. Create a new zip archive
+        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));
+
+        // 2. Read entries from the original zip blob
+        const zipReader = new zip.ZipReader(new zip.BlobReader(zipFileBlob));
+        const entries = await zipReader.getEntries();
+
+        // 3. Copy entries to the new zip, excluding redacted files
+        for (const entry of entries) {
+          if (entry.filename === "project.qde") {
+            // Skip the old project file; we'll add the new one later
+            continue;
+          }
+          if (!pathsToRemove.has(entry.filename)) {
+            await zipWriter.add(entry.filename, new zip.BlobReader(await entry.getData(new zip.BlobWriter())));
+          } else {
+            console.log(`Excluding ${entry.filename} from new zip.`);
+          }
+        }
+
+        // 4. Add the new, redacted project.qde
+        await zipWriter.add("project.qde", new zip.TextReader(redactedXmlString));
+
+        // 5. Finalize the new zip file
+        const redactedZipBlob = await zipWriter.close();
+
+        // 6. Prepare for upload
+        const formData = new FormData();
+        const originalFilename = file.filename || "project.qdpx";
+        const redactedFilename = originalFilename.replace(/(\.qdpx)?$/, '-redacted.qdpx');
+
+        formData.append("file", redactedZipBlob, redactedFilename);
+        formData.append("origin", "qdas");
+        formData.append("isPublic", "true"); // Or handle dynamically if needed
+        formData.append("type", "qda");
+
+        // 7. POST the new file to Dataverse
+        console.log(`Uploading redacted file: ${redactedFilename}`);
+        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+          method: 'POST',
+          body: formData,
+          // Headers are not needed for FormData; browser sets them
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Upload successful:", responseData);
+        alert("Redacted file has been successfully uploaded to Dataverse.");
+
+      } catch (error) {
+        console.error("Error during redaction and upload:", error);
+        alert(`An error occurred during the redaction process: ${error.message}`);
+      }
+    })();
+  } else {
+    // Fallback for non-zip mode (single XML file)
+    (async () => {
+      try {
+        // 1. Create a blob from the redacted XML string
+        const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
+
+        // 2. Prepare for upload
+        const formData = new FormData();
+        const originalFilename = file.filename || "project.qdc";
+        const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
+
+        formData.append("file", redactedXmlBlob, redactedFilename);
+        formData.append("origin", "qdas");
+        formData.append("isPublic", "true"); // Or handle dynamically if needed
+        formData.append("type", "qda");
+
+        // 3. POST the new file to Dataverse
+        console.log(`Uploading redacted file: ${redactedFilename}`);
+        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+          method: 'POST',
+          body: formData,
+          // Headers are not needed for FormData; browser sets them
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Upload successful:", responseData);
+        alert("Redacted file has been successfully uploaded to Dataverse.");
+
+      } catch (error) {
+        console.error("Error during redaction and upload:", error);
+        alert(`An error occurred during the redaction process: ${error.message}`);
+      }
+    })();
+  }
 }
