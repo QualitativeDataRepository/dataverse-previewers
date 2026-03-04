@@ -64,13 +64,11 @@
 .tooltip-text {
   margin-top: 5px;
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> refs/heads/QDAS
 label {
   margin-left:5px;
 }
+
 .redacted-notice {
   background-color: #fffbe6; /* A light yellow background */
   border: 1px solid #ffe58f; /* A slightly darker yellow border */
