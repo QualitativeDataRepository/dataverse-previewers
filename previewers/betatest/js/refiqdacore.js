@@ -12,6 +12,7 @@ var sourceDataTable;
 var setDataTable;
 var tables = new Array();
 
+let file;
 var textSourceCache = new Map(); // Cache for loaded text files
 
 $(document).ready(function() {
@@ -23,50 +24,14 @@ function translateBaseHtmlPage() {
   $('.refiqdaPreviewText').text(refiqdaPreviewText);
 }
 
-function addSelectAllAndUnselectButtons(dataTable, tableContainer, tableId) {
-  // Add "Unselect All" button next to the table title
-  const unselectAllButton = $('<button>Unselect All</button>')
-    .addClass('unselect-all-btn')
-    .hide()
-    .on('click', function() {
-      dataTable.rows({ selected: true }).deselect();
-    });
-  tableContainer.find('h2').first().append(unselectAllButton);
-
-  // Add "Select All" checkbox to the table header
-  const selectAllCheckbox = $('<input type="checkbox" title="Select all rows in this table" />');
-  $('#' + tableId + ' thead tr').prepend($('<th class="select-all">').append(selectAllCheckbox));
-  $('#' + tableId + ' tbody tr').prepend($('<td class="select-all">')); // Placeholder for alignment
-
-  selectAllCheckbox.on('click', function() {
-    if (this.checked) {
-      dataTable.rows().select();
-    } else {
-      dataTable.rows().deselect();
-    }
-  });
-
-  // Show/hide "Unselect All" button and manage "Select All" checkbox state
-  dataTable.on('select deselect', function() {
-    const selectedRows = dataTable.rows({ selected: true }).count();
-    const totalRows = dataTable.rows().count();
-
-    if (selectedRows > 0) {
-      unselectAllButton.show();
-    } else {
-      unselectAllButton.hide();
-    }
-
-    selectAllCheckbox.prop('checked', selectedRows === totalRows);
-  });
-}
-
 var zipUrl = '';
 
 //zipUrl is set in refiqdpx.js - the zip file case
 function isZipMode() {
     return typeof zipUrl !== 'undefined' && zipUrl !== null && zipUrl !== '';
 }
+
+var redactedMode;
 
 var wait;
 var cy;
@@ -84,7 +49,8 @@ function findDataAttribute(name, attrNamedNodeMap) {
 
 // Start parsing project file
 // This function just adds a loading icon and initial text to the page and then calls parseData2
-function parseData(data) {
+function parseData(data, filejson) {
+  file=filejson;
   $('#waiting').remove();
   wait = $('<div/>').attr('id', 'waiting');
   $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
@@ -101,7 +67,9 @@ function parseData2(data) {
   parser = new DOMParser();
   xmlDoc = parser.parseFromString(data, "text/xml");
 
-
+  if(redactedMode) {
+    let redactedNotice = $('<h2/>').addClass('redacted-notice').text("Note: This is a redacted, public view of the restricted QDAS file").appendTo($(".preview"));
+  }
     //Add a Filter By option
   let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
   filterBlock.append($("<h2/>").html("Enable Filtering By"));
@@ -295,26 +263,34 @@ function parseData2(data) {
                 let pdfSel = selection.pdfSelection;
                 let textSel = selection.plainTextSelection;
                 let selectionName = pdfSel.getAttribute("name");
+                
+                if(!selectionName) {
+                   selectionName = "(Hover for more info)";
+                }
                 guid = pdfSel.getAttribute("guid");
                 codes = getCodeNames(pdfSel); // Codes are on the PDF selection
 
+                let sourceGuid = source.getAttribute("guid");
+                
                 selectionMatches = sourceMatches +
                   pdfSel.getAttribute("creatingUser") + pdfSel.getAttribute("modifyingUser") +
                   textSel.getAttribute("creatingUser") + textSel.getAttribute("modifyingUser") +
-                  getCodeRelatedGUIDs(pdfSel);
-
-                let sourceGuid = source.getAttribute("guid");
+                  getCodeRelatedGUIDs(pdfSel) + sourceGuid;
 
                 displayName = createMergedSelectionWithTooltip(selectionName, pdfSel, textSel, sourceGuid);
 
               } else {
                 // Handle regular selection node
                 let selectionName = selection.getAttribute("name");
+                if(!selectionName) {
+                  selectionName = "(Hover for more info)";
+                }
                 guid = selection.getAttribute("guid");
                 codes = getCodeNames(selection);
-                selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser") + getCodeRelatedGUIDs(selection);
-
                 let sourceGuid = source.getAttribute("guid");
+                selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser") + getCodeRelatedGUIDs(selection) + sourceGuid;
+
+                
                 displayName = selectionName; // Default display name
 
                 if (selection.nodeName === "PDFSelection") {
@@ -409,7 +385,19 @@ function parseData2(data) {
         });
 
         sourceDataTable = new DataTable(".sourcetable", {
-          select: $('#filterby').val() == 'Sources'
+         select: $('#filterby').val() == 'Sources',
+          order: [[0, 'asc']],
+          columnDefs: [
+            {
+              render: function(data, type, row) {
+                if (type === 'display' && data !== null && data.length > 50) {
+                  return '<span title="' + data + '">' + data.substr(0, 50) + '...</span>';
+                }
+                return data;
+              },
+              targets: 1
+            }
+          ]
         });
 
         if (typeof downloadFile === 'function') {
@@ -446,14 +434,29 @@ function parseData2(data) {
         desc = desc[0].childNodes[0];
       }
       let matches = '';
-      if (note.getAttribute("creatingUser")) {
-        matches = matches + note.getAttribute("creatingUser");
-      }
-      if (note.getAttribute("modifyingUser")) {
-        matches = matches + note.getAttribute("modifyingUser");
+      let name = '';
+      let creatingUserGuid = note.getAttribute("creatingUser");
+      let modifyingUserGuid = note.getAttribute("modifyingUser");
+      let userNames = new Set();
+
+      if (creatingUserGuid) {
+        matches += creatingUserGuid;
+        let user = userMap.get(creatingUserGuid);
+        if (user) {
+          userNames.add(user.getAttribute("name"));
+        }
       }
 
-      let tr = addRow(noteTable, note.getAttribute("name"), ptc, desc, userMap.get(note.getAttribute("creatingUser")).getAttribute("name"));
+      if (modifyingUserGuid) {
+        matches += modifyingUserGuid;
+        let user = userMap.get(modifyingUserGuid);
+        if (user) {
+          userNames.add(user.getAttribute("name"));
+      }
+      }
+      name = Array.from(userNames).join(', ');
+
+      let tr = addRow(noteTable, note.getAttribute("name"), ptc, desc, name);
       tr.attr('data-guid', note.getAttribute("guid"));
       tr.attr('data-matches', matches);
 
@@ -468,6 +471,62 @@ function parseData2(data) {
     tables.push(noteDataTable);
   }
 
+ let variables = xmlDoc.getElementsByTagName("Variable");
+  let cases = xmlDoc.getElementsByTagName("Case");
+
+  if (variables.length > 0 && cases.length > 0) {
+    let variableMap = new Map();
+    let variableHeaders = ["Source"]; // First column is the source document
+
+    for (let variable of variables) {
+      let guid = variable.getAttribute("guid");
+      let name = variable.getAttribute("name");
+      // Store the variable name and its column index in the table
+      variableMap.set(guid, { name: name, index: variableHeaders.length });
+      variableHeaders.push(name);
+    }
+
+    let caseBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+    caseBlock.append($("<h2/>").html("Cases"));
+    let caseTable = createTable("Cases", ...variableHeaders).appendTo(caseBlock);
+    caseTable.addClass("casetable compact stripe");
+
+    for (let caseNode of cases) {
+      let rowData = new Array(variableHeaders.length).fill(""); // Initialize row with empty strings
+
+      // Find the source document for the case
+      let sourceRef = caseNode.getElementsByTagName("SourceRef")[0];
+      if (sourceRef) {
+        let sourceGuid = sourceRef.getAttribute("targetGUID");
+        let source = sourceMap.get(sourceGuid);
+        if (source) {
+          rowData[0] = createSourceReference(source, zipUrl);
+        }
+      }
+
+      // Populate variable values for the case
+      let variableValues = caseNode.getElementsByTagName("VariableValue");
+      for (let varValue of variableValues) {
+        let varRef = varValue.getElementsByTagName("VariableRef")[0];
+        let textValue = varValue.getElementsByTagName("TextValue")[0];
+        if (varRef && textValue) {
+          let varGuid = varRef.getAttribute("targetGUID");
+          let variableInfo = variableMap.get(varGuid);
+          if (variableInfo) {
+            rowData[variableInfo.index] = textValue.textContent;
+          }
+        }
+      }
+      addRow(caseTable, ...rowData);
+    }
+
+    // Initialize DataTable for cases, but don't add to filterable tables
+    new DataTable(".casetable", {
+      select: false // This table should not be selectable
+    });
+  }
+
+ 
   let sets = xmlDoc.getElementsByTagName("Set");
   if (sets != null && sets.length > 0) {
     $('#filterby').append($('<option/>').prop('value', 'Sets').text('Sets'));
@@ -487,7 +546,7 @@ function parseData2(data) {
           let codeId = member.getAttribute('targetGUID');
           let code = codeMap.get(codeId);
           if (code != null) {
-            codeNames = codeNames + ' ' + code.getAttribute("name");
+            codeNames = codeNames + '; ' + code.getAttribute("name");
           }
           matches += codeId;
         }
@@ -685,11 +744,58 @@ $("#filterby")
         $(".sourcetable").off('select.dt deselect.dt');
       }
       if ($(".sourcetable").length) {
-        sourceDataTable = new DataTable(".sourcetable", {
-          select: $('#filterby').val() == 'Sources'
-        });
+        let dtOptions = {
+          select: $('#filterby').val() == 'Sources',
+          columnDefs: [
+            {
+              render: function(data, type, row) {
+                if (type === 'display' && data !== null && data.length > 50) {
+                  return '<span title="' + data + '">' + data.substr(0, 50) + '...</span>';
+                }
+                return data;
+              },
+              targets: 1
+            }
+          ]
+          
+        };
+
+        if ($('#filterby').val() == 'Sources') {
+          dtOptions.layout = {
+            top2End: 'buttons'
+          };
+          dtOptions.buttons = [
+            'selectAll', 
+            'selectNone',
+            {
+              text: 'Redact',
+              className: 'redact-btn',
+              titleAttr: 'Create a redacted version of the datafile with the selected sources, and any related annotations, removed.',
+              action: function ( e, dt, node, config ) {
+                let selectedRows = dt.rows( { selected: true } );
+                let sourceGuids = [];
+                selectedRows.nodes().to$().each(function() {
+                    sourceGuids.push($(this).data('guid'));
+                });
+                redactSources(sourceGuids);
+              },
+              enabled: false
+            }
+          ];
+        }
+
+        sourceDataTable = new DataTable(".sourcetable", dtOptions);
+        
+        if ($('#filterby').val() == 'Sources') {
+            sourceDataTable.on('select deselect', function () {
+                var selectedRows = sourceDataTable.rows({ selected: true }).count();
+                sourceDataTable.button('.redact-btn').enable(selectedRows > 0);
+            });
+        }
+        
         attachFilterHandler(sourceDataTable);
         sourceDataTable.draw();
+
         tables.push(sourceDataTable);
       }
 
@@ -966,27 +1072,91 @@ function createPdfSelectionWithTooltip(selectionName, page, firstX, firstY, seco
     return spanHtml;
 }
 
-function createSourceReference(source) {
-    let sourceName = source.getAttribute("name");
-    let plainTextPath = source.getAttribute("plainTextPath");
-    
-    if (isZipMode()) {
-        // In zip mode, create a link that uses the zip entry
-        if (typeof entryMap !== 'undefined' && plainTextPath && entryMap[plainTextPath] !== undefined) {
-            let entryIndex = entryMap[plainTextPath];
-            return '<a href="#" data-entry-index="' + entryIndex + '">' + sourceName + '</a>';
-        } else {
-            // No link if file not found in zip
-            return sourceName;
-        }
-    } else {
-        // In non-zip mode, create a direct link to the file if it exists
-        if (plainTextPath) {
-            return '<a href="' + plainTextPath + '" target="_blank">' + sourceName + '</a>';
-        } else {
-            return sourceName;
+function createSourceReference(sourceElement) {
+    const sourceName = sourceElement.getAttribute("name");
+    const sourceGuid = sourceElement.getAttribute("guid");
+    const path = sourceElement.getAttribute("path");
+    const plainTextPath = sourceElement.getAttribute("plainTextPath");
+    const richTextPath = sourceElement.getAttribute("richTextPath");
+
+    const referenceDiv = document.createElement('div');
+    referenceDiv.className = 'source-reference';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = `${sourceName} (`;
+    referenceDiv.appendChild(nameSpan);
+
+    const links = [];
+
+    // Handle binary files (like PDFs) that have a 'path'
+    if (path) {
+        const pdfLink = document.createElement('a');
+        pdfLink.href = '#';
+        pdfLink.textContent = 'PDF';
+        pdfLink.title = 'Download PDF';
+        pdfLink.onclick = (e) => {
+            e.preventDefault();
+            downloadSourceFile(sourceGuid, path);
+        };
+        links.push(pdfLink);
+
+        // Check for a plain text representation of the binary file
+        const representation = sourceElement.querySelector('Representation[plainTextPath]');
+        if (representation) {
+            const textRepresentationPath = representation.getAttribute('plainTextPath');
+            const textLink = document.createElement('a');
+            textLink.href = '#';
+            textLink.textContent = 'TXT';
+            textLink.title='Download Text';
+            textLink.onclick = (e) => {
+                e.preventDefault();
+                downloadSourceFile(sourceGuid, textRepresentationPath);
+            };
+            links.push(textLink);
         }
     }
+    // Handle plain text files that only have a 'plainTextPath'
+    else if (plainTextPath) {
+        const textLink = document.createElement('a');
+        textLink.href = '#';
+        textLink.textContent = 'TXT';
+        textLink.title = 'Download Text';
+        textLink.onclick = (e) => {
+            e.preventDefault();
+            downloadSourceFile(sourceGuid, plainTextPath);
+        };
+        links.push(textLink);
+    }
+
+    // Handle rich text files (like DOCX) that have a 'richTextPath'
+    if (richTextPath) {
+        const richTextLink = document.createElement('a');
+        richTextLink.href = '#';
+        const extension = richTextPath.split('.').pop().toUpperCase();
+        richTextLink.textContent = extension;
+        richTextLink.title = 'Download Rich Text';
+        richTextLink.onclick = (e) => {
+            e.preventDefault();
+            downloadSourceFile(sourceGuid, richTextPath);
+        };
+        links.push(richTextLink);
+    }
+    
+    // Append all created links with separators
+    links.forEach((link, index) => {
+        referenceDiv.appendChild(link);
+        if (index < links.length - 1) {
+            const separator = document.createElement('span');
+            separator.textContent = ' | ';
+            referenceDiv.appendChild(separator);
+        }
+    });
+
+    const closingParen = document.createElement('span');
+    closingParen.textContent = ')';
+    referenceDiv.appendChild(closingParen);
+
+    return referenceDiv;
 }
 
 function formatExcerptTooltip(excerpt, startPos, endPos) {
@@ -1130,4 +1300,147 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
         console.error('Error loading text excerpt:', error);
         return null;
     }
+}
+
+function redactSources(guidsToRedact) {
+  console.log("Redacting sources with GUIDs:", guidsToRedact);
+
+  // Find the paths of the source files to remove from the zip archive.
+  const pathsToRemove = new Set();
+  for (const guid of guidsToRedact) {
+    const sourceElement = xmlDoc.querySelector(`[guid="${guid}"]`);
+    if (sourceElement) {
+      const plainTextPath = sourceElement.getAttribute("plainTextPath");
+      if (plainTextPath) {
+        // The path in the zip is typically "sources/..."
+        pathsToRemove.add(plainTextPath.replace("internal://", ""));
+      }
+    }
+  }
+  console.log("Paths to remove from zip:", Array.from(pathsToRemove));
+
+
+  let redactedXmlDoc = xmlDoc.cloneNode(true);
+
+  for (const guid of guidsToRedact) {
+    // Find any source element by its GUID and remove it.
+    // This will also remove all its children, including annotations.
+    let sourceElement = redactedXmlDoc.querySelector('[guid="' + guid + '"]');
+    if (sourceElement && sourceElement.parentNode) {
+      sourceElement.parentNode.removeChild(sourceElement);
+      console.log("Removed source element and its annotations with GUID:", guid);
+    }
+  }
+
+  const redactedXmlString = new XMLSerializer().serializeToString(redactedXmlDoc);
+
+  if (isZipMode() && typeof zip !== 'undefined') {
+    // Use an async function to handle zip operations
+    (async () => {
+ try {
+        // Fetch the original zip file as a blob on-demand
+        const zipResponse = await fetch(zipUrl);
+        if (!zipResponse.ok) {
+          throw new Error(`HTTP error! status: ${zipResponse.status}`);
+        }
+        zipFileBlob = await zipResponse.blob();
+
+        // 1. Create a new zip archive
+        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));
+
+        // 2. Read entries from the original zip blob
+        const zipReader = new zip.ZipReader(new zip.BlobReader(zipFileBlob));
+        const entries = await zipReader.getEntries();
+
+        // 3. Copy entries to the new zip, excluding redacted files
+        for (const entry of entries) {
+          if (entry.filename === "project.qde") {
+            // Skip the old project file; we'll add the new one later
+            continue;
+          }
+          if (!pathsToRemove.has(entry.filename)) {
+            await zipWriter.add(entry.filename, new zip.BlobReader(await entry.getData(new zip.BlobWriter())));
+          } else {
+            console.log(`Excluding ${entry.filename} from new zip.`);
+          }
+        }
+
+        // 4. Add the new, redacted project.qde
+        await zipWriter.add("project.qde", new zip.TextReader(redactedXmlString));
+
+        // 5. Finalize the new zip file
+        const redactedZipBlob = await zipWriter.close();
+
+        // 6. Prepare for upload
+        const formData = new FormData();
+        const originalFilename = file.filename || "project.qdpx";
+        const redactedFilename = originalFilename.replace(/(\.qdpx)?$/, '-redacted.qdpx');
+
+        formData.append("file", redactedZipBlob, redactedFilename);
+        formData.append("origin", "qdas");
+        formData.append("isPublic", "true"); // Or handle dynamically if needed
+        formData.append("type", "qda");
+
+        // 7. POST the new file to Dataverse
+        console.log(`Uploading redacted file: ${redactedFilename}`);
+        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+          method: 'POST',
+          body: formData,
+          // Headers are not needed for FormData; browser sets them
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Upload successful:", responseData);
+        alert("Redacted file has been successfully uploaded to Dataverse.");
+
+      } catch (error) {
+        console.error("Error during redaction and upload:", error);
+        alert(`An error occurred during the redaction process: ${error.message}`);
+      }
+    })();
+  } else {
+    // Fallback for non-zip mode (single XML file)
+    (async () => {
+      try {
+        // 1. Create a blob from the redacted XML string
+        const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
+
+        // 2. Prepare for upload
+        const formData = new FormData();
+        const originalFilename = file.filename || "project.qdc";
+        const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
+
+        formData.append("file", redactedXmlBlob, redactedFilename);
+        formData.append("origin", "qdas");
+        formData.append("isPublic", "true"); // Or handle dynamically if needed
+        formData.append("type", "qda");
+
+        // 3. POST the new file to Dataverse
+        console.log(`Uploading redacted file: ${redactedFilename}`);
+        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+          method: 'POST',
+          body: formData,
+          // Headers are not needed for FormData; browser sets them
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Upload successful:", responseData);
+        alert("Redacted file has been successfully uploaded to Dataverse.");
+
+      } catch (error) {
+        console.error("Error during redaction and upload:", error);
+        alert(`An error occurred during the redaction process: ${error.message}`);
+      }
+    })();
+  }
 }

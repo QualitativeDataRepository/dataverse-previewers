@@ -4,13 +4,18 @@ function writeContent(fileUrl, file, title, authors) {
     // Set the global zipUrl variable so other code knows we're in zip mode
     zipUrl = fileUrl;
     
-    readZip(fileUrl);
+    if(fileUrl.includes('auxiliary/qdpx')) {
+      redactedMode = true;
+    } else {
+      redactedMode = false;
+    }
+    readZip(fileUrl, file);
 }
 
 let entries;
 const entryMap = {};
 
-async function readZip(fileUrl) {
+async function readZip(fileUrl, file) {
         wait = $('<div/>').attr('id', 'waiting');
         $('<img/>').width('15%').attr('src','images/Loading_icon.gif').attr('id','throbber').appendTo(wait);
         $('<span/>').text(' Reading QPDX file. Parsing Contents...').appendTo(wait);
@@ -43,7 +48,7 @@ async function readZip(fileUrl) {
 
                   },
                 });
-                projectBlob.then(text => parseData(text)).catch((err)=> {
+                projectBlob.then(text => parseData(text, file)).catch((err)=> {
                     document.getElementById('waiting').innerHTML= "<span>Unable to continue: " + err + "</span>";
                 });
 
@@ -123,12 +128,13 @@ async function downloadFile(event) {
 }
 
 async function download(entry, li, a) {
-    if (!li.classList.contains("busy")) {
+    const parentCell = $(a).closest('td');
+    if (!parentCell.hasClass("busy")) {
 
         const controller = new AbortController();
         const signal = controller.signal;
 
-        li.classList.add("busy");
+        parentCell.addClass("busy");
         try {
             const blobURL = URL.createObjectURL(await entry.getData(new zip.BlobWriter(), {
                 onprogress: (index, max) => {
@@ -141,8 +147,11 @@ async function download(entry, li, a) {
             }))
             var index = a.getAttribute("data-entry-index");
             console.log("index: " + index);
+
+            const filename = a.getAttribute("data-entry-name");
+
             $("a[data-entry-index='" + index + "']").attr('href',blobURL);
-             $("a[data-entry-index='" + index + "']").attr('download',a.text);
+             $("a[data-entry-index='" + index + "']").attr('download', filename || a.text);
             const clickEvent = new MouseEvent("click");
             a.dispatchEvent(clickEvent);
         } catch (error) {
@@ -150,7 +159,7 @@ async function download(entry, li, a) {
                 throw error;
             }
         } finally {
-            li.classList.remove("busy");
+            parentCell.removeClass("busy");
         }
     }
 }
