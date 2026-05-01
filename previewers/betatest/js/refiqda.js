@@ -6,7 +6,7 @@ function writeContent(fileUrl, file, title, authors) {
   };  // Custom rules
   wait = $('<div/>').attr('id', 'waiting');
   $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').attr('id', 'throbber').appendTo(wait);
-  $('<span/>').text('Retrieving File...').appendTo(wait);
+  $('<span/>').text($.i18n('refiqdaRetrievingFile')).appendTo(wait);
   wait.appendTo($('.preview'));
 
   if (fileUrl.includes('auxiliary/qdpx')) {

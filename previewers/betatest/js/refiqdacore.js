@@ -22,6 +22,10 @@ $(document).ready(function() {
 function translateBaseHtmlPage() {
   var refiqdaPreviewText = $.i18n("refiqdaPreviewText");
   $('.refiqdaPreviewText').text(refiqdaPreviewText);
+  var refiqdpxPreviewText = $.i18n("refiqdpxPreviewText");
+  $('.refiqdpxPreviewText').text(refiqdpxPreviewText);
+  var refiqdcPreviewText = $.i18n("refiqdcPreviewText");
+  $('.refiqdcPreviewText').text(refiqdcPreviewText);
 }
 
 var zipUrl = '';
@@ -54,7 +58,7 @@ function parseData(data, filejson) {
   $('#waiting').remove();
   wait = $('<div/>').attr('id', 'waiting');
   $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
-    $('<span/>').text('Found Project File. Parsing Contents...').appendTo(wait);
+    $('<span/>').text($.i18n('refiqdaParsingProject')).appendTo(wait);
   wait.appendTo($('.preview'));
 
   new Promise((resolve) => setTimeout(resolve, 500)).then(() => { parseData2(data) });
@@ -68,25 +72,25 @@ function parseData2(data) {
   xmlDoc = parser.parseFromString(data, "text/xml");
 
   if(redactedMode) {
-    let redactedNotice = $('<h2/>').addClass('redacted-notice').text("Note: This is a redacted, public view of the restricted QDAS file").appendTo($(".preview"));
+    let redactedNotice = $('<h2/>').addClass('redacted-notice').text($.i18n('refiqdaRedactedNotice')).appendTo($(".preview"));
   }
     //Add a Filter By option
   let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-  filterBlock.append($("<h2/>").html("Enable Filtering By"));
-  filterBlock.append($("<p/>").html("Select a table and then select entries in that table to filter the other tables."));
+  filterBlock.append($("<h2/>").html($.i18n('refiqdaEnableFilteringBy')));
+  filterBlock.append($("<p/>").html($.i18n('refiqdaFilteringInstructions')));
   filterBlock.append($('<select/>').prop('id', 'filterby'));
-  $('#filterby').append($('<option/>').prop('value', 'None').text('No Filtering'));
+  $('#filterby').append($('<option/>').prop('value', 'None').text($.i18n('refiqdaNoFiltering')));
   //As tables are created, they will be added to the option list here
 
   //User table
   var users = xmlDoc.getElementsByTagName("User");
   if (users != null && users.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Users').text('Users'));
+    $('#filterby').append($('<option/>').prop('value', 'Users').text($.i18n('refiqdaUsers')));
 
     let userBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-    userBlock.append($("<h2>").html("Users"));
+    userBlock.append($("<h2>").html($.i18n('refiqdaUsers')));
     //Users only has a "Name" column
-    let userTable = createTable("Users", "Name").appendTo(userBlock);
+    let userTable = createTable($.i18n('refiqdaUsers'), $.i18n('refiqdaName')).appendTo(userBlock);
     userTable.attr('id', 'usertable');
     userTable.addClass("usertable compact stripe");
 
@@ -112,7 +116,7 @@ function parseData2(data) {
   console.log("Starting codes");
   var codes = xmlDoc.getElementsByTagName("Code");
   if (codes != null  && codes.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Codes').text('Codes'));
+    $('#filterby').append($('<option/>').prop('value', 'Codes').text($.i18n('refiqdaCodes')));
 
     // Check if any codes have a color attribute
     let hasColorAttribute = false;
@@ -134,13 +138,13 @@ function parseData2(data) {
     }
 
     let codeBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-    codeBlock.append($("<h2/>").html("Codes"));
+    codeBlock.append($("<h2/>").html($.i18n('refiqdaCodes')));
     // Create table with or without Color column based on whether color attributes exist
     let codeTable;
     if (hasColorAttribute) {
-      codeTable = createTable("Codes", "Code", "Description", "Color", "Codable", "# of Uses").appendTo(codeBlock);
+      codeTable = createTable($.i18n('refiqdaCodes'), $.i18n('refiqdaCode'), $.i18n('refiqdaDescription'), $.i18n('refiqdaColor'), $.i18n('refiqdaCodable'), $.i18n('refiqdaUses')).appendTo(codeBlock);
     } else {
-      codeTable = createTable("Codes", "Code", "Description", "Codable", "# of Uses").appendTo(codeBlock);
+      codeTable = createTable($.i18n('refiqdaCodes'), $.i18n('refiqdaCode'), $.i18n('refiqdaDescription'), $.i18n('refiqdaCodable'), $.i18n('refiqdaUses')).appendTo(codeBlock);
     }
     codeTable.attr('id', 'codetable');
     codeTable.addClass("codetable compact stripe");
@@ -311,7 +315,7 @@ function parseData2(data) {
               }
 
               annotationRows.push({
-                sourceRef: createSourceReference(source, zipUrl),
+                sourceRef: createSourceReference(source),
                 type: source.nodeName,
                 name: displayName,
                 codes: codes,
@@ -323,9 +327,9 @@ function parseData2(data) {
 
           // Add whole document entry to sources
           sourceRows.push({
-            sourceRef: createSourceReference(source, zipUrl),
+            sourceRef: createSourceReference(source),
             type: source.nodeName,
-            name: "Whole Document",
+            name: $.i18n('refiqdaWholeDocument'),
             codes: "",
             guid: source.getAttribute("guid"),
             matches: sourceMatches
@@ -336,11 +340,11 @@ function parseData2(data) {
 
       // Create Annotations table if there are any annotations
       if (annotationRows.length > 0) {
-          $('#filterby').append($('<option/>').prop('value', 'Annotations').text('Annotations'));
+          $('#filterby').append($('<option/>').prop('value', 'Annotations').text($.i18n('refiqdaAnnotations')));
 
           let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-          annotationBlock.append($("<h2/>").html("Annotations"));
-          let annotationTable = createTable("Annotations", "Filename", "Type", "Selection", "Codes").appendTo(annotationBlock);
+          annotationBlock.append($("<h2/>").html($.i18n('refiqdaAnnotations')));
+          let annotationTable = createTable($.i18n('refiqdaAnnotations'), $.i18n('refiqdaFilename'), $.i18n('refiqdaType'), $.i18n('refiqdaSelection'), $.i18n('refiqdaCodes')).appendTo(annotationBlock);
           annotationTable.addClass("annotationtable compact stripe");
 
           annotationRows.forEach(function(rowData) {
@@ -356,26 +360,16 @@ function parseData2(data) {
           // Initialize tooltips after table is created (ONLY for annotations table)
           initializeExcerptTooltips();
 
-          if (typeof downloadFile === 'function') {
-              $("a[data-entry-index]").click(downloadFile);
-              $('.annotationtable').on('draw.dt', function() {
-                  $("a[data-entry-index]").off('click');
-                  $("a[data-entry-index]").click(downloadFile);
-                  // Reinitialize tooltips after redraw (ONLY for annotations)
-                  initializeExcerptTooltips();
-              });
-          }
-
           tables.push(annotationDataTable);
       }
 
       // Create Sources table if there are any sources
       if (sourceRows.length > 0) {
-        $('#filterby').append($('<option/>').prop('value', 'Sources').text('Sources'));
+        $('#filterby').append($('<option/>').prop('value', 'Sources').text($.i18n('refiqdaSources')));
 
         let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-        sourceBlock.append($("<h2/>").html("Sources"));
-        let sourceTable = createTable("Sources", "Filename", "Type", "Selection", "Codes").appendTo(sourceBlock);
+        sourceBlock.append($("<h2/>").html($.i18n('refiqdaSources')));
+        let sourceTable = createTable($.i18n('refiqdaSources'), $.i18n('refiqdaFilename'), $.i18n('refiqdaType'), $.i18n('refiqdaSelection'), $.i18n('refiqdaCodes')).appendTo(sourceBlock);
         sourceTable.addClass("sourcetable compact stripe");
 
         sourceRows.forEach(function(rowData) {
@@ -385,7 +379,7 @@ function parseData2(data) {
         });
 
         sourceDataTable = new DataTable(".sourcetable", {
-         select: $('#filterby').val() == 'Sources',
+          select: $('#filterby').val() == 'Sources',
           order: [[0, 'asc']],
           columnDefs: [
             {
@@ -400,14 +394,6 @@ function parseData2(data) {
           ]
         });
 
-        if (typeof downloadFile === 'function') {
-          $("a[data-entry-index]").click(downloadFile);
-          $('.sourcetable').on('draw.dt', function() {
-            $("a[data-entry-index]").off('click');
-            $("a[data-entry-index]").click(downloadFile);
-          });
-        }
-
         tables.push(sourceDataTable);
       }
 
@@ -418,10 +404,10 @@ function parseData2(data) {
   var notes = xmlDoc.getElementsByTagName("Note");
 
   if (notes != null && notes.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Notes').text('Notes'));
+    $('#filterby').append($('<option/>').prop('value', 'Notes').text($.i18n('refiqdaNotes')));
     let noteBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-    noteBlock.append($("<h2/>").html("Notes"));
-    let noteTable = createTable("Notes", "Name", "Content", "Description", "Authors").appendTo(noteBlock);
+    noteBlock.append($("<h2/>").html($.i18n('refiqdaNotes')));
+    let noteTable = createTable($.i18n('refiqdaNotes'), $.i18n('refiqdaName'), $.i18n('refiqdaContent'), $.i18n('refiqdaDescription'), $.i18n('refiqdaAuthors')).appendTo(noteBlock);
     noteTable.addClass("notetable compact stripe");
 
     for (let note of notes) {
@@ -476,7 +462,7 @@ function parseData2(data) {
 
   if (variables.length > 0 && cases.length > 0) {
     let variableMap = new Map();
-    let variableHeaders = ["Source"]; // First column is the source document
+    let variableHeaders = [$.i18n('refiqdaSource')]; // First column is the source document
 
     for (let variable of variables) {
       let guid = variable.getAttribute("guid");
@@ -487,8 +473,8 @@ function parseData2(data) {
     }
 
     let caseBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-    caseBlock.append($("<h2/>").html("Cases"));
-    let caseTable = createTable("Cases", ...variableHeaders).appendTo(caseBlock);
+    caseBlock.append($("<h2/>").html($.i18n('refiqdaCases')));
+    let caseTable = createTable($.i18n('refiqdaCases'), ...variableHeaders).appendTo(caseBlock);
     caseTable.addClass("casetable compact stripe");
 
     for (let caseNode of cases) {
@@ -500,7 +486,7 @@ function parseData2(data) {
         let sourceGuid = sourceRef.getAttribute("targetGUID");
         let source = sourceMap.get(sourceGuid);
         if (source) {
-          rowData[0] = createSourceReference(source, zipUrl);
+          rowData[0] = createSourceReference(source);
         }
       }
 
@@ -529,10 +515,10 @@ function parseData2(data) {
  
   let sets = xmlDoc.getElementsByTagName("Set");
   if (sets != null && sets.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Sets').text('Sets'));
+    $('#filterby').append($('<option/>').prop('value', 'Sets').text($.i18n('refiqdaSets')));
     let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-    setBlock.append($("<h2/>").html("Sets"));
-    let setTable = createTable("Sets", "Name", "Sources", "Codes").appendTo(setBlock);
+    setBlock.append($("<h2/>").html($.i18n('refiqdaSets')));
+    let setTable = createTable($.i18n('refiqdaSets'), $.i18n('refiqdaName'), $.i18n('refiqdaSources'), $.i18n('refiqdaCodes')).appendTo(setBlock);
     setTable.addClass("settable compact stripe");
 
     for (let set of sets) {
@@ -574,7 +560,7 @@ function parseData2(data) {
     let graphs = xmlDoc.getElementsByTagName("Graph");
     if (graphs != null && graphs.length > 0) {
       let graphBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
-      graphBlock.append($("<h2/>").html("Graphs").append($('<span/>').attr('id', 'reset').text('Reset').addClass('btn btn-default')));
+      graphBlock.append($("<h2/>").html($.i18n('refiqdaGraphs')).append($('<span/>').attr('id', 'reset').text($.i18n('refiqdaReset')).addClass('btn btn-default')));
 
       let elements = [];
       for (let graph of graphs) {
@@ -862,8 +848,8 @@ function addRow(table, ...values) {
   let tr = $('<tr/>');
   values.forEach(function(value) {
     let td = $('<td/>');
-    // Check if value is a jQuery object
-    if (value instanceof jQuery) {
+    // Check if value is a jQuery object or a DOM element
+    if (value instanceof jQuery || (typeof HTMLElement !== 'undefined' && value instanceof HTMLElement)) {
       td.append(value);
     } else {
       td.html(value || '');
@@ -1180,7 +1166,7 @@ function formatExcerptTooltip(excerpt, startPos, endPos) {
     return `
         <div style="padding: 8px; font-family: sans-serif;">
             <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #999; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
-                Text Excerpt (Position ${startPos}-${endPos})
+                ${$.i18n('refiqdaExcerptTooltipHeader', startPos, endPos)}
             </div>
             <div style="font-size: 13px; line-height: 1.5; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
                 "${displayExcerpt}"
@@ -1272,15 +1258,19 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
 
         // For zip mode, use the fetchTextExcerpt function from refiqdpx.js
         if (isZipMode() && typeof fetchTextExcerpt === 'function') {
-            // fetchTextExcerpt already handles the substring extraction
-            let bagPath = plainTextPath.replace("internal://","sources/");
-            const excerpt = await fetchTextExcerpt(bagPath, startPos, endPos);
-            
-            // Note: We're not caching here because fetchTextExcerpt is efficient
-            // and only fetches the bytes we need. If you want to cache full files
-            // for multiple excerpts from the same file, you'd need to modify
-            // fetchTextExcerpt to optionally return the full text
-            return excerpt;
+            const finalPath = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(plainTextPath) : plainTextPath.replace("internal://", "sources/");
+            if (finalPath) {
+                try {
+                    // Note: We're not caching here because fetchTextExcerpt is efficient
+                    // and only fetches the bytes we need. If you want to cache full files
+                    // for multiple excerpts from the same file, you'd need to modify
+                    // fetchTextExcerpt to optionally return the full text
+                    return await fetchTextExcerpt(finalPath, startPos, endPos);
+                } catch (e) {
+                    console.debug(`File not found at ${finalPath}`);
+                }
+            }
+            return null;
         } else {
             // Fallback for non-zip mode (direct file access)
             const response = await fetch(plainTextPath);
@@ -1305,21 +1295,6 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
 function redactSources(guidsToRedact) {
   console.log("Redacting sources with GUIDs:", guidsToRedact);
 
-  // Find the paths of the source files to remove from the zip archive.
-  const pathsToRemove = new Set();
-  for (const guid of guidsToRedact) {
-    const sourceElement = xmlDoc.querySelector(`[guid="${guid}"]`);
-    if (sourceElement) {
-      const plainTextPath = sourceElement.getAttribute("plainTextPath");
-      if (plainTextPath) {
-        // The path in the zip is typically "sources/..."
-        pathsToRemove.add(plainTextPath.replace("internal://", ""));
-      }
-    }
-  }
-  console.log("Paths to remove from zip:", Array.from(pathsToRemove));
-
-
   let redactedXmlDoc = xmlDoc.cloneNode(true);
 
   for (const guid of guidsToRedact) {
@@ -1337,13 +1312,40 @@ function redactSources(guidsToRedact) {
   if (isZipMode() && typeof zip !== 'undefined') {
     // Use an async function to handle zip operations
     (async () => {
- try {
+      try {
+        // Find the paths of the source files to remove from the zip archive.
+        const pathsToRemove = new Set();
+        for (const guid of guidsToRedact) {
+          const sourceElement = xmlDoc.querySelector(`[guid="${guid}"]`);
+          if (sourceElement) {
+            // Check various path attributes
+            ["path", "plainTextPath", "richTextPath"].forEach(attr => {
+              const val = sourceElement.getAttribute(attr);
+              if (val) {
+                const p = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(val) : val.replace("internal://", "sources/");
+                if (p) pathsToRemove.add(p);
+              }
+            });
+
+            // Check for paths in Representations
+            const representations = sourceElement.querySelectorAll('Representation');
+            representations.forEach(rep => {
+              const ptp = rep.getAttribute("plainTextPath");
+              if (ptp) {
+                const p = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(ptp) : ptp.replace("internal://", "sources/");
+                if (p) pathsToRemove.add(p);
+              }
+            });
+          }
+        }
+        console.log("Paths to remove from zip:", Array.from(pathsToRemove));
+
         // Fetch the original zip file as a blob on-demand
         const zipResponse = await fetch(zipUrl);
         if (!zipResponse.ok) {
           throw new Error(`HTTP error! status: ${zipResponse.status}`);
         }
-        zipFileBlob = await zipResponse.blob();
+        const zipFileBlob = await zipResponse.blob();
 
         // 1. Create a new zip archive
         const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));

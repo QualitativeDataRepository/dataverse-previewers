@@ -14,11 +14,13 @@ function writeContent(fileUrl, file, title, authors) {
 
 let entries;
 const entryMap = {};
+var sourcesPathPrefix = "sources/";
+
 
 async function readZip(fileUrl, file) {
         wait = $('<div/>').attr('id', 'waiting');
         $('<img/>').width('15%').attr('src','images/Loading_icon.gif').attr('id','throbber').appendTo(wait);
-        $('<span/>').text(' Reading QPDX file. Parsing Contents...').appendTo(wait);
+        $('<span/>').text($.i18n('refiqdaParsingProject')).appendTo(wait);
         wait.appendTo($('.preview'));
 
     try {
@@ -33,7 +35,11 @@ async function readZip(fileUrl, file) {
         // get all entries from the zip
         entries = await reader.getEntries();
         if (entries.length) {
-
+            const hasUpperCase = entries.some(entry => entry.filename.startsWith('Sources/'));
+            if (hasUpperCase) {
+                sourcesPathPrefix = 'Sources/';
+                console.log("Detected sources path prefix:", sourcesPathPrefix);
+            }
 
             // First pass: Find and process the .qde file
             const qdeEntry = entries.find(entry => entry.filename.endsWith('.qde'));
@@ -49,7 +55,7 @@ async function readZip(fileUrl, file) {
                   },
                 });
                 projectBlob.then(text => parseData(text, file)).catch((err)=> {
-                    document.getElementById('waiting').innerHTML= "<span>Unable to continue: " + err + "</span>";
+                    document.getElementById('waiting').innerHTML= "<span>" + $.i18n('errorText') + err + "</span>";
                 });
 
                 // Second pass: Build entry map for all other files
@@ -59,7 +65,7 @@ async function readZip(fileUrl, file) {
                     }
                 });
             } else {
-                document.getElementById('waiting').innerHTML= "<span>Unable to continue: No .qde file found in archive</span>";
+                document.getElementById('waiting').innerHTML= "<span>" + $.i18n('refiqdaNoQdeError') + "</span>";
             }
         }
 
@@ -69,10 +75,9 @@ async function readZip(fileUrl, file) {
     }
     catch (err) {
         //Display error message
-        const errorMsg = document.createTextNode("Zip file structure could not be read (" + err + "). You can still download the zip file.");
-        document.getElementById('waiting').innerHTML="<span>Unable to continue: " + errorMsg + "</span>";
+        const errorMsg = $.i18n('refiqdaZipReadError', err);
+        document.getElementById('waiting').innerHTML="<span>" + errorMsg + "</span>";
         console.log(err);
-
     }
     finally {
         //remove throbber
@@ -110,56 +115,61 @@ async function fetchTextExcerpt(entryFilename, startPos, endPos) {
     }
 }
 
-async function downloadFile(event) {
-    const target = event.currentTarget;
-    let href = target.getAttribute("href");
-    if (target.dataset.entryIndex !== undefined && !target.download) {
-            console.log('Downloading');
-        target.removeAttribute("href");
-        event.preventDefault();
+/**
+ * Resolves an internal URI (e.g., "internal://file.txt") to the correct path within the ZIP archive.
+ * Standard QDPX stores files under "sources/", but we handle both for robustness and case sensitivity.
+ * @param {string} uri The URI to resolve.
+ * @returns {string|null} The resolved path in the ZIP, or null if not found.
+ */
+function resolveInternalZipPaths(uri) {
+    if (!uri) return null;
+    if (!uri.startsWith("internal://")) return uri;
+
+    const relativePath = uri.substring(11); // Remove "internal://"
+
+    // 1. Try with the detected/default prefix
+    let path = sourcesPathPrefix + relativePath;
+    if (entryMap[path] !== undefined) return path;
+
+    // 2. Try without any prefix
+    if (entryMap[relativePath] !== undefined) return relativePath;
+
+    // 3. Try with the alternative prefix (just in case)
+    const altPrefix = sourcesPathPrefix === "sources/" ? "Sources/" : "sources/";
+    path = altPrefix + relativePath;
+    if (entryMap[path] !== undefined) return path;
+
+    // 4. Return null if not found in archive
+    return null;
+}
+
+async function downloadSourceFile(sourceGuid, path) {
+    const finalPath = resolveInternalZipPaths(path);
+    const entryIndex = finalPath ? entryMap[finalPath] : undefined;
+
+    if (entryIndex !== undefined) {
+        const entry = entries[entryIndex];
         try {
-            await download(entries[Number(target.dataset.entryIndex)], target.parentElement, target);
-            href = target.getAttribute("href");
+            const blobURL = URL.createObjectURL(await entry.getData(new zip.BlobWriter()));
+            const filename = finalPath.split('/').pop();
+            const tempLink = document.createElement('a');
+            tempLink.href = blobURL;
+            tempLink.download = filename;
+            tempLink.style.display = 'none';
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+            setTimeout(() => URL.revokeObjectURL(blobURL), 10000);
         } catch (error) {
-            alert(error);
+            console.error('Download failed:', error);
+            alert('Download failed: ' + error);
         }
-        target.setAttribute("href", href);
+    } else {
+        console.error('File not found in archive:', path);
+        alert('File not found in archive: ' + path);
     }
 }
 
-async function download(entry, li, a) {
-    const parentCell = $(a).closest('td');
-    if (!parentCell.hasClass("busy")) {
-
-        const controller = new AbortController();
-        const signal = controller.signal;
-
-        parentCell.addClass("busy");
-        try {
-            const blobURL = URL.createObjectURL(await entry.getData(new zip.BlobWriter(), {
-                onprogress: (index, max) => {
-
-                    const percent = Math.round(index/max*100);
-                    console.log(index + "   " + max  + "   " + percent);
-                    //setProgressBarValue(percent);
-
-                },
-            }))
-            var index = a.getAttribute("data-entry-index");
-            console.log("index: " + index);
-
-            const filename = a.getAttribute("data-entry-name");
-
-            $("a[data-entry-index='" + index + "']").attr('href',blobURL);
-             $("a[data-entry-index='" + index + "']").attr('download', filename || a.text);
-            const clickEvent = new MouseEvent("click");
-            a.dispatchEvent(clickEvent);
-        } catch (error) {
-            if (error.message != zip.ERR_ABORT) {
-                throw error;
-            }
-        } finally {
-            parentCell.removeClass("busy");
-        }
-    }
+async function setProgressBarValue(val) {
+    // Dummy function since we don't have a progress bar in the UI yet
 }
