@@ -22,6 +22,8 @@
   "mdPreviewText": "Aperçu Markdown",
   "ncmlPreviewText": "Aperçu NcML",
   "rocratePreviewText": "Aperçu RO-Crate",
+  "refiqdpxPreviewText": "Aperçu  du projet REFI-QDA",
+  "refiqdcPreviewText": "Aperçu du codebook REFI-QDA",
   "prev": "Précédent",
   "next": "Suivant",
   "pageText": "Page:",
