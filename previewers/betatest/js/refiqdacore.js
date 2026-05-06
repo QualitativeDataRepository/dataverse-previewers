@@ -37,6 +37,31 @@ function isZipMode() {
 }
 
 var redactedMode;
+var canRedact = false;
+var redactedFileExists = false;
+
+async function checkPermissions() {
+    let permissionsUrl = queryParams.signedUrls ? queryParams.signedUrls.userPermissions : null;
+    if (!permissionsUrl && queryParams.siteUrl && queryParams.datasetid) {
+        permissionsUrl = queryParams.siteUrl + "/api/datasets/" + queryParams.datasetid + "/userPermissions";
+        if (queryParams.key) {
+            permissionsUrl += (permissionsUrl.includes('?') ? '&' : '?') + "key=" + queryParams.key;
+        }
+    }
+    if (permissionsUrl) {
+        try {
+            const response = await fetch(permissionsUrl);
+            if (response.ok) {
+                const json = await response.json();
+                if (json.status === 'OK' && json.data && json.data.permissions) {
+                    canRedact = json.data.permissions.includes('EditDataset');
+                }
+            }
+        } catch (error) {
+            console.error("Error checking permissions:", error);
+        }
+    }
+}
 
 var wait;
 var cy;
@@ -50,7 +75,14 @@ function parseData(data, filejson) {
     $('<span/>').text($.i18n('refiqdaParsingProject')).appendTo(wait);
   wait.appendTo($('.preview'));
 
-  new Promise((resolve) => setTimeout(resolve, 500)).then(() => { parseData2(data) });
+    checkPermissions().then(() => {
+    new Promise((resolve) => setTimeout(resolve, 500)).then(() => { 
+        parseData2(data);
+        if (canRedact && !redactedMode) {
+            checkForRedactedFile();
+        }
+    });
+  });
 }
 
 // Reads the project file and walks through the XML creating tables for all the entry types
@@ -69,6 +101,15 @@ function parseData2(data) {
   filterBlock.append($("<h2/>").html($.i18n('refiqdaEnableFilteringBy')));
   filterBlock.append($("<p/>").html($.i18n('refiqdaFilteringInstructions')));
   const filterBy = $('<select/>').prop('id', 'filterby').appendTo(filterBlock);
+  if (canRedact && !redactedMode) {
+      $('<button/>')
+          .addClass('btn btn-danger delete-redacted-btn')
+          .text($.i18n('refiqdaDeleteRedacted'))
+          .css('margin-left', '10px')
+          .hide()
+          .click(deleteRedactedFile)
+          .appendTo(filterBlock);
+  }
   filterBy.append($('<option/>').prop('value', 'None').text($.i18n('refiqdaNoFiltering')));
   //As tables are created, they will be added to the option list here
 
@@ -177,8 +218,10 @@ function parseData2(data) {
         };
         dataTableConfig.buttons = [
             'selectAll', 
-            'selectNone',
-            {
+            'selectNone'
+        ];
+        if (canRedact) {
+            dataTableConfig.buttons.push({
                 text: $.i18n('refiqdaRedact'),
                 className: 'redact-btn',
                 titleAttr: $.i18n('refiqdaRedactCodeTooltip'),
@@ -191,8 +234,8 @@ function parseData2(data) {
                     redactCodes(codeGuids);
                 },
                 enabled: false
-            }
-        ];
+            });
+        }
     }
 
     if (hasColorAttribute) {
@@ -253,7 +296,9 @@ function parseData2(data) {
     if (filterBy.val() === 'Codes') {
         codeDataTable.on('select deselect', function () {
             var selectedRows = codeDataTable.rows({ selected: true }).count();
-            codeDataTable.button('.redact-btn').enable(selectedRows > 0);
+            if (canRedact) {
+                codeDataTable.button('.redact-btn').enable(selectedRows > 0);
+            }
         });
     }
 
@@ -692,8 +737,10 @@ $("#filterby")
             };
             codeConfig.buttons = [
                 'selectAll', 
-                'selectNone',
-                {
+                'selectNone'
+            ];
+            if (canRedact) {
+                codeConfig.buttons.push({
                     text: $.i18n('refiqdaRedact'),
                     className: 'redact-btn',
                     titleAttr: $.i18n('refiqdaRedactCodeTooltip'),
@@ -706,8 +753,8 @@ $("#filterby")
                         redactCodes(codeGuids);
                     },
                     enabled: false
-                }
-            ];
+                });
+            }
         }
 
         if (hasColorColumn) {
@@ -770,7 +817,9 @@ $("#filterby")
         if ($('#filterby').val() === 'Codes') {
             codeDataTable.on('select deselect', function () {
                 var selectedRows = codeDataTable.rows({ selected: true }).count();
-                codeDataTable.button('.redact-btn').enable(selectedRows > 0);
+                if (canRedact) {
+                    codeDataTable.button('.redact-btn').enable(selectedRows > 0);
+                }
             });
         }
 
@@ -808,22 +857,24 @@ $("#filterby")
           };
           dtOptions.buttons = [
             'selectAll', 
-            'selectNone',
-            {
-              text: $.i18n('refiqdaRedact'),
-              className: 'redact-btn',
-              titleAttr: $.i18n('refiqdaRedactSourceTooltip'),
-              action: function ( e, dt, node, config ) {
-                let selectedRows = dt.rows( { selected: true } );
-                let sourceGuids = [];
-                selectedRows.nodes().to$().each(function() {
-                    sourceGuids.push($(this).data('guid'));
-                });
-                redactSources(sourceGuids);
-              },
-              enabled: false
-            }
+            'selectNone'
           ];
+          if (canRedact) {
+              dtOptions.buttons.push({
+                  text: $.i18n('refiqdaRedact'),
+                  className: 'redact-btn',
+                  titleAttr: $.i18n('refiqdaRedactSourceTooltip'),
+                  action: function ( e, dt, node, config ) {
+                      let selectedRows = dt.rows( { selected: true } );
+                      let sourceGuids = [];
+                      selectedRows.nodes().to$().each(function() {
+                          sourceGuids.push($(this).data('guid'));
+                      });
+                      redactSources(sourceGuids);
+                  },
+                  enabled: false
+              });
+          }
         }
 
         sourceDataTable = new DataTable(".sourcetable", dtOptions);
@@ -831,7 +882,9 @@ $("#filterby")
         if (filterBy.val() === 'Sources') {
             sourceDataTable.on('select deselect', function () {
                 var selectedRows = sourceDataTable.rows({ selected: true }).count();
-                sourceDataTable.button('.redact-btn').enable(selectedRows > 0);
+                if (canRedact) {
+                    sourceDataTable.button('.redact-btn').enable(selectedRows > 0);
+                }
             });
         }
         
@@ -1416,7 +1469,16 @@ async function uploadRedactedFile(blob, filename) {
     formData.append("type", "qda");
 
     console.log(`Uploading redacted file: ${filename}`);
-    const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+    let uploadUrl = queryParams.signedUrls ? queryParams.signedUrls.uploadRedactedFile : null;
+    if (!uploadUrl && queryParams.siteUrl && queryParams.fileid) {
+        const type = isZipMode() ? 'qdpx' : 'qdc';
+        uploadUrl = queryParams.siteUrl + "/api/access/datafile/" + queryParams.fileid + "/auxiliary/" + type + "/1.0";
+        if (queryParams.key) {
+            uploadUrl += (uploadUrl.includes('?') ? '&' : '?') + "key=" + queryParams.key;
+        }
+    }
+
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
     });
@@ -1429,6 +1491,7 @@ async function uploadRedactedFile(blob, filename) {
     const responseData = await response.json();
     console.log("Upload successful:", responseData);
     alert($.i18n('refiqdaRedactSuccess'));
+    checkForRedactedFile();
   } catch (error) {
     console.error("Error during upload:", error);
     alert($.i18n('refiqdaRedactError', error.message));
@@ -1496,4 +1559,60 @@ function redactCodes(guidsToRedact) {
     const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
     uploadRedactedFile(redactedXmlBlob, redactedFilename);
   }
+}
+
+async function checkForRedactedFile() {
+    let listUrl = queryParams.signedUrls ? queryParams.signedUrls.listAuxiliaryFiles : null;
+    if (!listUrl && queryParams.siteUrl && queryParams.fileid) {
+        listUrl = queryParams.siteUrl + "/api/access/datafile/" + queryParams.fileid + "/auxiliary";
+        if (queryParams.key) {
+            listUrl += (listUrl.includes('?') ? '&' : '?') + "key=" + queryParams.key;
+        }
+    }
+    if (listUrl) {
+        try {
+            const response = await fetch(listUrl);
+            if (response.ok) {
+                const auxFiles = await response.json();
+                const type = isZipMode() ? 'qdpx' : 'qdc';
+                redactedFileExists = auxFiles.some(f => f.formatTag === type && f.formatVersion === '1.0');
+                if (redactedFileExists) {
+                    $('.delete-redacted-btn').show();
+                } else {
+                    $('.delete-redacted-btn').hide();
+                }
+            }
+        } catch (error) {
+            console.error("Error checking for redacted file:", error);
+        }
+    }
+}
+
+async function deleteRedactedFile() {
+    if (confirm($.i18n('refiqdaDeleteConfirm'))) {
+        try {
+            let deleteUrl = queryParams.signedUrls ? queryParams.signedUrls.deleteRedactedFile : null;
+            if (!deleteUrl && queryParams.siteUrl && queryParams.fileid) {
+                const type = isZipMode() ? 'qdpx' : 'qdc';
+                deleteUrl = queryParams.siteUrl + "/api/access/datafile/" + queryParams.fileid + "/auxiliary/" + type + "/1.0";
+                if (queryParams.key) {
+                    deleteUrl += (deleteUrl.includes('?') ? '&' : '?') + "key=" + queryParams.key;
+                }
+            }
+            const response = await fetch(deleteUrl, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                alert($.i18n('refiqdaDeleteSuccess'));
+                redactedFileExists = false;
+                $('.delete-redacted-btn').hide();
+            } else {
+                const errorText = await response.text();
+                throw new Error(`Delete failed: ${response.statusText} - ${errorText}`);
+            }
+        } catch (error) {
+            console.error("Error deleting redacted file:", error);
+            alert($.i18n('refiqdaDeleteError', error.message));
+        }
+    }
 }
