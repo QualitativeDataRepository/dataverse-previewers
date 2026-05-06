@@ -1,3 +1,4 @@
+/* global $, jQuery, DataTable, cytoscape, tippy, zip, fetchTextExcerpt, resolveInternalZipPaths, createAndUploadRedactedZip, queryParams */
 
 var userMap = new Map();
 var codeMap = new Map();
@@ -39,18 +40,6 @@ var redactedMode;
 
 var wait;
 var cy;
-
-
-
-
-function findDataAttribute(name, attrNamedNodeMap) {
-  let attr = attrNamedNodeMap[name];
-  if (typeof attr !== 'undefined') {
-    return attr.nodeValue;
-  }
-  return '';
-}
-
 // Start parsing project file
 // This function just adds a loading icon and initial text to the page and then calls parseData2
 function parseData(data, filejson) {
@@ -79,8 +68,7 @@ function parseData2(data) {
   let filterBlock = $('<div/>').width(tableWidth).appendTo(preview);
   filterBlock.append($("<h2/>").html($.i18n('refiqdaEnableFilteringBy')));
   filterBlock.append($("<p/>").html($.i18n('refiqdaFilteringInstructions')));
-  filterBlock.append($('<select/>').prop('id', 'filterby'));
-  const filterBy = $('#filterby');
+  const filterBy = $('<select/>').prop('id', 'filterby').appendTo(filterBlock);
   filterBy.append($('<option/>').prop('value', 'None').text($.i18n('refiqdaNoFiltering')));
   //As tables are created, they will be added to the option list here
 
@@ -180,10 +168,10 @@ function parseData2(data) {
 
     // Configure DataTable with conditional columnDefs
     let dataTableConfig = {
-        select: filterBy.val() == 'Codes'
+        select: filterBy.val() === 'Codes'
     };
 
-    if (filterBy.val() == 'Codes') {
+    if (filterBy.val() === 'Codes') {
         dataTableConfig.layout = {
             top2End: 'buttons'
         };
@@ -262,7 +250,7 @@ function parseData2(data) {
     dataTableConfig.order = [[usesColumnIndex, "desc"]];
     codeDataTable = new DataTable(".codetable", dataTableConfig);
 
-    if (filterBy.val() == 'Codes') {
+    if (filterBy.val() === 'Codes') {
         codeDataTable.on('select deselect', function () {
             var selectedRows = codeDataTable.rows({ selected: true }).count();
             codeDataTable.button('.redact-btn').enable(selectedRows > 0);
@@ -373,7 +361,7 @@ function parseData2(data) {
 
       // Create Annotations table if there are any annotations
       if (annotationRows.length > 0) {
-          $('#filterby').append($('<option/>').prop('value', 'Annotations').text($.i18n('refiqdaAnnotations')));
+          filterBy.append($('<option/>').prop('value', 'Annotations').text($.i18n('refiqdaAnnotations')));
 
           let annotationBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
           annotationBlock.append($("<h2/>").html($.i18n('refiqdaAnnotations')));
@@ -387,7 +375,7 @@ function parseData2(data) {
           });
 
           var annotationDataTable = new DataTable(".annotationtable", {
-              select: $('#filterby').val() == 'Annotations'
+              select: filterBy.val() === 'Annotations'
           });
 
           // Initialize tooltips after table is created (ONLY for annotations table)
@@ -398,7 +386,7 @@ function parseData2(data) {
 
       // Create Sources table if there are any sources
       if (sourceRows.length > 0) {
-        $('#filterby').append($('<option/>').prop('value', 'Sources').text($.i18n('refiqdaSources')));
+        filterBy.append($('<option/>').prop('value', 'Sources').text($.i18n('refiqdaSources')));
 
         let sourceBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
         sourceBlock.append($("<h2/>").html($.i18n('refiqdaSources')));
@@ -412,13 +400,13 @@ function parseData2(data) {
         });
 
         sourceDataTable = new DataTable(".sourcetable", {
-          select: $('#filterby').val() == 'Sources',
+          select: filterBy.val() === 'Sources',
           order: [[0, 'asc']],
           columnDefs: [
             {
               render: function(data, type, row) {
                 if (type === 'display' && data !== null && data.length > 50) {
-                  return '<span title="' + data + '">' + data.substr(0, 50) + '...</span>';
+                  return '<span title="' + data + '">' + data.substring(0, 50) + '...</span>';
                 }
                 return data;
               },
@@ -437,7 +425,7 @@ function parseData2(data) {
   var notes = xmlDoc.getElementsByTagName("Note");
 
   if (notes != null && notes.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Notes').text($.i18n('refiqdaNotes')));
+    filterBy.append($('<option/>').prop('value', 'Notes').text($.i18n('refiqdaNotes')));
     let noteBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     noteBlock.append($("<h2/>").html($.i18n('refiqdaNotes')));
     let noteTable = createTable($.i18n('refiqdaNotes'), $.i18n('refiqdaName'), $.i18n('refiqdaContent'), $.i18n('refiqdaDescription'), $.i18n('refiqdaAuthors')).appendTo(noteBlock);
@@ -484,7 +472,7 @@ function parseData2(data) {
     }
 
     noteDataTable = new DataTable(".notetable", {
-      select: $('#filterby').val() == 'Notes'
+      select: filterBy.val() === 'Notes'
       //columnDefs:[{target:0,visible:false,seachable:false}]
     });
     tables.push(noteDataTable);
@@ -548,7 +536,7 @@ function parseData2(data) {
  
   let sets = xmlDoc.getElementsByTagName("Set");
   if (sets != null && sets.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Sets').text($.i18n('refiqdaSets')));
+    filterBy.append($('<option/>').prop('value', 'Sets').text($.i18n('refiqdaSets')));
     let setBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
     setBlock.append($("<h2/>").html($.i18n('refiqdaSets')));
     let setTable = createTable($.i18n('refiqdaSets'), $.i18n('refiqdaName'), $.i18n('refiqdaSources'), $.i18n('refiqdaCodes')).appendTo(setBlock);
@@ -585,7 +573,7 @@ function parseData2(data) {
         tr.attr('data-guid', set.getAttribute('guid'));
     }
     setDataTable = new DataTable(".settable", {
-      select: $('#filterby').val() == 'Sets'
+      select: filterBy.val() === 'Sets'
     });
     tables.push(setDataTable);
   }
@@ -664,17 +652,17 @@ $("#filterby")
 
       // Clear selections when changing filter
       selectedGUIDs = [];
-        tables=new Array();
-
+        tables=[];
+      const userTable = $(".usertable");
       // Destroy and recreate userDataTable
       if (userDataTable) {
         userDataTable.destroy();
         //Also remove event handlers
-        $(".usertable").off('select.dt deselect.dt');
+        userTable.off('select.dt deselect.dt');
       }
-      if ($(".usertable").length) {
+      if (userTable.length) {
         userDataTable = new DataTable(".usertable", {
-          select: $('#filterby').val() == 'Users',
+          select: filterBy.val() === 'Users',
           order: [[0, 'asc']]
         });
         attachFilterHandler(userDataTable);
@@ -685,19 +673,20 @@ $("#filterby")
 
       // Destroy and recreate codeDataTable
       let codeTableOrder;
+      const codeTable = $(".codetable");
       if (codeDataTable) {
       codeTableOrder = codeDataTable.order();
         codeDataTable.destroy();
-        $(".codetable").off('select.dt deselect.dt');
+        codeTable.off('select.dt deselect.dt');
       }
-      if ($(".codetable").length) {
+      if (codeTable.length) {
         // Need to check if color column exists before recreating the table
         let hasColorColumn = $('.codetable thead th').length === 5; // 5 columns means Color is present plus # of Uses
         let codeConfig = {
-          select: $('#filterby').val() == 'Codes'
+          select: filterBy.val() === 'Codes'
         };
 
-        if ($('#filterby').val() == 'Codes') {
+        if (filterBy.val() === 'Codes') {
             codeConfig.layout = {
                 top2End: 'buttons'
             };
@@ -778,7 +767,7 @@ $("#filterby")
         }
         codeDataTable = new DataTable(".codetable", codeConfig);
 
-        if ($('#filterby').val() == 'Codes') {
+        if ($('#filterby').val() === 'Codes') {
             codeDataTable.on('select deselect', function () {
                 var selectedRows = codeDataTable.rows({ selected: true }).count();
                 codeDataTable.button('.redact-btn').enable(selectedRows > 0);
@@ -791,13 +780,14 @@ $("#filterby")
       }
 
       // Destroy and recreate sourceDataTable
+        const sourceTable = $(".sourcetable");
       if (sourceDataTable) {
         sourceDataTable.destroy();
-        $(".sourcetable").off('select.dt deselect.dt');
+        sourceTable.off('select.dt deselect.dt');
       }
-      if ($(".sourcetable").length) {
+      if (sourceTable.length) {
         let dtOptions = {
-          select: $('#filterby').val() == 'Sources',
+          select: filterBy.val() === 'Sources',
           columnDefs: [
             {
               render: function(data, type, row) {
@@ -812,7 +802,7 @@ $("#filterby")
           
         };
 
-        if ($('#filterby').val() == 'Sources') {
+        if (filterBy.val() === 'Sources') {
           dtOptions.layout = {
             top2End: 'buttons'
           };
@@ -838,7 +828,7 @@ $("#filterby")
 
         sourceDataTable = new DataTable(".sourcetable", dtOptions);
         
-        if ($('#filterby').val() == 'Sources') {
+        if (filterBy.val() === 'Sources') {
             sourceDataTable.on('select deselect', function () {
                 var selectedRows = sourceDataTable.rows({ selected: true }).count();
                 sourceDataTable.button('.redact-btn').enable(selectedRows > 0);
@@ -852,13 +842,14 @@ $("#filterby")
       }
 
       // Destroy and recreate annotationDataTable
+      const annotationTable = $(".annotationtable");
       if (annotationDataTable) {
         annotationDataTable.destroy();
-        $(".annotationtable").off('select.dt deselect.dt');
+        annotationTable.off('select.dt deselect.dt');
       }
-      if ($(".annotationtable").length) {
+      if (annotationTable.length) {
         annotationDataTable = new DataTable(".annotationtable", {
-          select: $('#filterby').val() == 'Annotations'
+          select: filterBy.val() === 'Annotations'
         });
         attachFilterHandler(annotationDataTable);
         annotationDataTable.draw();
@@ -866,13 +857,14 @@ $("#filterby")
       }
 
       // Destroy and recreate noteDataTable
+      const noteTable = $(".notetable");
       if (noteDataTable) {
         noteDataTable.destroy();
-        $(".notetable").off('select.dt deselect.dt');
+        noteTable.off('select.dt deselect.dt');
       }
-      if ($(".notetable").length) {
+      if (noteTable.length) {
         noteDataTable = new DataTable(".notetable", {
-          select: $('#filterby').val() == 'Notes'
+          select: filterBy.val() === 'Notes'
         });
         attachFilterHandler(noteDataTable);
         noteDataTable.draw();
@@ -880,13 +872,14 @@ $("#filterby")
       }
 
       // Destroy and recreate setDataTable
+        const setTable = $(".settable");
       if (setDataTable) {
         setDataTable.destroy();
-        $(".settable").off('select.dt deselect.dt');
+        setTable.off('select.dt deselect.dt');
       }
-      if ($(".settable").length) {
+      if (setTable.length) {
         setDataTable = new DataTable(".settable", {
-          select: $('#filterby').val() == 'Sets'
+          select: filterBy.val() === 'Sets'
         });
         attachFilterHandler(setDataTable);
         setDataTable.draw();
@@ -906,10 +899,16 @@ function createTable() {
   for (var i = 1; i < arguments.length; i++) {
     tr.append($("<th/>").text(arguments[i]));
   }
-  let tableBody = $("<tbody/>").appendTo(table);
+  $("<tbody/>").appendTo(table);
   return table;
 }
-
+/**
+ * Adds a table row and returns it as a jQuery object.
+ *
+ * @param {jQuery} table
+ * @param {...*} values
+ * @returns {jQuery}
+ */
 function addRow(table, ...values) {
   let tr = $('<tr/>');
   values.forEach(function(value) {
@@ -931,7 +930,7 @@ function attachFilterHandler(dataTable) {
   //When selections are made, update the array of selected GUIDs and redraw other tables so they get filtered.
   dataTable.on('select deselect', function(e, dt, type, indexes) {
     if (type === 'row') {
-      selectedGUIDs = new Array();
+      selectedGUIDs = [];
       dataTable.rows({ selected: true }).nodes().to$().each(function(index, element) {
         selectedGUIDs.push(element.dataset.guid);
       });
@@ -990,7 +989,7 @@ function getSelections(source) {
   let selections = [];
   // If it's a PDF source, we look for both PDF and PlainText selections to merge them
   if (source.nodeName === "PDFSource") {
-    const representation = source.querySelector("Representation");
+    const representation = source.getElementsByTagName("Representation")[0];
     const plainTextSelections = new Map();
 
     // Map PlainTextSelections by their GUID from the Representation, if it exists
@@ -1061,15 +1060,13 @@ function getCodeNames(selection) {
 // Update the createSelectionWithTooltip function to use a simpler data structure
 function createSelectionWithTooltip(selectionName, startPos, endPos, plainTextPath, sourceGuid) {
     // Create a span with data attributes that we'll use for the tooltip
-    let spanHtml = '<span class="selection-with-excerpt" ' +
+    return '<span class="selection-with-excerpt" ' +
         'data-start="' + startPos + '" ' +
         'data-end="' + endPos + '" ' +
         'data-path="' + plainTextPath + '" ' +
         'data-source-guid="' + sourceGuid + '">' +
         selectionName +
         '</span>';
-    
-    return spanHtml;
 }
 
 function createMergedSelectionWithTooltip(selectionName, pdfSel, plainTextSel, sourceGuid) {
