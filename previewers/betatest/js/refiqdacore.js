@@ -1402,6 +1402,40 @@ function removeCodesFromXml(targetXmlDoc, guidsToRedact) {
   }
 }
 
+/**
+ * Uploads a redacted file (either a codebook XML or a project ZIP) to Dataverse.
+ * 
+ * @param {Blob} blob The redacted file blob.
+ * @param {string} filename The name of the file to be uploaded.
+ */
+async function uploadRedactedFile(blob, filename) {
+  try {
+    const formData = new FormData();
+    formData.append("file", blob, filename);
+    formData.append("origin", "qdas");
+    formData.append("isPublic", "true");
+    formData.append("type", "qda");
+
+    console.log(`Uploading redacted file: ${filename}`);
+    const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    console.log("Upload successful:", responseData);
+    alert($.i18n('refiqdaRedactSuccess'));
+  } catch (error) {
+    console.error("Error during upload:", error);
+    alert($.i18n('refiqdaRedactError', error.message));
+  }
+}
+
 function redactSources(guidsToRedact) {
   console.log("Redacting sources with GUIDs:", guidsToRedact);
 
@@ -1411,140 +1445,38 @@ function redactSources(guidsToRedact) {
   const redactedXmlString = new XMLSerializer().serializeToString(redactedXmlDoc);
 
   if (isZipMode() && typeof zip !== 'undefined') {
-    // Use an async function to handle zip operations
-    (async () => {
-      try {
-        // Find the paths of the source files to remove from the zip archive.
-        const pathsToRemove = new Set();
-        for (const guid of guidsToRedact) {
-          const sourceElement = xmlDoc.querySelector(`[guid="${guid}"]`);
-          if (sourceElement) {
-            // Check various path attributes
-            ["path", "plainTextPath", "richTextPath"].forEach(attr => {
-              const val = sourceElement.getAttribute(attr);
-              if (val) {
-                const p = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(val) : val.replace("internal://", "sources/");
-                if (p) pathsToRemove.add(p);
-              }
-            });
-
-            // Check for paths in Representations
-            const representations = sourceElement.querySelectorAll('Representation');
-            representations.forEach(rep => {
-              const ptp = rep.getAttribute("plainTextPath");
-              if (ptp) {
-                const p = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(ptp) : ptp.replace("internal://", "sources/");
-                if (p) pathsToRemove.add(p);
-              }
-            });
+    // Find the paths of the source files to remove from the zip archive.
+    const pathsToRemove = new Set();
+    for (const guid of guidsToRedact) {
+      const sourceElement = xmlDoc.querySelector(`[guid="${guid}"]`);
+      if (sourceElement) {
+        // Check various path attributes
+        ["path", "plainTextPath", "richTextPath"].forEach(attr => {
+          const val = sourceElement.getAttribute(attr);
+          if (val) {
+            const p = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(val) : val.replace("internal://", "sources/");
+            if (p) pathsToRemove.add(p);
           }
-        }
-        console.log("Paths to remove from zip:", Array.from(pathsToRemove));
-
-        // Fetch the original zip file as a blob on-demand
-        const zipResponse = await fetch(zipUrl);
-        if (!zipResponse.ok) {
-          throw new Error(`HTTP error! status: ${zipResponse.status}`);
-        }
-        const zipFileBlob = await zipResponse.blob();
-
-        // 1. Create a new zip archive
-        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));
-
-        // 2. Read entries from the original zip blob
-        const zipReader = new zip.ZipReader(new zip.BlobReader(zipFileBlob));
-        const entries = await zipReader.getEntries();
-
-        // 3. Copy entries to the new zip, excluding redacted files
-        for (const entry of entries) {
-          if (entry.filename === "project.qde") {
-            // Skip the old project file; we'll add the new one later
-            continue;
-          }
-          if (!pathsToRemove.has(entry.filename)) {
-            await zipWriter.add(entry.filename, new zip.BlobReader(await entry.getData(new zip.BlobWriter())));
-          } else {
-            console.log(`Excluding ${entry.filename} from new zip.`);
-          }
-        }
-
-        // 4. Add the new, redacted project.qde
-        await zipWriter.add("project.qde", new zip.TextReader(redactedXmlString));
-
-        // 5. Finalize the new zip file
-        const redactedZipBlob = await zipWriter.close();
-
-        // 6. Prepare for upload
-        const formData = new FormData();
-        const originalFilename = file.filename || "project.qdpx";
-        const redactedFilename = originalFilename.replace(/(\.qdpx)?$/, '-redacted.qdpx');
-
-        formData.append("file", redactedZipBlob, redactedFilename);
-        formData.append("origin", "qdas");
-        formData.append("isPublic", "true"); // Or handle dynamically if needed
-        formData.append("type", "qda");
-
-        // 7. POST the new file to Dataverse
-        console.log(`Uploading redacted file: ${redactedFilename}`);
-        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
-          method: 'POST',
-          body: formData,
-          // Headers are not needed for FormData; browser sets them
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
-        }
-
-        const responseData = await response.json();
-        console.log("Upload successful:", responseData);
-        alert($.i18n('refiqdaRedactSuccess'));
-
-      } catch (error) {
-        console.error("Error during redaction and upload:", error);
-        alert($.i18n('refiqdaRedactError', error.message));
+        // Check for paths in Representations
+        const representations = sourceElement.querySelectorAll('Representation');
+        representations.forEach(rep => {
+          const ptp = rep.getAttribute("plainTextPath");
+          if (ptp) {
+            const p = typeof resolveInternalZipPaths === 'function' ? resolveInternalZipPaths(ptp) : ptp.replace("internal://", "sources/");
+            if (p) pathsToRemove.add(p);
+          }
+        });
       }
-    })();
+    }
+    createAndUploadRedactedZip(redactedXmlString, pathsToRemove);
   } else {
     // Fallback for non-zip mode (single XML file)
-    (async () => {
-      try {
-        // 1. Create a blob from the redacted XML string
-        const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
-
-        // 2. Prepare for upload
-        const formData = new FormData();
-        const originalFilename = file.filename || "project.qdc";
-        const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
-
-        formData.append("file", redactedXmlBlob, redactedFilename);
-        formData.append("origin", "qdas");
-        formData.append("isPublic", "true"); // Or handle dynamically if needed
-        formData.append("type", "qda");
-
-        // 3. POST the new file to Dataverse
-        console.log(`Uploading redacted file: ${redactedFilename}`);
-        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
-          method: 'POST',
-          body: formData,
-          // Headers are not needed for FormData; browser sets them
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
-        }
-
-        const responseData = await response.json();
-        console.log("Upload successful:", responseData);
-        alert($.i18n('refiqdaRedactSuccess'));
-
-      } catch (error) {
-        console.error("Error during redaction and upload:", error);
-        alert($.i18n('refiqdaRedactError', error.message));
-      }
-    })();
+    const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
+    const originalFilename = file.filename || "project.qdc";
+    const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
+    uploadRedactedFile(redactedXmlBlob, redactedFilename);
   }
 }
 
@@ -1557,90 +1489,12 @@ function redactCodes(guidsToRedact) {
   const redactedXmlString = new XMLSerializer().serializeToString(redactedXmlDoc);
 
   if (isZipMode() && typeof zip !== 'undefined') {
-    (async () => {
-      try {
-        // Fetch the original zip file as a blob on-demand
-        const zipResponse = await fetch(zipUrl);
-        if (!zipResponse.ok) {
-          throw new Error(`HTTP error! status: ${zipResponse.status}`);
-        }
-        const zipFileBlob = await zipResponse.blob();
-
-        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));
-        const zipReader = new zip.ZipReader(new zip.BlobReader(zipFileBlob));
-        const entries = await zipReader.getEntries();
-
-        for (const entry of entries) {
-          if (entry.filename === "project.qde") {
-            continue;
-          }
-          await zipWriter.add(entry.filename, new zip.BlobReader(await entry.getData(new zip.BlobWriter())));
-        }
-
-        await zipWriter.add("project.qde", new zip.TextReader(redactedXmlString));
-        const redactedZipBlob = await zipWriter.close();
-
-        const formData = new FormData();
-        const originalFilename = file.filename || "project.qdpx";
-        const redactedFilename = originalFilename.replace(/(\.qdpx)?$/, '-redacted.qdpx');
-
-        formData.append("file", redactedZipBlob, redactedFilename);
-        formData.append("origin", "qdas");
-        formData.append("isPublic", "true");
-        formData.append("type", "qda");
-
-        console.log(`Uploading redacted file: ${redactedFilename}`);
-        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
-        }
-
-        const responseData = await response.json();
-        console.log("Upload successful:", responseData);
-        alert($.i18n('refiqdaRedactSuccess'));
-
-      } catch (error) {
-        console.error("Error during redaction and upload:", error);
-        alert($.i18n('refiqdaRedactError', error.message));
-      }
-    })();
+    createAndUploadRedactedZip(redactedXmlString);
   } else {
-    (async () => {
-      try {
-        const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
-        const formData = new FormData();
-        const originalFilename = file.filename || "project.qdc";
-        const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
-
-        formData.append("file", redactedXmlBlob, redactedFilename);
-        formData.append("origin", "qdas");
-        formData.append("isPublic", "true");
-        formData.append("type", "qda");
-
-        console.log(`Uploading redacted file: ${redactedFilename}`);
-        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
-        }
-
-        const responseData = await response.json();
-        console.log("Upload successful:", responseData);
-        alert($.i18n('refiqdaRedactSuccess'));
-
-      } catch (error) {
-        console.error("Error during redaction and upload:", error);
-        alert($.i18n('refiqdaRedactError', error.message));
-      }
-    })();
+    // Fallback for non-zip mode (single XML file)
+    const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
+    const originalFilename = file.filename || "project.qdc";
+    const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
+    uploadRedactedFile(redactedXmlBlob, redactedFilename);
   }
 }

@@ -173,3 +173,56 @@ async function downloadSourceFile(sourceGuid, path) {
 async function setProgressBarValue(val) {
     // Dummy function since we don't have a progress bar in the UI yet
 }
+
+/**
+ * Creates a new redacted zip archive and uploads it to Dataverse.
+ * 
+ * @param {string} redactedXmlString The redacted project.qde content.
+ * @param {Set<string>} pathsToRemove A set of file paths to exclude from the zip.
+ */
+async function createAndUploadRedactedZip(redactedXmlString, pathsToRemove = new Set()) {
+    try {
+        // Fetch the original zip file as a blob on-demand
+        const zipResponse = await fetch(zipUrl);
+        if (!zipResponse.ok) {
+            throw new Error(`HTTP error! status: ${zipResponse.status}`);
+        }
+        const zipFileBlob = await zipResponse.blob();
+
+        // 1. Create a new zip archive
+        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));
+
+        // 2. Read entries from the original zip blob
+        const zipReader = new zip.ZipReader(new zip.BlobReader(zipFileBlob));
+        const entries = await zipReader.getEntries();
+
+        // 3. Copy entries to the new zip, excluding redacted files
+        for (const entry of entries) {
+            if (entry.filename === "project.qde") {
+                // Skip the old project file; we'll add the new one later
+                continue;
+            }
+            if (!pathsToRemove.has(entry.filename)) {
+                await zipWriter.add(entry.filename, new zip.BlobReader(await entry.getData(new zip.BlobWriter())));
+            } else {
+                console.log(`Excluding ${entry.filename} from new zip.`);
+            }
+        }
+
+        // 4. Add the new, redacted project.qde
+        await zipWriter.add("project.qde", new zip.TextReader(redactedXmlString));
+
+        // 5. Finalize the new zip file
+        const redactedZipBlob = await zipWriter.close();
+
+        // 6. Prepare for upload
+        const originalFilename = file.filename || "project.qdpx";
+        const redactedFilename = originalFilename.replace(/(\.qdpx)?$/, '-redacted.qdpx');
+
+        await uploadRedactedFile(redactedZipBlob, redactedFilename);
+
+    } catch (error) {
+        console.error("Error during zip redaction and upload:", error);
+        alert($.i18n('refiqdaRedactError', error.message));
+    }
+}
