@@ -4,13 +4,13 @@ var codeMap = new Map();
 var sourceMap = new Map();
 var noteMap = new Map();
 var tableWidth = '90%';
-var selectedGUIDs = new Array();
+var selectedGUIDs = [];
 var noteDataTable;
 var userDataTable;
 var codeDataTable;
 var sourceDataTable;
 var setDataTable;
-var tables = new Array();
+var tables = [];
 
 let file;
 var textSourceCache = new Map(); // Cache for loaded text files
@@ -57,7 +57,7 @@ function parseData(data, filejson) {
   file=filejson;
   $('#waiting').remove();
   wait = $('<div/>').attr('id', 'waiting');
-  $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
+  $('<img alt="Loading"/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
     $('<span/>').text($.i18n('refiqdaParsingProject')).appendTo(wait);
   wait.appendTo($('.preview'));
 
@@ -72,22 +72,24 @@ function parseData2(data) {
   xmlDoc = parser.parseFromString(data, "text/xml");
 
   if(redactedMode) {
-    let redactedNotice = $('<h2/>').addClass('redacted-notice').text($.i18n('refiqdaRedactedNotice')).appendTo($(".preview"));
+      $('<h2/>').addClass('redacted-notice').text($.i18n('refiqdaRedactedNotice')).appendTo($(".preview"));
   }
     //Add a Filter By option
-  let filterBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+  const preview = $('.preview');
+  let filterBlock = $('<div/>').width(tableWidth).appendTo(preview);
   filterBlock.append($("<h2/>").html($.i18n('refiqdaEnableFilteringBy')));
   filterBlock.append($("<p/>").html($.i18n('refiqdaFilteringInstructions')));
   filterBlock.append($('<select/>').prop('id', 'filterby'));
-  $('#filterby').append($('<option/>').prop('value', 'None').text($.i18n('refiqdaNoFiltering')));
+  const filterBy = $('#filterby');
+  filterBy.append($('<option/>').prop('value', 'None').text($.i18n('refiqdaNoFiltering')));
   //As tables are created, they will be added to the option list here
 
   //User table
   var users = xmlDoc.getElementsByTagName("User");
   if (users != null && users.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Users').text($.i18n('refiqdaUsers')));
+      filterBy.append($('<option/>').prop('value', 'Users').text($.i18n('refiqdaUsers')));
 
-    let userBlock = $('<div/>').width(tableWidth).appendTo($(".preview"));
+    let userBlock = $('<div/>').width(tableWidth).appendTo(preview);
     userBlock.append($("<h2>").html($.i18n('refiqdaUsers')));
     //Users only has a "Name" column
     let userTable = createTable($.i18n('refiqdaUsers'), $.i18n('refiqdaName')).appendTo(userBlock);
@@ -105,7 +107,7 @@ function parseData2(data) {
 
     userDataTable = new DataTable(".usertable", {
       //Allow table rows to be selectable if this is the filter by table
-      select: $('#filterby').val() == 'Users',
+      select: $('#filterby').val() === 'Users',
       order: [[0, 'asc']]
     });
     //Draw to set order
@@ -116,7 +118,7 @@ function parseData2(data) {
   console.log("Starting codes");
   var codes = xmlDoc.getElementsByTagName("Code");
   if (codes != null  && codes.length > 0) {
-    $('#filterby').append($('<option/>').prop('value', 'Codes').text($.i18n('refiqdaCodes')));
+      filterBy.append($('<option/>').prop('value', 'Codes').text($.i18n('refiqdaCodes')));
 
     // Check if any codes have a color attribute
     let hasColorAttribute = false;
@@ -178,10 +180,10 @@ function parseData2(data) {
 
     // Configure DataTable with conditional columnDefs
     let dataTableConfig = {
-        select: $('#filterby').val() == 'Codes'
+        select: filterBy.val() == 'Codes'
     };
 
-    if ($('#filterby').val() == 'Codes') {
+    if (filterBy.val() == 'Codes') {
         dataTableConfig.layout = {
             top2End: 'buttons'
         };
@@ -260,7 +262,7 @@ function parseData2(data) {
     dataTableConfig.order = [[usesColumnIndex, "desc"]];
     codeDataTable = new DataTable(".codetable", dataTableConfig);
 
-    if ($('#filterby').val() == 'Codes') {
+    if (filterBy.val() == 'Codes') {
         codeDataTable.on('select deselect', function () {
             var selectedRows = codeDataTable.rows({ selected: true }).count();
             codeDataTable.button('.redact-btn').enable(selectedRows > 0);
@@ -286,7 +288,7 @@ function parseData2(data) {
           let sourceMatches = source.getAttribute("creatingUser") + source.getAttribute("modifyingUser");
           let selections = getSelections(source);
 
-          if (selections != null && selections.length != 0) {
+          if (selections != null && selections.length !== 0) {
             selections.forEach(function(selection) {
               let displayName;
               let selectionMatches;
@@ -597,24 +599,24 @@ function parseData2(data) {
       for (let graph of graphs) {
           let vertexes = graph.getElementsByTagName("Vertex");
           for (let vertex of vertexes) {
-            var data = {};
-            data.id = vertex.getAttribute("guid");
-            data.name = vertex.getAttribute("name");
-            var gnode = {};
+            var vertData = {};
+            vertData.id = vertex.getAttribute("guid");
+            vertData.name = vertex.getAttribute("name");
+            var vertGnode = {};
 
-            gnode.data = data;
-            elements.push(gnode);
+            edgeGnode.data = vertData;
+            elements.push(vertGnode);
           }
           let edges = graph.getElementsByTagName("Edge");
           for (let edge of edges) {
-            var data = {};
-            data.id = edge.getAttribute("guid");
-            data.name = "";
-            data.source = edge.getAttribute("sourceVertex");
-            data.target = edge.getAttribute("targetVertex");
-            var gnode = {};
-            gnode.data = data;
-            elements.push(gnode);
+            var edgeData = {};
+            edgeData.id = edge.getAttribute("guid");
+            edgeData.name = "";
+            edgeData.source = edge.getAttribute("sourceVertex");
+            edgeData.target = edge.getAttribute("targetVertex");
+            var edgeGnode = {};
+            edgeGnode.data = edgeData;
+            elements.push(edgeGnode);
           }
       }
       let cyContainer = $('<div/>').width("100%").height("400px").attr('id', 'cy').appendTo(graphBlock);
