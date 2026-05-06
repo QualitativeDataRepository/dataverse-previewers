@@ -181,6 +181,30 @@ function parseData2(data) {
         select: $('#filterby').val() == 'Codes'
     };
 
+    if ($('#filterby').val() == 'Codes') {
+        dataTableConfig.layout = {
+            top2End: 'buttons'
+        };
+        dataTableConfig.buttons = [
+            'selectAll', 
+            'selectNone',
+            {
+                text: $.i18n('refiqdaRedact'),
+                className: 'redact-btn',
+                titleAttr: $.i18n('refiqdaRedactCodeTooltip'),
+                action: function ( e, dt, node, config ) {
+                    let selectedRows = dt.rows( { selected: true } );
+                    let codeGuids = [];
+                    selectedRows.nodes().to$().each(function() {
+                        codeGuids.push($(this).data('guid'));
+                    });
+                    redactCodes(codeGuids);
+                },
+                enabled: false
+            }
+        ];
+    }
+
     if (hasColorAttribute) {
         dataTableConfig.columnDefs = [
             {
@@ -235,6 +259,13 @@ function parseData2(data) {
     const usesColumnIndex = hasColorAttribute ? 4 : 3;
     dataTableConfig.order = [[usesColumnIndex, "desc"]];
     codeDataTable = new DataTable(".codetable", dataTableConfig);
+
+    if ($('#filterby').val() == 'Codes') {
+        codeDataTable.on('select deselect', function () {
+            var selectedRows = codeDataTable.rows({ selected: true }).count();
+            codeDataTable.button('.redact-btn').enable(selectedRows > 0);
+        });
+    }
 
     tables.push(codeDataTable);
   }
@@ -663,6 +694,31 @@ $("#filterby")
         let codeConfig = {
           select: $('#filterby').val() == 'Codes'
         };
+
+        if ($('#filterby').val() == 'Codes') {
+            codeConfig.layout = {
+                top2End: 'buttons'
+            };
+            codeConfig.buttons = [
+                'selectAll', 
+                'selectNone',
+                {
+                    text: $.i18n('refiqdaRedact'),
+                    className: 'redact-btn',
+                    titleAttr: $.i18n('refiqdaRedactCodeTooltip'),
+                    action: function ( e, dt, node, config ) {
+                        let selectedRows = dt.rows( { selected: true } );
+                        let codeGuids = [];
+                        selectedRows.nodes().to$().each(function() {
+                            codeGuids.push($(this).data('guid'));
+                        });
+                        redactCodes(codeGuids);
+                    },
+                    enabled: false
+                }
+            ];
+        }
+
         if (hasColorColumn) {
           codeConfig.columnDefs = [
             {
@@ -719,6 +775,14 @@ $("#filterby")
             codeConfig.order = [[usesColumnIndex, "desc"]];
         }
         codeDataTable = new DataTable(".codetable", codeConfig);
+
+        if ($('#filterby').val() == 'Codes') {
+            codeDataTable.on('select deselect', function () {
+                var selectedRows = codeDataTable.rows({ selected: true }).count();
+                codeDataTable.button('.redact-btn').enable(selectedRows > 0);
+            });
+        }
+
         attachFilterHandler(codeDataTable);
         codeDataTable.draw();
         tables.push(codeDataTable);
@@ -754,9 +818,9 @@ $("#filterby")
             'selectAll', 
             'selectNone',
             {
-              text: 'Redact',
+              text: $.i18n('refiqdaRedact'),
               className: 'redact-btn',
-              titleAttr: 'Create a redacted version of the datafile with the selected sources, and any related annotations, removed.',
+              titleAttr: $.i18n('refiqdaRedactSourceTooltip'),
               action: function ( e, dt, node, config ) {
                 let selectedRows = dt.rows( { selected: true } );
                 let sourceGuids = [];
@@ -1292,20 +1356,57 @@ async function loadTextExcerpt(plainTextPath, startPos, endPos, sourceGuid) {
     }
 }
 
-function redactSources(guidsToRedact) {
-  console.log("Redacting sources with GUIDs:", guidsToRedact);
-
-  let redactedXmlDoc = xmlDoc.cloneNode(true);
-
+function removeSourcesFromXml(targetXmlDoc, guidsToRedact) {
   for (const guid of guidsToRedact) {
     // Find any source element by its GUID and remove it.
     // This will also remove all its children, including annotations.
-    let sourceElement = redactedXmlDoc.querySelector('[guid="' + guid + '"]');
+    let sourceElement = targetXmlDoc.querySelector('[guid="' + guid + '"]');
     if (sourceElement && sourceElement.parentNode) {
       sourceElement.parentNode.removeChild(sourceElement);
       console.log("Removed source element and its annotations with GUID:", guid);
     }
   }
+}
+
+function removeCodesFromXml(targetXmlDoc, guidsToRedact) {
+  for (const guid of guidsToRedact) {
+    // 1. Find and remove the Code element
+    let codeElement = targetXmlDoc.querySelector('Code[guid="' + guid + '"]');
+    if (codeElement && codeElement.parentNode) {
+      codeElement.parentNode.removeChild(codeElement);
+      console.log("Removed code element with GUID:", guid);
+    }
+
+    // 2. Find and remove all CodeRef elements pointing to this code
+    let codeRefs = targetXmlDoc.querySelectorAll('CodeRef[targetGUID="' + guid + '"]');
+    codeRefs.forEach(codeRef => {
+      // Find the parent annotation
+      let annotation = codeRef.parentNode;
+      while (annotation && annotation.nodeName !== 'Annotation') {
+          annotation = annotation.parentNode;
+      }
+
+      if (codeRef.parentNode) {
+        codeRef.parentNode.removeChild(codeRef);
+      }
+      
+      // 3. Remove any annotations that only used that code (now have no CodeRefs)
+      if (annotation) {
+        let remainingCodeRefs = annotation.querySelectorAll('CodeRef');
+        if (remainingCodeRefs.length === 0 && annotation.parentNode) {
+          annotation.parentNode.removeChild(annotation);
+          console.log("Removed annotation that has no remaining codes.");
+        }
+      }
+    });
+  }
+}
+
+function redactSources(guidsToRedact) {
+  console.log("Redacting sources with GUIDs:", guidsToRedact);
+
+  let redactedXmlDoc = xmlDoc.cloneNode(true);
+  removeSourcesFromXml(redactedXmlDoc, guidsToRedact);
 
   const redactedXmlString = new XMLSerializer().serializeToString(redactedXmlDoc);
 
@@ -1398,11 +1499,11 @@ function redactSources(guidsToRedact) {
 
         const responseData = await response.json();
         console.log("Upload successful:", responseData);
-        alert("Redacted file has been successfully uploaded to Dataverse.");
+        alert($.i18n('refiqdaRedactSuccess'));
 
       } catch (error) {
         console.error("Error during redaction and upload:", error);
-        alert(`An error occurred during the redaction process: ${error.message}`);
+        alert($.i18n('refiqdaRedactError', error.message));
       }
     })();
   } else {
@@ -1437,11 +1538,108 @@ function redactSources(guidsToRedact) {
 
         const responseData = await response.json();
         console.log("Upload successful:", responseData);
-        alert("Redacted file has been successfully uploaded to Dataverse.");
+        alert($.i18n('refiqdaRedactSuccess'));
 
       } catch (error) {
         console.error("Error during redaction and upload:", error);
-        alert(`An error occurred during the redaction process: ${error.message}`);
+        alert($.i18n('refiqdaRedactError', error.message));
+      }
+    })();
+  }
+}
+
+function redactCodes(guidsToRedact) {
+  console.log("Redacting codes with GUIDs:", guidsToRedact);
+
+  let redactedXmlDoc = xmlDoc.cloneNode(true);
+  removeCodesFromXml(redactedXmlDoc, guidsToRedact);
+
+  const redactedXmlString = new XMLSerializer().serializeToString(redactedXmlDoc);
+
+  if (isZipMode() && typeof zip !== 'undefined') {
+    (async () => {
+      try {
+        // Fetch the original zip file as a blob on-demand
+        const zipResponse = await fetch(zipUrl);
+        if (!zipResponse.ok) {
+          throw new Error(`HTTP error! status: ${zipResponse.status}`);
+        }
+        const zipFileBlob = await zipResponse.blob();
+
+        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/x-zip-refiqda"));
+        const zipReader = new zip.ZipReader(new zip.BlobReader(zipFileBlob));
+        const entries = await zipReader.getEntries();
+
+        for (const entry of entries) {
+          if (entry.filename === "project.qde") {
+            continue;
+          }
+          await zipWriter.add(entry.filename, new zip.BlobReader(await entry.getData(new zip.BlobWriter())));
+        }
+
+        await zipWriter.add("project.qde", new zip.TextReader(redactedXmlString));
+        const redactedZipBlob = await zipWriter.close();
+
+        const formData = new FormData();
+        const originalFilename = file.filename || "project.qdpx";
+        const redactedFilename = originalFilename.replace(/(\.qdpx)?$/, '-redacted.qdpx');
+
+        formData.append("file", redactedZipBlob, redactedFilename);
+        formData.append("origin", "qdas");
+        formData.append("isPublic", "true");
+        formData.append("type", "qda");
+
+        console.log(`Uploading redacted file: ${redactedFilename}`);
+        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Upload successful:", responseData);
+        alert($.i18n('refiqdaRedactSuccess'));
+
+      } catch (error) {
+        console.error("Error during redaction and upload:", error);
+        alert($.i18n('refiqdaRedactError', error.message));
+      }
+    })();
+  } else {
+    (async () => {
+      try {
+        const redactedXmlBlob = new Blob([redactedXmlString], { type: 'text/x-xml-refiqda' });
+        const formData = new FormData();
+        const originalFilename = file.filename || "project.qdc";
+        const redactedFilename = originalFilename.replace(/(\.qdc)?$/, '-redacted.qdc');
+
+        formData.append("file", redactedXmlBlob, redactedFilename);
+        formData.append("origin", "qdas");
+        formData.append("isPublic", "true");
+        formData.append("type", "qda");
+
+        console.log(`Uploading redacted file: ${redactedFilename}`);
+        const response = await fetch(queryParams.signedUrls.uploadRedactedFile, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Upload successful:", responseData);
+        alert($.i18n('refiqdaRedactSuccess'));
+
+      } catch (error) {
+        console.error("Error during redaction and upload:", error);
+        alert($.i18n('refiqdaRedactError', error.message));
       }
     })();
   }
