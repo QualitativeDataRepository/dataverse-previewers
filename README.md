@@ -72,7 +72,7 @@ The image previewer only works with image/tiff files on some browsers (as of ~Ja
 
 The original tools were developed through the [Qualitative Data Repository](https://qdr.syr.edu) but are being offered to the Dataverse community at large.
 
-[qqmyers](https://github.com/qqmyers) - developer of the original previewer framework, contributions to the Rich Html Previewer, Voyager Previewer, updating to use signed URLs
+[qqmyers](https://github.com/qqmyers) - developer of the original previewer framework, contributions to the Rich Html Previewer, Voyager Previewer, REFI-QDA previewers, updating to use signed URLs
 
 The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/anncie-pcss).
 
@@ -84,7 +84,7 @@ The Spreadsheet Previewer was contributed by [anncie-pcss](https://github.com/an
 
 [Max Planck Digital Library](https://github.com/MPDL) contributed the ZIP Previewer.
 
-[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer and the RO-Crate previewer.
+[erykkul](https://github.com/erykkul) contributed the Markdown (MD) Previewer, the RO-Crate previewer, and the CDI (DDI Cross-Domain Integration) previewer. The CDI previewer displays all JSON-LD data nodes and properties with real-time SHACL validation, smart property classification (required/optional/extra fields), support for complex nested objects, and editing capabilities. See [https://github.com/libis/cdi-viewer](https://github.com/libis/cdi-viewer) for the source code, documentation and implementation details.
 
 [Jan Range](https://github.com/JR-1991) contributed the H5Web Previewer, Rich Html Previewer.
 
