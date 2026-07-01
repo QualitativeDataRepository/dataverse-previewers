@@ -64,3 +64,7 @@
 .tooltip-text {
   margin-top: 5px;
 }
+
+label {
+  margin-left:5px;
+}
