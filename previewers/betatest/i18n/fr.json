@@ -30,6 +30,7 @@
   "refiqdaFilteringInstructions": "Sélectionnez un tableau, puis sélectionnez des entrées dans ce tableau pour filtrer les autres tableaux.",
   "refiqdaNoFiltering": "Pas de filtrage",
   "refiqdaParsingProject": "Fichier de projet trouvé. Analyse du contenu...",
+  "refiqdaRedactingProject": "Rédaction du projet...",
   "refiqdaRetrievingFile": "Récupération du fichier...",
   "refiqdaExcerptTooltipHeader": "Extrait de texte (Position $1-$2)",
   "refiqdaWholeDocument": "Document entier",

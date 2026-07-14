@@ -223,6 +223,9 @@ async function createAndUploadRedactedZip(redactedXmlString, pathsToRemove = new
 
     } catch (error) {
         console.error("Error during zip redaction and upload:", error);
+        if (typeof hideWaitingIndicator === 'function') {
+            hideWaitingIndicator();
+        }
         alert($.i18n('refiqdaRedactError', error.message));
     }
 }

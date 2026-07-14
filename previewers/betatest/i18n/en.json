@@ -30,6 +30,7 @@
   "refiqdaFilteringInstructions": "Select a table and then select entries in that table to filter the other tables.",
   "refiqdaNoFiltering": "No Filtering",
   "refiqdaParsingProject": "Found Project File. Parsing Contents...",
+  "refiqdaRedactingProject": "Redacting Project...",
   "refiqdaRetrievingFile": "Retrieving File...",
   "refiqdaExcerptTooltipHeader": "Text Excerpt (Position $1-$2)",
   "refiqdaWholeDocument": "Whole Document",

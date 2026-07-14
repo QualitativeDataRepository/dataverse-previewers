@@ -65,15 +65,24 @@ async function checkPermissions() {
 
 var wait;
 var cy;
+
+function showWaitingIndicator(messageKey) {
+  $('#waiting').remove();
+  wait = $('<div/>').attr('id', 'waiting');
+  $('<img alt="Loading"/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
+  $('<span/>').text($.i18n(messageKey)).appendTo(wait);
+  wait.appendTo($('.preview'));
+}
+
+function hideWaitingIndicator() {
+  $('#waiting').remove();
+}
+
 // Start parsing project file
 // This function just adds a loading icon and initial text to the page and then calls parseData2
 function parseData(data, filejson) {
   file=filejson;
-  $('#waiting').remove();
-  wait = $('<div/>').attr('id', 'waiting');
-  $('<img alt="Loading"/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
-    $('<span/>').text($.i18n('refiqdaParsingProject')).appendTo(wait);
-  wait.appendTo($('.preview'));
+  showWaitingIndicator('refiqdaParsingProject');
 
     checkPermissions().then(() => {
     new Promise((resolve) => setTimeout(resolve, 500)).then(() => { 
@@ -942,7 +951,7 @@ $("#filterby")
   });
 
 
-  $('#waiting').remove();
+  hideWaitingIndicator();
 }
 
 function createTable() {
@@ -1490,15 +1499,18 @@ async function uploadRedactedFile(blob, filename) {
 
     const responseData = await response.json();
     console.log("Upload successful:", responseData);
+    hideWaitingIndicator();
     alert($.i18n('refiqdaRedactSuccess'));
     checkForRedactedFile();
   } catch (error) {
     console.error("Error during upload:", error);
+    hideWaitingIndicator();
     alert($.i18n('refiqdaRedactError', error.message));
   }
 }
 
 function redactSources(guidsToRedact) {
+  showWaitingIndicator('refiqdaRedactingProject');
   console.log("Redacting sources with GUIDs:", guidsToRedact);
 
   let redactedXmlDoc = xmlDoc.cloneNode(true);
@@ -1543,6 +1555,7 @@ function redactSources(guidsToRedact) {
 }
 
 function redactCodes(guidsToRedact) {
+  showWaitingIndicator('refiqdaRedactingProject');
   console.log("Redacting codes with GUIDs:", guidsToRedact);
 
   let redactedXmlDoc = xmlDoc.cloneNode(true);
@@ -1575,7 +1588,7 @@ async function checkForRedactedFile() {
             if (response.ok) {
                 const auxFiles = await response.json();
                 const type = isZipMode() ? 'qdpx' : 'qdc';
-                redactedFileExists = auxFiles.some(f => f.formatTag === type && f.formatVersion === '1.0');
+                redactedFileExists = auxFiles.data.some(f => f.formatTag === type && f.formatVersion === '1.0');
                 if (redactedFileExists) {
                     $('.delete-redacted-btn').show();
                 } else {
