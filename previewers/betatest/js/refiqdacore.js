@@ -1097,9 +1097,12 @@ function getCodeRelatedGUIDs(selection) {
   let codings = selection.getElementsByTagName("Coding");
   if (codings != null) {
     for (let coding of codings) {
-      let codeId = coding.getElementsByTagName("CodeRef")[0].getAttribute("targetGUID");
-      let userId = coding.getAttribute('creatingUser');
-      codeGUIDs = codeGUIDs + codeId + userId;
+      let codeRefs = coding.getElementsByTagName("CodeRef");
+      for (let codeRef of codeRefs) {
+        let codeId = codeRef.getAttribute("targetGUID");
+        let userId = coding.getAttribute('creatingUser');
+        codeGUIDs = codeGUIDs + codeId + userId;
+      }
     }
   }
   return codeGUIDs;
@@ -1110,10 +1113,13 @@ function getCodeNames(selection) {
   let codings = selection.getElementsByTagName("Coding");
   if (codings != null) {
     for (let coding of codings) {
-      let codeId = coding.getElementsByTagName("CodeRef")[0].getAttribute("targetGUID");
-      let code = codeMap.get(codeId);
-      if (code != null) {
-        codeNameList.push(code.getAttribute("name"));
+      let codeRefs = coding.getElementsByTagName("CodeRef");
+      for (let codeRef of codeRefs) {
+        let codeId = codeRef.getAttribute("targetGUID");
+        let code = codeMap.get(codeId);
+        if (code != null) {
+          codeNameList.push(code.getAttribute("name"));
+        }
       }
     }
   }
@@ -1442,20 +1448,34 @@ function removeCodesFromXml(targetXmlDoc, guidsToRedact) {
     // 2. Find and remove all CodeRef elements pointing to this code
     let codeRefs = targetXmlDoc.querySelectorAll('CodeRef[targetGUID="' + guid + '"]');
     codeRefs.forEach(codeRef => {
+      let coding = codeRef.parentNode;
+      if (!coding) return;
+
       // Find the parent annotation
-      let annotation = codeRef.parentNode;
+      let annotation = coding.parentNode;
       while (annotation && annotation.nodeName !== 'Annotation') {
           annotation = annotation.parentNode;
       }
 
-      if (codeRef.parentNode) {
-        codeRef.parentNode.removeChild(codeRef);
+      // 1. Remove the CodeRef
+      coding.removeChild(codeRef);
+
+      // 2. If the Coding element now has no more CodeRefs, remove it
+      let selection = coding.parentNode;
+      if (selection && coding.getElementsByTagName("CodeRef").length === 0) {
+        selection.removeChild(coding);
+
+        // 3. If the selection (parent of Coding) now has no more Codings, remove it
+        if (selection.nodeName.endsWith("Selection") && selection.getElementsByTagName("Coding").length === 0 && selection.parentNode) {
+            selection.parentNode.removeChild(selection);
+            console.log("Removed empty selection.");
+        }
       }
-      
+
       // 3. Remove any annotations that only used that code (now have no CodeRefs)
-      if (annotation) {
+      if (annotation && annotation.parentNode) {
         let remainingCodeRefs = annotation.querySelectorAll('CodeRef');
-        if (remainingCodeRefs.length === 0 && annotation.parentNode) {
+        if (remainingCodeRefs.length === 0) {
           annotation.parentNode.removeChild(annotation);
           console.log("Removed annotation that has no remaining codes.");
         }
