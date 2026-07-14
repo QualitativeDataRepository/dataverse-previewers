@@ -18,10 +18,7 @@ var sourcesPathPrefix = "sources/";
 
 
 async function readZip(fileUrl, file) {
-        wait = $('<div/>').attr('id', 'waiting');
-        $('<img/>').width('15%').attr('src','images/Loading_icon.gif').attr('id','throbber').appendTo(wait);
-        $('<span/>').text($.i18n('refiqdaParsingProject')).appendTo(wait);
-        wait.appendTo($('.preview'));
+    showWaitingIndicator('refiqdaParsingProject');
 
     try {
         //Just a workaround, as current Dataverse delivers https links for localhost
@@ -55,7 +52,7 @@ async function readZip(fileUrl, file) {
                   },
                 });
                 projectBlob.then(text => parseData(text, file)).catch((err)=> {
-                    document.getElementById('waiting').innerHTML= "<span>" + $.i18n('errorText') + err + "</span>";
+                    showWaitingIndicator($.i18n('errorText') + err, true);
                 });
 
                 // Second pass: Build entry map for all other files
@@ -65,7 +62,7 @@ async function readZip(fileUrl, file) {
                     }
                 });
             } else {
-                document.getElementById('waiting').innerHTML= "<span>" + $.i18n('refiqdaNoQdeError') + "</span>";
+                showWaitingIndicator('refiqdaNoQdeError');
             }
         }
 
@@ -76,14 +73,11 @@ async function readZip(fileUrl, file) {
     catch (err) {
         //Display error message
         const errorMsg = $.i18n('refiqdaZipReadError', err);
-        document.getElementById('waiting').innerHTML="<span>" + errorMsg + "</span>";
+        showWaitingIndicator(errorMsg, true);
         console.log(err);
     }
     finally {
-        //remove throbber
-        const throbber = document.getElementById("throbber");
-        if (throbber)
-            throbber.parentNode.removeChild(throbber);
+        // No longer need to manually remove throbber here as showWaitingIndicator/hideWaitingIndicator handles it
     }
 }
 

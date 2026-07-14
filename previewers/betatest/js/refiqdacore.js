@@ -66,12 +66,13 @@ async function checkPermissions() {
 var wait;
 var cy;
 
-function showWaitingIndicator(messageKey) {
+function showWaitingIndicator(messageKey, isRawMessage) {
   $('#waiting').remove();
   wait = $('<div/>').attr('id', 'waiting');
-  $('<img alt="Loading"/>').width('15%').attr('src', 'images/Loading_icon.gif').appendTo(wait);
-  $('<span/>').text($.i18n(messageKey)).appendTo(wait);
-  wait.appendTo($('.preview'));
+  $('<img alt="Loading"/>').attr('src', 'images/Loading_icon.gif').appendTo(wait);
+  let message = isRawMessage ? messageKey : $.i18n(messageKey);
+  $('<span/>').text(message).appendTo(wait);
+  wait.appendTo($('body'));
 }
 
 function hideWaitingIndicator() {
