@@ -4,10 +4,7 @@ function writeContent(fileUrl, file, title, authors) {
     "stripIgnoreTag": true,
     "stripIgnoreTagBody": ['script', 'head']
   };  // Custom rules
-  wait = $('<div/>').attr('id', 'waiting');
-  $('<img/>').width('15%').attr('src', 'images/Loading_icon.gif').attr('id', 'throbber').appendTo(wait);
-  $('<span/>').text('Retrieving File...').appendTo(wait);
-  wait.appendTo($('.preview'));
+  showWaitingIndicator('refiqdaRetrievingFile');
 
   if (fileUrl.includes('auxiliary/qdpx')) {
     redactedMode = true;
