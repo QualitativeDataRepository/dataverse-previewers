@@ -1,4 +1,4 @@
-import { extractEntryBytes, inspectSevenZipUrl } from "../lib/sevenzip/sevenzip.js";
+const { inspectSevenZipUrl, extractEntryBytes } = SevenZipHttpRangeParser
 
 const MAX_ENTRIES_EXPANDED = 2000;
 let entries = [];
@@ -6,6 +6,7 @@ let inspectionResult = null;
 let currentFileUrl = null;
 
 $(document).ready(function () {
+
     startPreview(false);
 });
 
