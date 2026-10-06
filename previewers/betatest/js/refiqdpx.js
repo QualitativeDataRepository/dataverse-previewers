@@ -170,7 +170,7 @@ async function setProgressBarValue(val) {
 
 /**
  * Creates a new redacted zip archive and uploads it to Dataverse.
- * 
+ *
  * @param {string} redactedXmlString The redacted project.qde content.
  * @param {Set<string>} pathsToRemove A set of file paths to exclude from the zip.
  */

@@ -86,7 +86,7 @@ function parseData(data, filejson) {
   showWaitingIndicator('refiqdaParsingProject');
 
     checkPermissions().then(() => {
-    new Promise((resolve) => setTimeout(resolve, 500)).then(() => { 
+    new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
         parseData2(data);
         if (canRedact && !redactedMode) {
             checkForRedactedFile();
@@ -227,7 +227,7 @@ function parseData2(data) {
             top2End: 'buttons'
         };
         dataTableConfig.buttons = [
-            'selectAll', 
+            'selectAll',
             'selectNone'
         ];
         if (canRedact) {
@@ -343,7 +343,7 @@ function parseData2(data) {
                 let pdfSel = selection.pdfSelection;
                 let textSel = selection.plainTextSelection;
                 let selectionName = pdfSel.getAttribute("name");
-                
+
                 if(!selectionName) {
                    selectionName = "(Hover for more info)";
                 }
@@ -370,7 +370,7 @@ function parseData2(data) {
                 let sourceGuid = source.getAttribute("guid");
                 selectionMatches = sourceMatches + selection.getAttribute("creatingUser") + selection.getAttribute("modifyingUser") + getCodeRelatedGUIDs(selection) + sourceGuid;
 
-                
+
                 displayName = selectionName; // Default display name
 
                 if (selection.nodeName === "PDFSelection") {
@@ -746,7 +746,7 @@ $("#filterby")
                 top2End: 'buttons'
             };
             codeConfig.buttons = [
-                'selectAll', 
+                'selectAll',
                 'selectNone'
             ];
             if (canRedact) {
@@ -858,7 +858,7 @@ $("#filterby")
               targets: 1
             }
           ]
-          
+
         };
 
         if (filterBy.val() === 'Sources') {
@@ -866,7 +866,7 @@ $("#filterby")
             top2End: 'buttons'
           };
           dtOptions.buttons = [
-            'selectAll', 
+            'selectAll',
             'selectNone'
           ];
           if (canRedact) {
@@ -888,7 +888,7 @@ $("#filterby")
         }
 
         sourceDataTable = new DataTable(".sourcetable", dtOptions);
-        
+
         if (filterBy.val() === 'Sources') {
             sourceDataTable.on('select deselect', function () {
                 var selectedRows = sourceDataTable.rows({ selected: true }).count();
@@ -897,7 +897,7 @@ $("#filterby")
                 }
             });
         }
-        
+
         attachFilterHandler(sourceDataTable);
         sourceDataTable.draw();
 
@@ -1259,7 +1259,7 @@ function createSourceReference(sourceElement) {
         };
         links.push(richTextLink);
     }
-    
+
     // Append all created links with separators
     links.forEach((link, index) => {
         referenceDiv.appendChild(link);
@@ -1486,7 +1486,7 @@ function removeCodesFromXml(targetXmlDoc, guidsToRedact) {
 
 /**
  * Uploads a redacted file (either a codebook XML or a project ZIP) to Dataverse.
- * 
+ *
  * @param {Blob} blob The redacted file blob.
  * @param {string} filename The name of the file to be uploaded.
  */
