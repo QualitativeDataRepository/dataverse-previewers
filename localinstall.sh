@@ -85,4 +85,5 @@ rm replace_js.sh
 rm replace_css.sh
 
 echo Done
+echo For QDR, make sure to link the resources directory under your previewers directory - needed for Anotonia fonts
 exit 0
